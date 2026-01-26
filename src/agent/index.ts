@@ -50,6 +50,7 @@ async function loadSDK(): Promise<typeof sdkQuery> {
 export interface AgentConfig {
   memory: MemoryManager;
   projectRoot?: string;
+  workspace?: string;  // Isolated working directory for agent file operations
   model?: string;
   tools?: ToolsConfig;
 }
@@ -68,6 +69,7 @@ class AgentManagerClass extends EventEmitter {
   private static instance: AgentManagerClass | null = null;
   private memory: MemoryManager | null = null;
   private projectRoot: string = process.cwd();
+  private workspace: string = process.cwd();  // Isolated working directory for agent
   private model: string = 'claude-opus-4-5-20251101';
   private toolsConfig: ToolsConfig | null = null;
   private initialized: boolean = false;
@@ -91,6 +93,7 @@ class AgentManagerClass extends EventEmitter {
   initialize(config: AgentConfig): void {
     this.memory = config.memory;
     this.projectRoot = config.projectRoot || process.cwd();
+    this.workspace = config.workspace || this.projectRoot;
     this.model = config.model || 'claude-opus-4-5-20251101';
     this.toolsConfig = config.tools || null;
     this.initialized = true;
@@ -102,6 +105,7 @@ class AgentManagerClass extends EventEmitter {
 
     console.log('[AgentManager] Initialized');
     console.log('[AgentManager] Project root:', this.projectRoot);
+    console.log('[AgentManager] Workspace:', this.workspace);
     console.log('[AgentManager] Model:', this.model);
     console.log('[AgentManager] Identity loaded:', this.identity.length, 'chars');
     console.log('[AgentManager] Instructions loaded:', this.instructions.length, 'chars');
@@ -272,7 +276,7 @@ class AgentManagerClass extends EventEmitter {
 
     const options: SDKOptions = {
       model: this.model,
-      cwd: this.projectRoot,
+      cwd: this.workspace,  // Use isolated workspace for agent file operations
       maxTurns: 20,
       abortController: this.currentAbortController || new AbortController(),
       tools: { type: 'preset', preset: 'claude_code' },
@@ -343,6 +347,12 @@ class AgentManagerClass extends EventEmitter {
     return `## Your Capabilities as Pocket Agent
 
 You are a persistent personal AI assistant with special capabilities.
+
+### Your Workspace
+Your working directory is: ${this.workspace}
+This is an isolated environment separate from the application code.
+All file operations (reading, writing, creating projects) happen here by default.
+Feel free to create subdirectories, projects, and files as needed.
 
 ### Scheduling & Reminders
 You CAN create scheduled tasks and reminders! Three schedule types are supported:

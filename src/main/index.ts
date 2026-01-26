@@ -122,6 +122,104 @@ let factsGraphWindow: BrowserWindow | null = null;
 let customizeWindow: BrowserWindow | null = null;
 let factsWindow: BrowserWindow | null = null;
 
+/**
+ * Get the agent's isolated workspace directory.
+ * This is separate from the app's project root to prevent conflicts.
+ * Located in ~/Documents/Pocket-agent/
+ */
+function getAgentWorkspace(): string {
+  const documentsPath = app.getPath('documents');
+  return path.join(documentsPath, 'Pocket-agent');
+}
+
+/**
+ * Ensure the agent workspace directory exists.
+ * Creates it if missing (on first run, after onboarding, or if deleted).
+ * Sets up CLAUDE.md for the SDK to load.
+ */
+function ensureAgentWorkspace(): string {
+  const workspace = getAgentWorkspace();
+
+  if (!fs.existsSync(workspace)) {
+    console.log('[Main] Creating agent workspace:', workspace);
+    fs.mkdirSync(workspace, { recursive: true });
+  }
+
+  // Always ensure CLAUDE.md exists (recreate if deleted)
+  const claudeMdPath = path.join(workspace, 'CLAUDE.md');
+  if (!fs.existsSync(claudeMdPath)) {
+    console.log('[Main] Creating workspace CLAUDE.md');
+    const claudeMdContent = `# Pocket Agent Workspace
+
+This is your personal workspace directory. All file operations happen here by default.
+
+## Workspace Guidelines
+- Create subdirectories for different projects
+- This workspace persists across sessions
+- Use absolute paths to work outside this directory
+
+## Core Behavior
+
+**PROACTIVE MEMORY IS CRITICAL:**
+- Save facts IMMEDIATELY when user shares info - don't ask, just remember
+- Search memory before answering questions about the user
+- Reference stored knowledge naturally: "As you mentioned before..."
+- Update facts when information changes (forget + remember)
+
+## Available Tools
+
+All tools are pre-approved. Use them directly.
+
+### Memory
+- \`remember(category, subject, content)\` - Save facts
+- \`forget(category, subject)\` - Remove facts
+- \`list_facts(category?)\` - Show facts
+- \`memory_search(query)\` - Search facts
+
+**Categories:** user_info, preferences, projects, people, work, notes, decisions
+
+### Calendar
+- \`calendar_add(title, start_time, reminder_minutes?, location?)\`
+- \`calendar_list(date?)\` - "today", "tomorrow", or date
+- \`calendar_upcoming(hours?)\` - Next N hours
+- \`calendar_delete(id)\`
+
+### Tasks
+- \`task_add(title, due?, priority?, reminder_minutes?)\`
+- \`task_list(status?)\` - pending/completed/all
+- \`task_complete(id)\`
+- \`task_delete(id)\`
+- \`task_due(hours?)\` - Overdue/upcoming
+
+### Scheduler (Recurring)
+- \`schedule_task(name, cron, prompt, channel?)\`
+- \`list_scheduled_tasks()\`
+- \`delete_scheduled_task(name)\`
+
+### Browser
+- \`browser(action, ...)\` - navigate, screenshot, click, type, scroll, hover, download, upload, tabs
+- Use \`requires_auth: true\` for logged-in sessions
+
+### System
+- \`notify(title, body?, urgency?)\` - Desktop notification
+- \`pty_exec(command)\` - Interactive terminal
+
+## Time Formats
+- Natural: "today 3pm", "tomorrow 9am", "monday 2pm"
+- Relative: "in 2 hours", "in 30 minutes"
+
+## Behavior
+1. **Memory First** - Check/save relevant facts
+2. **Offer Help** - Suggest tasks/events for mentioned plans
+3. **Be Concise** - Verbose on desktop, brief on Telegram
+4. **Stay Proactive** - Remind about overdue tasks
+`;
+    fs.writeFileSync(claudeMdPath, claudeMdContent, 'utf-8');
+  }
+
+  return workspace;
+}
+
 // ============ Tray Setup ============
 
 async function createTray(): Promise<void> {
@@ -862,10 +960,13 @@ async function initializeAgent(): Promise<void> {
     return;
   }
 
-  // Project root (where CLAUDE.md lives)
+  // Project root (where CLAUDE.md and CLI tools live)
   const projectRoot = app.isPackaged
     ? path.join(process.resourcesPath, 'app')
     : path.join(__dirname, '../..');
+
+  // Agent workspace (isolated working directory for file operations)
+  const workspace = ensureAgentWorkspace();
 
   // Initialize memory (if not already done)
   if (!memory) {
@@ -899,6 +1000,7 @@ async function initializeAgent(): Promise<void> {
   AgentManager.initialize({
     memory,
     projectRoot,
+    workspace,  // Isolated working directory for agent file operations
     model: SettingsManager.get('agent.model'),
     tools: toolsConfig,
   });
