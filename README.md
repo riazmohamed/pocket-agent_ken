@@ -19,7 +19,10 @@ A persistent personal AI assistant that runs as a desktop application on macOS. 
 
 Download the latest release from the [Releases](https://github.com/KenKaiii/pocket-agent/releases) page:
 
-- **Pocket Agent.dmg** - Disk image for easy installation
+| Architecture | Download |
+|--------------|----------|
+| Apple Silicon (M1/M2/M3) | [Pocket Agent-arm64.dmg](https://github.com/KenKaiii/pocket-agent/releases/latest/download/Pocket.Agent-1.0.0-arm64.dmg) |
+| Intel Mac | [Pocket Agent-x64.dmg](https://github.com/KenKaiii/pocket-agent/releases/latest/download/Pocket.Agent-1.0.0-x64.dmg) |
 
 ### Install
 

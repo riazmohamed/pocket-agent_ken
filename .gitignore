@@ -10,3 +10,5 @@ dist/
 
 # Config with secrets
 config.json
+release/
+*.cer

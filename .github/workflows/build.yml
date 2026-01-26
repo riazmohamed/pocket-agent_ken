@@ -41,7 +41,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run build && npx electron-builder --mac -p never
+        run: npm run build && npx electron-builder --mac --arm64 --x64 -p never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -58,3 +58,28 @@ jobs:
           files: |
             release/*.dmg
             release/*.zip
+          body: |
+            ## Pocket Agent ${{ github.ref_name }}
+
+            A persistent personal AI assistant for macOS with memory and scheduling.
+
+            ### Downloads
+
+            | Architecture | File |
+            |--------------|------|
+            | Apple Silicon (M1/M2/M3) | `Pocket.Agent-*-arm64.dmg` |
+            | Intel Mac | `Pocket.Agent-*-x64.dmg` |
+
+            ### Installation
+
+            1. Download the DMG for your Mac
+            2. Open the DMG and drag Pocket Agent to Applications
+            3. Launch and enter your Anthropic API key
+
+            ### What's New
+
+            - Initial release
+            - Persistent conversation memory
+            - Telegram integration
+            - Scheduled tasks with cron
+            - Code signed and notarized for macOS
