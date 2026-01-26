@@ -409,8 +409,8 @@ function openSetupWindow(): void {
   }
 
   setupWindow = new BrowserWindow({
-    width: 550,
-    height: 500,
+    width: 520,
+    height: 580,
     title: 'Welcome to Pocket Agent',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -760,6 +760,10 @@ function setupIPC(): void {
 
   ipcMain.handle('settings:isFirstRun', async () => {
     return SettingsManager.isFirstRun();
+  });
+
+  ipcMain.handle('settings:initializeKeychain', async () => {
+    return SettingsManager.initializeKeychain();
   });
 
   ipcMain.handle('settings:validateAnthropic', async (_, key: string) => {

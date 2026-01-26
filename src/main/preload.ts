@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('pocketAgent', {
   deleteSetting: (key: string) => ipcRenderer.invoke('settings:delete', key),
   getSettingsSchema: (category?: string) => ipcRenderer.invoke('settings:schema', category),
   isFirstRun: () => ipcRenderer.invoke('settings:isFirstRun'),
+  initializeKeychain: () => ipcRenderer.invoke('settings:initializeKeychain'),
   validateAnthropicKey: (key: string) => ipcRenderer.invoke('settings:validateAnthropic', key),
   validateOpenAIKey: (key: string) => ipcRenderer.invoke('settings:validateOpenAI', key),
   validateTelegramToken: (token: string) => ipcRenderer.invoke('settings:validateTelegram', token),
@@ -123,6 +124,7 @@ declare global {
       deleteSetting: (key: string) => Promise<{ success: boolean }>;
       getSettingsSchema: (category?: string) => Promise<Array<{ key: string; defaultValue: string; encrypted: boolean; category: string; label: string; description?: string; type: string }>>;
       isFirstRun: () => Promise<boolean>;
+      initializeKeychain: () => Promise<{ available: boolean; error?: string }>;
       validateAnthropicKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
       validateOpenAIKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
       validateTelegramToken: (token: string) => Promise<{ valid: boolean; error?: string; botInfo?: unknown }>;

@@ -567,6 +567,33 @@ class SettingsManagerClass {
   }
 
   /**
+   * Initialize keychain access by triggering a test encryption.
+   * This prompts macOS for keychain permission upfront during onboarding
+   * rather than surprising users later when saving API keys.
+   * Returns true if encryption is available and working.
+   */
+  initializeKeychain(): { available: boolean; error?: string } {
+    try {
+      if (!safeStorage.isEncryptionAvailable()) {
+        return { available: false, error: 'Encryption not available on this system' };
+      }
+      // Trigger keychain access with a test encryption
+      const testValue = 'keychain-init-test';
+      const encrypted = safeStorage.encryptString(testValue);
+      const decrypted = safeStorage.decryptString(encrypted);
+      if (decrypted !== testValue) {
+        return { available: false, error: 'Encryption verification failed' };
+      }
+      return { available: true };
+    } catch (error) {
+      return {
+        available: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
    * Get formatted user profile for agent context
    */
   getFormattedProfile(): string {

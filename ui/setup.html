@@ -48,20 +48,21 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 40px 40px 60px 40px;
+      justify-content: flex-start;
+      padding: 32px 36px 40px 36px;
       overflow-y: auto;
     }
 
     .logo {
-      width: 80px;
-      height: 80px;
+      width: 64px;
+      height: 64px;
       background: linear-gradient(135deg, var(--accent), #818cf8);
-      border-radius: 20px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
       animation: logoIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -71,26 +72,26 @@
     }
 
     .logo svg {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       color: white;
     }
 
     h1 {
       font-family: 'Sora', sans-serif;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.03em;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       text-align: center;
       animation: textIn 0.5s ease 0.1s both;
     }
 
     .subtitle {
-      font-size: 15px;
+      font-size: 14px;
       color: var(--text-secondary);
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 28px;
       animation: textIn 0.5s ease 0.15s both;
     }
 
@@ -103,7 +104,7 @@
     .step {
       display: none;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       animation: stepIn 0.3s ease;
     }
 
@@ -128,12 +129,12 @@
       background: var(--bg-secondary);
       border: 2px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px;
       cursor: pointer;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .auth-option:hover {
@@ -147,9 +148,9 @@
     }
 
     .auth-option-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -194,20 +195,20 @@
 
     /* Form */
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .form-group label {
       display: block;
       font-size: 13px;
       font-weight: 500;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: var(--text-secondary);
     }
 
     .form-group input {
       width: 100%;
-      padding: 14px 16px;
+      padding: 12px 14px;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -250,12 +251,17 @@
     /* Status */
     .status {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 10px;
       font-size: 13px;
+      line-height: 1.5;
       padding: 12px 14px;
       border-radius: var(--radius-sm);
       margin-bottom: 16px;
+    }
+
+    .status svg {
+      margin-top: 2px;
     }
 
     .status.success {
@@ -279,17 +285,21 @@
       flex-shrink: 0;
     }
 
+    .status span {
+      flex: 1;
+    }
+
     /* Buttons */
     .button-row {
       display: flex;
       gap: 12px;
-      margin-top: 24px;
-      margin-bottom: 20px;
+      margin-top: 20px;
+      margin-bottom: 16px;
     }
 
     button {
       flex: 1;
-      padding: 14px 24px;
+      padding: 12px 20px;
       border: none;
       border-radius: var(--radius);
       font-size: 14px;
@@ -300,6 +310,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      white-space: nowrap;
+      min-height: 46px;
     }
 
     button.primary {
@@ -376,14 +388,14 @@
 
     /* Success */
     .success-icon {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       background: rgba(34, 197, 94, 0.1);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 24px;
+      margin: 0 auto 20px;
       animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -394,8 +406,8 @@
     }
 
     .success-icon svg {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       color: var(--success);
     }
 
@@ -404,9 +416,9 @@
     }
 
     .success-text h2 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .success-text p {
@@ -416,9 +428,9 @@
 
     /* Optional section */
     .optional-section {
-      margin-top: 24px;
-      margin-bottom: 16px;
-      padding-top: 24px;
+      margin-top: 16px;
+      margin-bottom: 12px;
+      padding-top: 16px;
       border-top: 1px solid var(--border);
     }
 
@@ -491,8 +503,29 @@
     <h1>Pocket Agent</h1>
     <p class="subtitle">Your AI assistant with persistent memory</p>
 
+    <!-- Step 0: Keychain Initialization (macOS) -->
+    <div class="step active" id="step-keychain">
+      <div id="keychain-status"></div>
+
+      <div class="status info">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Pocket Agent uses your Mac's Keychain to securely store API keys. You may be prompted for your Mac password.</span>
+      </div>
+
+      <div class="button-row">
+        <button class="primary" id="keychain-btn" onclick="initKeychain()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Enable Keychain
+        </button>
+      </div>
+
+      <div class="skip-link">
+        <a onclick="skipKeychain()">Skip for now</a>
+      </div>
+    </div>
+
     <!-- Step 1: Choose Auth Method -->
-    <div class="step active" id="step-auth">
+    <div class="step" id="step-auth">
       <div class="auth-options">
         <div class="auth-option" onclick="selectAuth('oauth')">
           <div class="auth-option-icon oauth">
@@ -617,7 +650,7 @@
         <p>Double-click the tray icon to start chatting</p>
       </div>
 
-      <div class="button-row" style="margin-top: 32px;">
+      <div class="button-row" style="margin-top: 24px;">
         <button class="primary" onclick="finishSetup()">
           Start Chatting
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -628,6 +661,52 @@
 
   <script>
     let selectedAuth = null;
+    let keychainInitialized = false;
+
+    async function initKeychain() {
+      const btn = document.getElementById('keychain-btn');
+      const statusDiv = document.getElementById('keychain-status');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Initializing...';
+
+      try {
+        const result = await window.pocketAgent.initializeKeychain();
+
+        if (result.available) {
+          keychainInitialized = true;
+          statusDiv.innerHTML = `
+            <div class="status success">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Secure storage enabled! Your API keys will be encrypted.
+            </div>
+          `;
+          setTimeout(() => showStep('step-auth'), 1000);
+        } else {
+          statusDiv.innerHTML = `
+            <div class="status error">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              ${result.error || 'Could not access Keychain. Keys will be stored unencrypted.'}
+            </div>
+          `;
+          btn.disabled = false;
+          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Try Again`;
+        }
+      } catch (err) {
+        statusDiv.innerHTML = `
+          <div class="status error">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>${err.message || 'Failed to initialize secure storage'}</span>
+          </div>
+        `;
+        btn.disabled = false;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Try Again`;
+      }
+    }
+
+    function skipKeychain() {
+      showStep('step-auth');
+    }
 
     function selectAuth(method) {
       selectedAuth = method;
