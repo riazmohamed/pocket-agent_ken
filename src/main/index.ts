@@ -387,6 +387,16 @@ function setupIPC(): void {
     try {
       const result = await AgentManager.processMessage(message, 'desktop');
       updateTrayMenu();
+
+      // Sync to Telegram (Desktop -> Telegram)
+      console.log('[Main] Checking telegram sync - bot exists:', !!telegramBot, 'active chats:', telegramBot?.getActiveChatIds().length ?? 0);
+      if (telegramBot && telegramBot.getActiveChatIds().length > 0) {
+        console.log('[Main] Syncing desktop message to Telegram');
+        telegramBot.syncFromDesktop(message, result.response).catch((err) => {
+          console.error('[Main] Failed to sync desktop message to Telegram:', err);
+        });
+      }
+
       return { success: true, response: result.response, tokensUsed: result.tokensUsed };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -674,6 +684,48 @@ async function initializeAgent(): Promise<void> {
   if (telegramEnabled && telegramToken) {
     try {
       telegramBot = createTelegramBot();
+
+      // Set up cross-channel sync: Telegram -> Desktop
+      telegramBot.setOnMessageCallback((data) => {
+        console.log('[Main] Telegram message callback triggered, syncing to desktop');
+
+        // Show notification to confirm callback is working
+        showNotification('Telegram Message', `Received: ${data.userMessage.substring(0, 50)}`);
+
+        const messageData = {
+          userMessage: data.userMessage,
+          response: data.response,
+          chatId: data.chatId,
+        };
+
+        const sendToWindow = () => {
+          if (chatWindow && !chatWindow.isDestroyed()) {
+            console.log('[Main] Sending telegram:message IPC');
+            chatWindow.webContents.send('telegram:message', messageData);
+          }
+        };
+
+        // If chat window is open and loaded, send immediately
+        if (chatWindow && !chatWindow.isDestroyed()) {
+          console.log('[Main] Chat window exists, sending IPC');
+          sendToWindow();
+        } else {
+          // Open chat window and wait for it to fully load
+          console.log('[Main] Chat window not open, opening it');
+          openChatWindow();
+
+          // Wait for did-finish-load which fires after page JS has executed
+          if (chatWindow) {
+            chatWindow.webContents.once('did-finish-load', () => {
+              console.log('[Main] Chat window loaded, sending telegram:message IPC');
+              // Small additional delay to ensure DOMContentLoaded handlers have run
+              setTimeout(sendToWindow, 200);
+            });
+          }
+        }
+      });
+      console.log('[Main] Telegram onMessageCallback set');
+
       await telegramBot.start();
 
       if (scheduler) {

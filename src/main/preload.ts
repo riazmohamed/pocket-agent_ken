@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('pocketAgent', {
     ipcRenderer.on('scheduler:message', listener);
     return () => ipcRenderer.removeListener('scheduler:message', listener);
   },
+  onTelegramMessage: (callback: (data: { userMessage: string; response: string; chatId: number }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: { userMessage: string; response: string; chatId: number }) => callback(data);
+    ipcRenderer.on('telegram:message', listener);
+    return () => ipcRenderer.removeListener('telegram:message', listener);
+  },
   getHistory: (limit?: number) => ipcRenderer.invoke('agent:history', limit),
   getStats: () => ipcRenderer.invoke('agent:stats'),
   clearConversation: () => ipcRenderer.invoke('agent:clear'),
@@ -65,6 +70,7 @@ declare global {
       onStatus: (callback: (status: { type: string; toolName?: string; toolInput?: string; message?: string }) => void) => () => void;
       saveAttachment: (name: string, dataUrl: string) => Promise<string>;
       onSchedulerMessage: (callback: (data: { jobName: string; prompt: string; response: string }) => void) => () => void;
+      onTelegramMessage: (callback: (data: { userMessage: string; response: string; chatId: number }) => void) => () => void;
       getHistory: (limit?: number) => Promise<Array<{ role: string; content: string; timestamp: string }>>;
       getStats: () => Promise<{ messageCount: number; factCount: number; estimatedTokens: number } | null>;
       clearConversation: () => Promise<{ success: boolean }>;

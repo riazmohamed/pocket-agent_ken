@@ -3,11 +3,228 @@ import { BaseChannel } from './index';
 import { AgentManager } from '../agent';
 import { SettingsManager } from '../settings';
 
+/**
+ * Convert markdown to Telegram HTML format
+ * Telegram supports: <b>, <i>, <u>, <s>, <code>, <pre>, <a href="">
+ * IMPORTANT: Telegram does NOT support nested tags or tables!
+ */
+function markdownToTelegramHtml(text: string): string {
+  let result = text;
+
+  // Placeholders for protected content
+  const protected_content: string[] = [];
+
+  // Extract and protect code blocks first (```...```)
+  result = result.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, _lang, code) => {
+    const idx = protected_content.length;
+    const escapedCode = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .trim();
+    protected_content.push(`<pre>${escapedCode}</pre>`);
+    return `\n@@PROTECTED_${idx}@@\n`;
+  });
+
+  // Extract and protect inline code (`...`)
+  result = result.replace(/`([^`\n]+)`/g, (_, code) => {
+    const idx = protected_content.length;
+    const escapedCode = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    protected_content.push(`<code>${escapedCode}</code>`);
+    return `@@PROTECTED_${idx}@@`;
+  });
+
+  // Extract and protect links [text](url) - before escaping
+  result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, linkText, url) => {
+    const idx = protected_content.length;
+    const escapedText = linkText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    protected_content.push(`<a href="${url}">${escapedText}</a>`);
+    return `@@PROTECTED_${idx}@@`;
+  });
+
+  // Escape HTML in the rest of the text
+  result = result
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Process line by line
+  const lines = result.split('\n');
+  const processedLines: string[] = [];
+
+  // Collect table rows for batch processing
+  let tableRows: string[][] = [];
+
+  for (const line of lines) {
+    // Check if this is a table row
+    const isTableRow = line.startsWith('|') && line.endsWith('|');
+    const isTableSeparator = /^\|[-:\s|]+\|$/.test(line);
+
+    if (isTableRow && !isTableSeparator) {
+      // Collect table row
+      const cells = line.slice(1, -1).split('|').map(c => stripInlineMarkdown(c.trim()));
+      tableRows.push(cells);
+      continue;
+    } else if (isTableSeparator) {
+      // Skip separator rows
+      continue;
+    } else if (tableRows.length > 0) {
+      // End of table - output formatted table
+      processedLines.push(formatTable(tableRows));
+      tableRows = [];
+    }
+
+    // Headers: # ## ### etc -> Bold
+    const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headerMatch) {
+      const content = stripInlineMarkdown(headerMatch[2]);
+      processedLines.push(`<b>${content}</b>`);
+      continue;
+    }
+
+    // Blockquotes: > text -> bar + italic
+    const quoteMatch = line.match(/^&gt;\s*(.+)$/);
+    if (quoteMatch) {
+      const content = stripInlineMarkdown(quoteMatch[1]);
+      processedLines.push(`│ <i>${content}</i>`);
+      continue;
+    }
+
+    // Checkboxes: - [ ] or - [x]
+    const uncheckedMatch = line.match(/^[-*]\s+\[\s*\]\s+(.+)$/);
+    if (uncheckedMatch) {
+      processedLines.push(`☐ ${applyInlineFormatting(uncheckedMatch[1])}`);
+      continue;
+    }
+    const checkedMatch = line.match(/^[-*]\s+\[x\]\s+(.+)$/i);
+    if (checkedMatch) {
+      processedLines.push(`☑ ${applyInlineFormatting(checkedMatch[1])}`);
+      continue;
+    }
+
+    // Unordered lists: - item or * item -> bullet
+    const ulMatch = line.match(/^[-*]\s+(.+)$/);
+    if (ulMatch) {
+      processedLines.push(`• ${applyInlineFormatting(ulMatch[1])}`);
+      continue;
+    }
+
+    // Ordered lists: 1. item
+    const olMatch = line.match(/^(\d+)\.\s+(.+)$/);
+    if (olMatch) {
+      processedLines.push(`${olMatch[1]}. ${applyInlineFormatting(olMatch[2])}`);
+      continue;
+    }
+
+    // Horizontal rules: --- or *** or ___
+    if (/^[-*_]{3,}$/.test(line)) {
+      processedLines.push('─────────');
+      continue;
+    }
+
+    // Regular line - apply inline formatting
+    processedLines.push(applyInlineFormatting(line));
+  }
+
+  // Handle any remaining table rows at end of text
+  if (tableRows.length > 0) {
+    processedLines.push(formatTable(tableRows));
+  }
+
+  result = processedLines.join('\n');
+
+  // Restore protected content
+  protected_content.forEach((content, idx) => {
+    result = result.replace(`@@PROTECTED_${idx}@@`, content);
+  });
+
+  // Clean up excessive newlines
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  return result.trim();
+}
+
+/**
+ * Format table rows with aligned columns using monospace
+ */
+function formatTable(rows: string[][]): string {
+  if (rows.length === 0) return '';
+
+  // Calculate max width for each column
+  const colWidths: number[] = [];
+  for (const row of rows) {
+    for (let i = 0; i < row.length; i++) {
+      colWidths[i] = Math.max(colWidths[i] || 0, row[i].length);
+    }
+  }
+
+  // Format each row with padding
+  const formattedRows = rows.map(row => {
+    const cells = row.map((cell, i) => cell.padEnd(colWidths[i]));
+    return cells.join(' │ ');
+  });
+
+  // Wrap in <pre> for monospace alignment
+  return `<pre>${formattedRows.join('\n')}</pre>`;
+}
+
+/**
+ * Strip inline markdown formatting (for contexts where we can't nest tags)
+ */
+function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove **bold**
+    .replace(/__(.+?)__/g, '$1')       // Remove __bold__
+    .replace(/(?<![*\w])\*([^*\n]+)\*(?![*\w])/g, '$1')  // Remove *italic*
+    .replace(/(?<![_\w])_([^_\n]+)_(?![_\w])/g, '$1')    // Remove _italic_
+    .replace(/~~(.+?)~~/g, '$1');      // Remove ~~strike~~
+}
+
+/**
+ * Apply inline formatting (bold, italic, strikethrough) - one at a time to avoid nesting
+ */
+function applyInlineFormatting(text: string): string {
+  // Process bold first: **text** or __text__
+  // We process each match individually to avoid nesting
+  let result = text;
+
+  // Bold: **text**
+  result = result.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+  // Bold: __text__ (only if not inside a word)
+  result = result.replace(/(?<!\w)__([^_]+)__(?!\w)/g, '<b>$1</b>');
+
+  // Italic: *text* (but not **)
+  result = result.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<i>$1</i>');
+
+  // Italic: _text_ (but not __)
+  result = result.replace(/(?<!_)_([^_\n]+)_(?!_)/g, '<i>$1</i>');
+
+  // Strikethrough: ~~text~~
+  result = result.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+
+  return result;
+}
+
+export type MessageCallback = (data: {
+  userMessage: string;
+  response: string;
+  channel: 'telegram';
+  chatId: number;
+}) => void;
+
 export class TelegramBot extends BaseChannel {
   name = 'telegram';
   private bot: Bot;
   private allowedUserIds: Set<number>;
   private activeChatIds: Set<number> = new Set();
+  private onMessageCallback: MessageCallback | null = null;
 
   constructor() {
     super();
@@ -15,7 +232,39 @@ export class TelegramBot extends BaseChannel {
     const allowedUsers = SettingsManager.getArray('telegram.allowedUserIds');
     this.bot = new Bot(botToken);
     this.allowedUserIds = new Set(allowedUsers.map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
+    this.loadPersistedChatIds();
     this.setupHandlers();
+  }
+
+  /**
+   * Load persisted chat IDs from settings
+   */
+  private loadPersistedChatIds(): void {
+    const savedIds = SettingsManager.getArray('telegram.activeChatIds');
+    for (const id of savedIds) {
+      const parsed = parseInt(id, 10);
+      if (!isNaN(parsed)) {
+        this.activeChatIds.add(parsed);
+      }
+    }
+    if (this.activeChatIds.size > 0) {
+      console.log(`[Telegram] Loaded ${this.activeChatIds.size} persisted chat IDs`);
+    }
+  }
+
+  /**
+   * Persist chat IDs to settings
+   */
+  private persistChatIds(): void {
+    const ids = Array.from(this.activeChatIds).map(String);
+    SettingsManager.set('telegram.activeChatIds', JSON.stringify(ids));
+  }
+
+  /**
+   * Set callback for when messages are received (for cross-channel sync)
+   */
+  setOnMessageCallback(callback: MessageCallback): void {
+    this.onMessageCallback = callback;
   }
 
   private setupHandlers(): void {
@@ -26,7 +275,12 @@ export class TelegramBot extends BaseChannel {
 
       // Track active chat IDs for proactive messaging
       if (chatId) {
+        const isNew = !this.activeChatIds.has(chatId);
         this.activeChatIds.add(chatId);
+        if (isNew) {
+          this.persistChatIds();
+          console.log(`[Telegram] New chat ID registered: ${chatId}`);
+        }
       }
 
       // If allowlist is configured, enforce it
@@ -143,10 +397,41 @@ export class TelegramBot extends BaseChannel {
       await ctx.reply('✅ Conversation history cleared.\nFacts and scheduled tasks are preserved.');
     });
 
+    // Handle /testhtml command - for debugging HTML formatting
+    this.bot.command('testhtml', async (ctx) => {
+      console.log('[Telegram] /testhtml command received!');
+      const testHtml = `<b>Bold text</b>
+<i>Italic text</i>
+<u>Underline text</u>
+<s>Strikethrough text</s>
+<code>inline code</code>
+<pre>code block
+multiline</pre>
+<a href="https://example.com">Link text</a>
+
+• Bullet point 1
+• Bullet point 2
+
+1. Numbered item
+2. Another item`;
+
+      try {
+        await ctx.reply(testHtml, { parse_mode: 'HTML' });
+        console.log('[Telegram] Test HTML sent successfully');
+      } catch (error) {
+        console.error('[Telegram] Test HTML failed:', error);
+        await ctx.reply('HTML test failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
+    });
+    console.log('[Telegram] /testhtml command handler registered');
+
     // Handle all text messages
     this.bot.on('message:text', async (ctx: Context) => {
       const message = ctx.message?.text;
-      if (!message) return;
+      const chatId = ctx.chat?.id;
+      if (!message || !chatId) return;
+
+      console.log('[Telegram] message:text handler received:', message.substring(0, 50));
 
       // Show typing indicator
       await ctx.replyWithChatAction('typing');
@@ -163,6 +448,20 @@ export class TelegramBot extends BaseChannel {
 
         // Send response, splitting if necessary
         await this.sendResponse(ctx, result.response);
+
+        // Notify callback for cross-channel sync (to desktop)
+        console.log('[Telegram] Checking onMessageCallback:', !!this.onMessageCallback);
+        if (this.onMessageCallback) {
+          console.log('[Telegram] Calling onMessageCallback for cross-channel sync');
+          this.onMessageCallback({
+            userMessage: message,
+            response: result.response,
+            channel: 'telegram',
+            chatId,
+          });
+        } else {
+          console.log('[Telegram] No onMessageCallback set!');
+        }
 
         // If compaction happened, notify
         if (result.wasCompacted) {
@@ -184,19 +483,38 @@ export class TelegramBot extends BaseChannel {
 
   /**
    * Send a response, splitting into multiple messages if needed
+   * Converts markdown to Telegram HTML format
    */
   private async sendResponse(ctx: Context, text: string): Promise<void> {
     const MAX_LENGTH = 4000; // Telegram limit is 4096, leave buffer
 
     if (text.length <= MAX_LENGTH) {
-      await ctx.reply(text);
+      const html = markdownToTelegramHtml(text);
+      console.log('[Telegram] Original text length:', text.length);
+      console.log('[Telegram] HTML text length:', html.length);
+      console.log('[Telegram] HTML preview:', html.substring(0, 500));
+      try {
+        await ctx.reply(html, { parse_mode: 'HTML' });
+        console.log('[Telegram] HTML send successful');
+      } catch (error) {
+        // Fallback to plain text if HTML parsing fails
+        console.error('[Telegram] HTML parse failed, falling back to plain text:', error);
+        await ctx.reply(text);
+      }
       return;
     }
 
     const chunks = this.splitMessage(text, MAX_LENGTH);
     for (let i = 0; i < chunks.length; i++) {
       const prefix = chunks.length > 1 ? `(${i + 1}/${chunks.length}) ` : '';
-      await ctx.reply(prefix + chunks[i]);
+      const html = markdownToTelegramHtml(prefix + chunks[i]);
+      try {
+        await ctx.reply(html, { parse_mode: 'HTML' });
+      } catch (error) {
+        // Fallback to plain text if HTML parsing fails
+        console.warn('[Telegram] HTML parse failed, falling back to plain text');
+        await ctx.reply(prefix + chunks[i]);
+      }
       // Small delay between messages to maintain order
       if (i < chunks.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -269,6 +587,7 @@ export class TelegramBot extends BaseChannel {
   /**
    * Proactively send a message to a specific chat
    * Used by scheduler for cron jobs
+   * Converts markdown to Telegram HTML format
    */
   async sendMessage(chatId: number, text: string): Promise<boolean> {
     if (!this.isRunning) {
@@ -280,12 +599,23 @@ export class TelegramBot extends BaseChannel {
       const MAX_LENGTH = 4000;
 
       if (text.length <= MAX_LENGTH) {
-        await this.bot.api.sendMessage(chatId, text);
+        const html = markdownToTelegramHtml(text);
+        try {
+          await this.bot.api.sendMessage(chatId, html, { parse_mode: 'HTML' });
+        } catch {
+          // Fallback to plain text
+          await this.bot.api.sendMessage(chatId, text);
+        }
       } else {
         const chunks = this.splitMessage(text, MAX_LENGTH);
         for (let i = 0; i < chunks.length; i++) {
           const prefix = chunks.length > 1 ? `(${i + 1}/${chunks.length}) ` : '';
-          await this.bot.api.sendMessage(chatId, prefix + chunks[i]);
+          const html = markdownToTelegramHtml(prefix + chunks[i]);
+          try {
+            await this.bot.api.sendMessage(chatId, html, { parse_mode: 'HTML' });
+          } catch {
+            await this.bot.api.sendMessage(chatId, prefix + chunks[i]);
+          }
           if (i < chunks.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
@@ -310,6 +640,15 @@ export class TelegramBot extends BaseChannel {
       if (success) sent++;
     }
     return sent;
+  }
+
+  /**
+   * Sync a desktop conversation to Telegram
+   * Shows both the user message and assistant response
+   */
+  async syncFromDesktop(userMessage: string, response: string): Promise<number> {
+    const text = `💻 [Desktop]\n\n👤 ${userMessage}\n\n🤖 ${response}`;
+    return this.broadcast(text);
   }
 
   /**
