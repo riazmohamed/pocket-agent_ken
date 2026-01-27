@@ -39,7 +39,7 @@
 
     header {
       background: var(--bg-secondary);
-      padding: 16px 24px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -48,7 +48,7 @@
     }
 
     header h1 {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -212,12 +212,11 @@
     .status.needs { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
     .status.na { background: rgba(99, 99, 102, 0.1); color: var(--text-muted); }
 
-    .actions { width: 110px; text-align: right; }
+    .actions { min-width: 100px; text-align: right; }
 
     .actions button {
       padding: 4px 10px;
       font-size: 12px;
-      min-width: 90px;
       white-space: nowrap;
     }
 
@@ -240,6 +239,31 @@
       border-color: var(--error);
       color: var(--error);
       cursor: default;
+    }
+
+    .actions .remove {
+      background: transparent;
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+      padding: 2px 6px;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .actions .remove:hover:not(:disabled) {
+      border-color: var(--error);
+      color: var(--error);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .actions .removing {
+      background: transparent;
+      border-color: var(--error);
+      color: var(--error);
+      cursor: default;
+      opacity: 0.7;
+      padding: 2px 6px;
+      font-size: 11px;
     }
 
     .empty {
@@ -266,12 +290,412 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast.success { border-color: var(--success); }
     .toast.error { border-color: var(--error); }
+
+    /* Tooltip */
+    .info-tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 6px;
+      color: var(--text-muted);
+      cursor: help;
+    }
+
+    .info-tip svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .info-tip:hover { color: var(--text-secondary); }
+
+    .info-tip .tip-text {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 6px);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 400;
+      padding: 6px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 1000;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .info-tip .tip-text::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 10px;
+      border: 5px solid transparent;
+      border-top-color: var(--border);
+    }
+
+    .info-tip:hover .tip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Ensure tooltips aren't clipped */
+    table { overflow: visible; }
+    tbody { overflow: visible; }
+    tr { overflow: visible; }
+    td { overflow: visible; }
+    .content { overflow: visible; overflow-y: auto; }
+
+    /* Setup Modal - matching settings.html patterns */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      width: 90%;
+      max-width: 380px;
+      max-height: 80vh;
+      overflow: hidden;
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-secondary);
+    }
+
+    .modal-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .modal-title h2 {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .modal-title p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .modal-close {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover { color: var(--text-primary); }
+
+    .modal-body {
+      padding: 14px;
+      overflow-y: auto;
+      max-height: calc(80vh - 60px);
+    }
+
+    /* Steps indicator */
+    .steps-indicator {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.15s;
+    }
+
+    .step-dot.active { background: var(--accent); }
+    .step-dot.done { background: var(--success); }
+
+    /* Setup step */
+    .setup-step {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .setup-step.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    /* Form inputs - matching settings.html .key-input */
+    .setup-input {
+      margin-bottom: 10px;
+    }
+
+    .setup-input label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .setup-input input {
+      width: 100%;
+      padding: 6px 10px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .setup-input input:focus {
+      border-color: var(--accent);
+    }
+
+    .setup-input input::placeholder { color: var(--text-muted); }
+
+    /* Info box - matching settings.html .info-box */
+    .setup-info {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .setup-info svg {
+      width: 14px;
+      height: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Status - matching settings.html .status */
+    .setup-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+
+    .setup-status svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .setup-status.info {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--accent);
+    }
+
+    .setup-status.success {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+    }
+
+    .setup-status.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    .setup-status.loading {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+    }
+
+    /* Terminal output */
+    .terminal-output {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-family: 'SF Mono', monospace;
+      font-size: 10px;
+      line-height: 1.4;
+      color: var(--text-muted);
+      max-height: 100px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Buttons - matching settings.html patterns */
+    .setup-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .setup-buttons button {
+      flex: 1;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .setup-buttons .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .setup-buttons .btn-secondary:hover:not(:disabled) {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .setup-buttons .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: 1px solid var(--accent);
+    }
+
+    .setup-buttons .btn-primary:hover:not(:disabled) {
+      background: var(--accent-secondary);
+      border-color: var(--accent-secondary);
+    }
+
+    .setup-buttons button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .spinner-sm {
+      width: 12px;
+      height: 12px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Help link */
+    .help-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .help-link:hover { color: var(--accent); }
+
+    /* Success view */
+    .setup-success {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .setup-success .success-check {
+      width: 40px;
+      height: 40px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .setup-success .success-check svg {
+      width: 20px;
+      height: 20px;
+      color: var(--success);
+    }
+
+    .setup-success h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .setup-success p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
   <header>
     <div style="display: flex; align-items: center;">
-      <h1><span>Superpowers</span> 🦸</h1>
+      <h1><span>Skills</span></h1>
       <div class="stats" id="stats"></div>
     </div>
     <div class="header-actions">
@@ -293,18 +717,75 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Setup Modal -->
+  <div class="modal-overlay" id="setup-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon" id="modal-icon">🔧</div>
+        <div class="modal-title">
+          <h2 id="modal-title">Setup</h2>
+          <p id="modal-subtitle">Configure your skill</p>
+        </div>
+        <button class="modal-close" onclick="closeSetupModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="steps-indicator" id="steps-indicator"></div>
+        <div id="setup-steps"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let data = [];
     let view = 'all';
     let installing = false;
 
+    // Skills with setup configurations
+    const skillsWithSetup = ['gog', 'openhue', 'spotify-player', 'wacli'];
+
     const emojis = {
       '1password':'🔐','apple-notes':'📝','apple-reminders':'⏰','bear-notes':'🐻','bird':'🐦',
       'blogwatcher':'📰','camsnap':'📷','coding-agent':'💻','discord':'🎮',
-      'food-order':'🍕','gemini':'♊','gifgrep':'🎬','github':'🐙','himalaya':'📧','imsg':'💬',
+      'food-order':'🍕','gemini':'♊','gifgrep':'🎬','github':'🐙','gog':'📬','himalaya':'📧','imsg':'💬',
       'notion':'📔','obsidian':'💎','openhue':'💡','peekaboo':'👀','slack':'💼','sonoscli':'🔊',
       'spotify-player':'🎧','summarize':'📝','things-mac':'✅','tmux':'🖥️','trello':'📋',
       'wacli':'📱','weather':'🌤️'
+    };
+
+    const descriptions = {
+      '1password': 'Access your passwords and secrets securely',
+      'apple-notes': 'Create, search, and manage your Apple Notes',
+      'apple-reminders': 'Add and check off reminders on your Mac',
+      'bear-notes': 'Work with your Bear notes and tags',
+      'bird': 'Read and post on X/Twitter',
+      'blogwatcher': 'Monitor blogs and RSS feeds for updates',
+      'camsnap': 'Capture frames from your security cameras',
+      'coding-agent': 'Run other AI coding tools in the background',
+      'discord': 'Send messages and manage Discord servers',
+      'food-order': 'Check your food delivery order status',
+      'gemini': 'Chat with Google\'s Gemini AI',
+      'gifgrep': 'Search and download GIFs from the web',
+      'github': 'Manage issues, PRs, and repos on GitHub',
+      'gog': 'Read emails, check calendar, and access Google Drive',
+      'himalaya': 'Send and read emails via IMAP/SMTP',
+      'imsg': 'Send and read your iMessages',
+      'notion': 'Create and manage Notion pages and databases',
+      'obsidian': 'Work with your Obsidian vault and notes',
+      'openhue': 'Control your Philips Hue lights and scenes',
+      'peekaboo': 'See and interact with apps on your screen',
+      'slack': 'Send messages and react in Slack channels',
+      'sonoscli': 'Control your Sonos speakers',
+      'spotify-player': 'Play music and control Spotify',
+      'summarize': 'Summarize articles, videos, and podcasts',
+      'things-mac': 'Add and manage tasks in Things 3',
+      'tmux': 'Control terminal sessions remotely',
+      'trello': 'Manage your Trello boards and cards',
+      'wacli': 'Send and read WhatsApp messages',
+      'weather': 'Get current weather and forecasts'
     };
 
     async function load() {
@@ -384,6 +865,12 @@
           const needsPermission = !s.available && s.osCompatible
             && !hasMissingBins && !hasMissingEnvVars && hasMissingPerms;
 
+          // Check if skill has setup wizard
+          const hasSetupWizard = skillsWithSetup.includes(s.name);
+
+          // Can uninstall if available and has install options
+          const canUninstall = s.available && s.installOptions && s.installOptions.length > 0;
+
           let btn = '';
           if (canInstall) {
             btn = `<button id="btn-${s.name}" onclick="install('${s.name}')">Unlock</button>`;
@@ -391,10 +878,22 @@
             btn = `<button id="btn-${s.name}" onclick="openSettings()">Add Key</button>`;
           } else if (needsPermission) {
             btn = `<button id="btn-${s.name}" onclick="openPermission('${s.missingPermissions[0]}')">Grant</button>`;
+          } else if (s.available && hasSetupWizard) {
+            // Show setup for available skills with setup wizards
+            btn = `<button id="btn-${s.name}" onclick="openSetup('${s.name}')">Setup</button>`;
+          } else if (!s.available && s.osCompatible && hasSetupWizard && !hasMissingBins) {
+            // Show setup button for skills that need setup (bins installed but not configured)
+            btn = `<button id="btn-${s.name}" class="primary" onclick="openSetup('${s.name}')">Setup</button>`;
+          } else if (canUninstall) {
+            // Show × remove button for installed skills
+            btn = `<button id="rm-${s.name}" class="remove" onclick="uninstall('${s.name}')" title="Remove">×</button>`;
           }
 
+          const tip = descriptions[s.name] || '';
+          const tipHtml = tip ? `<span class="info-tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span class="tip-text">${esc(tip)}</span></span>` : '';
+
           return `<tr id="row-${s.name}">
-            <td class="name"><span>${e}</span>${esc(s.name)}</td>
+            <td class="name"><span>${e}</span>${esc(s.name)}${tipHtml}</td>
             <td class="deps ${depsClass}">${depsHtml}</td>
             <td id="status-${s.name}"><span class="status ${st}">${stTxt}</span></td>
             <td class="actions">${btn}</td>
@@ -530,6 +1029,49 @@
       updateStatsCount();
     }
 
+    async function uninstall(name) {
+      if (installing) return;
+      if (!confirm(`Remove ${name}? This will uninstall its dependencies from your system.`)) return;
+
+      installing = true;
+      const rmBtn = document.getElementById(`rm-${name}`);
+      const btn = document.getElementById(`btn-${name}`);
+
+      if (rmBtn) {
+        rmBtn.className = 'removing';
+        rmBtn.disabled = true;
+        rmBtn.textContent = '...';
+      }
+      if (btn) btn.disabled = true;
+
+      try {
+        const r = await window.pocketAgent.uninstallSkillDeps(name);
+        if (r.success) {
+          toast('Removed ' + name, 'success');
+          // Refresh the list
+          await load();
+        } else {
+          toast('Failed: ' + r.failed.join(', '), 'error');
+          if (rmBtn) {
+            rmBtn.className = 'remove';
+            rmBtn.disabled = false;
+            rmBtn.textContent = '×';
+          }
+          if (btn) btn.disabled = false;
+        }
+      } catch (e) {
+        toast(e.message, 'error');
+        if (rmBtn) {
+          rmBtn.className = 'remove';
+          rmBtn.disabled = false;
+          rmBtn.textContent = '×';
+        }
+        if (btn) btn.disabled = false;
+      }
+
+      installing = false;
+    }
+
     // Update stats from local data (doesn't fetch from backend)
     function updateStatsCount() {
       const available = data.filter(s => s.available).length;
@@ -580,6 +1122,267 @@
       } catch (e) {
         toast('Failed to open settings', 'error');
       }
+    }
+
+    // Setup modal state
+    let currentSetup = null;
+    let currentStepIndex = 0;
+    let setupInputValues = {};
+
+    async function openSetup(skillName) {
+      try {
+        const result = await window.pocketAgent.getSkillSetupConfig(skillName);
+        if (!result.found || !result.setup) {
+          toast('No setup configuration found', 'error');
+          return;
+        }
+
+        currentSetup = { skillName, ...result.setup };
+        currentStepIndex = 0;
+        setupInputValues = {};
+
+        // Update modal header
+        document.getElementById('modal-icon').textContent = emojis[skillName] || '🔧';
+        document.getElementById('modal-title').textContent = result.setup.title;
+        document.getElementById('modal-subtitle').textContent = `Setup ${skillName}`;
+
+        // Build steps indicator
+        const indicator = document.getElementById('steps-indicator');
+        indicator.innerHTML = result.setup.steps.map((_, i) =>
+          `<div class="step-dot${i === 0 ? ' active' : ''}" id="dot-${i}"></div>`
+        ).join('');
+
+        // Render first step
+        renderSetupStep(0);
+
+        // Show modal
+        document.getElementById('setup-modal').classList.add('show');
+      } catch (e) {
+        console.error('Failed to load setup config:', e);
+        toast('Failed to load setup', 'error');
+      }
+    }
+
+    function closeSetupModal() {
+      document.getElementById('setup-modal').classList.remove('show');
+      currentSetup = null;
+      currentStepIndex = 0;
+      setupInputValues = {};
+      // Refresh the list
+      load();
+    }
+
+    function renderSetupStep(index) {
+      const step = currentSetup.steps[index];
+      const container = document.getElementById('setup-steps');
+      const isLast = index === currentSetup.steps.length - 1;
+
+      let inputsHtml = '';
+      if (step.inputs && step.inputs.length) {
+        inputsHtml = step.inputs.map(input => `
+          <div class="setup-input">
+            <label for="setup-${input.id}">${esc(input.label)}</label>
+            <input type="text" id="setup-${input.id}" placeholder="${esc(input.placeholder || '')}"
+              value="${esc(setupInputValues[input.id] || '')}"
+              oninput="setupInputValues['${input.id}'] = this.value">
+          </div>
+        `).join('');
+      }
+
+      let actionHtml = '';
+      if (step.action === 'info') {
+        actionHtml = `
+          <div class="setup-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>${esc(step.description)}</span>
+          </div>
+        `;
+      } else if (step.action === 'file_upload') {
+        actionHtml = `
+          <div class="setup-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>${esc(step.description)}</span>
+          </div>
+          ${step.help_url ? `<a href="${esc(step.help_url)}" target="_blank" class="help-link">Setup guide →</a>` : ''}
+        `;
+      } else if (step.action === 'cli_command' || step.action === 'cli_interactive') {
+        actionHtml = `
+          <div class="setup-status info" id="step-status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            <span>Ready to run</span>
+          </div>
+          <div class="terminal-output" id="terminal-output" style="display: none;"></div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="setup-step active" id="step-${index}">
+          <div class="step-title">${esc(step.title)}</div>
+          ${step.action !== 'info' && step.action !== 'file_upload' ? `<div class="step-desc">${esc(step.description)}</div>` : ''}
+          ${inputsHtml}
+          ${actionHtml}
+          <div class="setup-buttons">
+            ${index > 0 ? '<button class="btn-secondary" onclick="prevSetupStep()">Back</button>' : '<button class="btn-secondary" onclick="closeSetupModal()">Cancel</button>'}
+            <button class="btn-primary" id="next-btn" onclick="executeSetupStep()">
+              ${step.action === 'info' ? 'Next' : step.verify ? 'Verify' : 'Run'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Update step dots
+      currentSetup.steps.forEach((_, i) => {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) {
+          dot.className = 'step-dot';
+          if (i < index) dot.classList.add('done');
+          if (i === index) dot.classList.add('active');
+        }
+      });
+    }
+
+    function prevSetupStep() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        renderSetupStep(currentStepIndex);
+      }
+    }
+
+    async function executeSetupStep() {
+      const step = currentSetup.steps[currentStepIndex];
+      const nextBtn = document.getElementById('next-btn');
+      const statusDiv = document.getElementById('step-status');
+      const terminalDiv = document.getElementById('terminal-output');
+
+      // For info steps, just proceed
+      if (step.action === 'info') {
+        nextStep();
+        return;
+      }
+
+      // For file upload, show instruction and proceed (manual step)
+      if (step.action === 'file_upload') {
+        nextStep();
+        return;
+      }
+
+      // Validate inputs
+      if (step.inputs && step.inputs.length) {
+        for (const input of step.inputs) {
+          if (!setupInputValues[input.id]) {
+            toast(`Please enter ${input.label}`, 'error');
+            return;
+          }
+        }
+      }
+
+      // Build command with substitutions
+      let command = step.command;
+      for (const [key, value] of Object.entries(setupInputValues)) {
+        command = command.replace(`{{${key}}}`, value);
+      }
+
+      // Disable button and show loading
+      nextBtn.disabled = true;
+      nextBtn.innerHTML = '<span class="spinner-sm"></span>';
+
+      if (statusDiv) {
+        statusDiv.className = 'setup-status loading';
+        statusDiv.innerHTML = `<span class="spinner-sm"></span><span>Running...</span>`;
+      }
+
+      if (terminalDiv) {
+        terminalDiv.style.display = 'block';
+        terminalDiv.textContent = `$ ${command}\n`;
+      }
+
+      try {
+        const result = await window.pocketAgent.runSkillSetupCommand(command);
+
+        if (terminalDiv && result.output) {
+          terminalDiv.textContent += result.output;
+          terminalDiv.scrollTop = terminalDiv.scrollHeight;
+        }
+
+        if (result.success) {
+          if (statusDiv) {
+            statusDiv.className = 'setup-status success';
+            statusDiv.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>${step.verify ? 'Verified' : 'Done'}</span>
+            `;
+          }
+
+          // Brief delay then proceed
+          setTimeout(() => nextStep(), 800);
+        } else {
+          if (statusDiv) {
+            statusDiv.className = 'setup-status error';
+            statusDiv.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <span>Failed</span>
+            `;
+          }
+          nextBtn.disabled = false;
+          nextBtn.textContent = 'Retry';
+        }
+      } catch (e) {
+        if (statusDiv) {
+          statusDiv.className = 'setup-status error';
+          statusDiv.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span>Failed</span>
+          `;
+        }
+        nextBtn.disabled = false;
+        nextBtn.textContent = 'Retry';
+      }
+    }
+
+    function nextStep() {
+      currentStepIndex++;
+      if (currentStepIndex >= currentSetup.steps.length) {
+        // Show success
+        showSetupSuccess();
+      } else {
+        renderSetupStep(currentStepIndex);
+      }
+    }
+
+    function showSetupSuccess() {
+      const container = document.getElementById('setup-steps');
+      container.innerHTML = `
+        <div class="setup-success">
+          <div class="success-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3>${currentSetup.title} ready!</h3>
+          <p>${currentSetup.skillName} configured</p>
+          <div class="setup-buttons" style="margin-top: 16px;">
+            <button class="btn-primary" onclick="closeSetupModal()">Done</button>
+          </div>
+        </div>
+      `;
+
+      // Update all dots to done
+      currentSetup.steps.forEach((_, i) => {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.className = 'step-dot done';
+      });
     }
 
     load();

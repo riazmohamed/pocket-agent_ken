@@ -425,6 +425,7 @@ export class MemoryManager {
     const contextMessages: Array<{ role: string; content: string }> = [];
 
     if (summary) {
+      console.log(`[Memory] Including summary for ${allMessages.length - recentMessages.length} older messages`);
       contextMessages.push({
         role: 'system',
         content: `[Previous conversation summary]\n${summary}`,
@@ -457,6 +458,7 @@ export class MemoryManager {
     `).get(beforeMessageId - 1) as { content: string } | undefined;
 
     if (existingSummary) {
+      console.log(`[Memory] Retrieved existing summary for messages up to ID ${beforeMessageId - 1}`);
       return existingSummary.content;
     }
 
@@ -502,10 +504,18 @@ export class MemoryManager {
     }
 
     const endId = messagesToSummarize[messagesToSummarize.length - 1].id;
+    console.log(`[Memory] Created new summary for messages ${startId}-${endId} (${messagesToSummarize.length} messages, ${estimateTokens(summary)} tokens)`);
     this.db.prepare(`
       INSERT INTO summaries (start_message_id, end_message_id, content, token_count)
       VALUES (?, ?, ?, ?)
     `).run(startId, endId, summary, estimateTokens(summary));
+
+    // Clean up old summaries that are now superseded (keep only the 3 most recent)
+    this.db.prepare(`
+      DELETE FROM summaries WHERE id NOT IN (
+        SELECT id FROM summaries ORDER BY end_message_id DESC LIMIT 3
+      )
+    `).run();
 
     return summary;
   }

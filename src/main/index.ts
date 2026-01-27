@@ -11,6 +11,22 @@ import { loadInstructions, saveInstructions, getInstructionsPath } from '../conf
 import { closeTaskDb } from '../tools';
 import cityTimezones from 'city-timezones';
 
+// Fix PATH for packaged apps - node/npm binaries aren't in PATH when launched from Finder
+if (app.isPackaged) {
+  const fixedPath = [
+    '/opt/homebrew/bin',        // Apple Silicon Homebrew
+    '/usr/local/bin',           // Intel Homebrew / standard location
+    '/usr/bin',
+    '/bin',
+    '/usr/sbin',
+    '/sbin',
+    process.env.HOME + '/.nvm/versions/node/*/bin', // nvm
+    process.env.HOME + '/.local/bin',
+  ].join(':');
+  process.env.PATH = fixedPath + ':' + (process.env.PATH || '');
+  console.log('[Main] Fixed PATH for packaged app');
+}
+
 /**
  * Convert cron expression to human-readable format
  */
@@ -225,9 +241,26 @@ function ensureAgentWorkspace(): string {
     }
   }
 
-  // Always ensure CLAUDE.md exists (recreate if deleted)
+  // Ensure CLAUDE.md exists and is up to date
   const claudeMdPath = path.join(workspace, 'CLAUDE.md');
-  if (!fs.existsSync(claudeMdPath)) {
+  const heartbeatInstruction = '**Silent Acknowledgment:** When a scheduled task has nothing to report, respond with only `HEARTBEAT_OK`. This tells the system not to notify the user.';
+
+  if (fs.existsSync(claudeMdPath)) {
+    // Update existing file if missing HEARTBEAT_OK instruction
+    const existingContent = fs.readFileSync(claudeMdPath, 'utf-8');
+    if (!existingContent.includes('HEARTBEAT_OK')) {
+      console.log('[Main] Updating workspace CLAUDE.md with HEARTBEAT_OK instruction');
+      // Insert after the Scheduler tools list
+      const schedulerMarker = '- `delete_scheduled_task(name)`';
+      if (existingContent.includes(schedulerMarker)) {
+        const updatedContent = existingContent.replace(
+          schedulerMarker,
+          `${schedulerMarker}\n\n${heartbeatInstruction}`
+        );
+        fs.writeFileSync(claudeMdPath, updatedContent, 'utf-8');
+      }
+    }
+  } else {
     console.log('[Main] Creating workspace CLAUDE.md');
     const claudeMdContent = `# Pocket Agent Workspace
 
@@ -275,6 +308,8 @@ All tools are pre-approved. Use them directly.
 - \`schedule_task(name, cron, prompt, channel?)\`
 - \`list_scheduled_tasks()\`
 - \`delete_scheduled_task(name)\`
+
+${heartbeatInstruction}
 
 ### Browser
 - \`browser(action, ...)\` - navigate, screenshot, click, type, scroll, hover, download, upload, tabs
@@ -870,6 +905,10 @@ function setupIPC(): void {
     openCustomizeWindow();
   });
 
+  ipcMain.handle('app:openRoutines', async () => {
+    openCronWindow();
+  });
+
   // Customize - Identity
   ipcMain.handle('customize:getIdentity', async () => {
     return loadIdentity();
@@ -1145,6 +1184,31 @@ function setupIPC(): void {
     return result;
   });
 
+  ipcMain.handle('skills:uninstall', async (_, skillName: string) => {
+    const {
+      loadSkillsManifest,
+      getSkillStatus,
+      uninstallSkillDependencies,
+    } = await import('../skills');
+
+    const projectRoot = app.isPackaged
+      ? path.join(process.resourcesPath, 'app')
+      : path.join(__dirname, '../..');
+    const skillsDir = path.join(projectRoot, '.claude');
+
+    const manifest = loadSkillsManifest(skillsDir);
+    if (!manifest || !manifest.skills[skillName]) {
+      return { success: false, removed: [], failed: ['Skill not found'] };
+    }
+
+    const status = getSkillStatus(skillName, manifest.skills[skillName]);
+    const result = await uninstallSkillDependencies(status, (msg) => {
+      console.log(`[Skills] ${skillName}: ${msg}`);
+    });
+
+    return result;
+  });
+
   ipcMain.handle('skills:openPermissionSettings', async (_, permissionType: string) => {
     const { openPermissionSettings } = await import('../permissions/macos');
     await openPermissionSettings(permissionType as Parameters<typeof openPermissionSettings>[0]);
@@ -1158,6 +1222,65 @@ function setupIPC(): void {
 
   ipcMain.handle('app:openSkillsSetup', async () => {
     createSkillsSetupWindow();
+  });
+
+  // Skill setup handlers
+  ipcMain.handle('skills:getSetupConfig', async (_, skillName: string) => {
+    const { loadSkillsManifest } = await import('../skills');
+
+    const projectRoot = app.isPackaged
+      ? path.join(process.resourcesPath, 'app')
+      : path.join(__dirname, '../..');
+    const skillsDir = path.join(projectRoot, '.claude');
+
+    const manifest = loadSkillsManifest(skillsDir);
+    if (!manifest || !manifest.skills[skillName]) {
+      return { found: false };
+    }
+
+    const skill = manifest.skills[skillName];
+    return {
+      found: true,
+      setup: skill.setup || undefined,
+    };
+  });
+
+  ipcMain.handle('skills:runSetupCommand', async (_, command: string) => {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    try {
+      // Add common paths for homebrew, go, npm binaries
+      const home = process.env.HOME || '';
+      const extraPaths = [
+        '/opt/homebrew/bin',
+        '/usr/local/bin',
+        `${home}/go/bin`,
+        `${home}/.npm-global/bin`,
+        `${home}/.local/bin`,
+      ].join(':');
+
+      const { stdout, stderr } = await execAsync(command, {
+        timeout: 60000,
+        env: {
+          ...process.env,
+          PATH: `${extraPaths}:${process.env.PATH}`,
+        },
+      });
+      // Combine stdout and stderr for display
+      const output = [stdout, stderr].filter(Boolean).join('\n');
+      return { success: true, output };
+    } catch (error) {
+      const err = error as { message?: string; stdout?: string; stderr?: string };
+      // Include any partial output in error case
+      const output = [err.stdout, err.stderr].filter(Boolean).join('\n');
+      return {
+        success: false,
+        error: err.message || 'Command failed',
+        output,
+      };
+    }
   });
 }
 
@@ -1315,9 +1438,12 @@ async function restartAgent(): Promise<void> {
 // ============ App Lifecycle ============
 
 app.whenReady().then(async () => {
-  // Hide dock on macOS
+  // Set Dock icon on macOS
   if (process.platform === 'darwin') {
-    app.dock?.hide();
+    const dockIconPath = path.join(__dirname, '../../assets/icon.png');
+    if (fs.existsSync(dockIconPath)) {
+      app.dock?.setIcon(dockIconPath);
+    }
   }
 
   const userDataPath = app.getPath('userData');

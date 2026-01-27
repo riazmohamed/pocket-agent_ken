@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('pocketAgent', {
   openFactsGraph: () => ipcRenderer.invoke('app:openFactsGraph'),
   openFacts: () => ipcRenderer.invoke('app:openFacts'),
   openCustomize: () => ipcRenderer.invoke('app:openCustomize'),
+  openRoutines: () => ipcRenderer.invoke('app:openRoutines'),
 
   // Customize
   getIdentity: () => ipcRenderer.invoke('customize:getIdentity'),
@@ -79,9 +80,12 @@ contextBridge.exposeInMainWorld('pocketAgent', {
   // Skills
   getSkillsStatus: () => ipcRenderer.invoke('skills:getStatus'),
   installSkillDeps: (skillName: string) => ipcRenderer.invoke('skills:install', skillName),
+  uninstallSkillDeps: (skillName: string) => ipcRenderer.invoke('skills:uninstall', skillName),
   openSkillsSetup: () => ipcRenderer.invoke('app:openSkillsSetup'),
   openPermissionSettings: (permissionType: string) => ipcRenderer.invoke('skills:openPermissionSettings', permissionType),
   checkPermission: (permissionType: string) => ipcRenderer.invoke('skills:checkPermission', permissionType),
+  getSkillSetupConfig: (skillName: string) => ipcRenderer.invoke('skills:getSetupConfig', skillName),
+  runSkillSetupCommand: (command: string) => ipcRenderer.invoke('skills:runSetupCommand', command),
 });
 
 // Type declarations for renderer
@@ -108,6 +112,7 @@ declare global {
       openFactsGraph: () => Promise<void>;
       openFacts: () => Promise<void>;
       openCustomize: () => Promise<void>;
+      openRoutines: () => Promise<void>;
       // Customize
       getIdentity: () => Promise<string>;
       saveIdentity: (content: string) => Promise<{ success: boolean }>;
@@ -159,9 +164,29 @@ declare global {
         prerequisites: { brew: boolean; go: boolean; node: boolean; uv: boolean; git: boolean };
       }>;
       installSkillDeps: (skillName: string) => Promise<{ success: boolean; installed: string[]; failed: string[] }>;
+      uninstallSkillDeps: (skillName: string) => Promise<{ success: boolean; removed: string[]; failed: string[] }>;
       openSkillsSetup: () => Promise<void>;
       openPermissionSettings: (permissionType: string) => Promise<void>;
       checkPermission: (permissionType: string) => Promise<{ type: string; granted: boolean; canRequest: boolean; label: string; description: string; settingsUrl: string }>;
+      getSkillSetupConfig: (skillName: string) => Promise<{
+        found: boolean;
+        setup?: {
+          type: string;
+          title: string;
+          steps: Array<{
+            id: string;
+            title: string;
+            description: string;
+            action: string;
+            command?: string;
+            inputs?: Array<{ id: string; label: string; placeholder?: string }>;
+            file_type?: string;
+            help_url?: string;
+            verify?: boolean;
+          }>;
+        };
+      }>;
+      runSkillSetupCommand: (command: string) => Promise<{ success: boolean; output?: string; error?: string }>;
     };
   }
 }

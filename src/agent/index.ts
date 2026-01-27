@@ -7,9 +7,16 @@ import { loadInstructions } from '../config/instructions';
 import { SettingsManager } from '../settings';
 import { EventEmitter } from 'events';
 
-// Token limits
-const MAX_CONTEXT_TOKENS = 150000;
-const COMPACTION_THRESHOLD = 120000; // Start compacting at 80% capacity
+// Token limits - defaults, can be overridden by settings
+const DEFAULT_MAX_CONTEXT_TOKENS = 150000;
+const COMPACTION_RATIO = 0.8; // Start compacting at 80% capacity
+
+// Get token limits from settings
+function getTokenLimits(): { maxContextTokens: number; compactionThreshold: number } {
+  const maxContextTokens = Number(SettingsManager.get('agent.maxContextTokens')) || DEFAULT_MAX_CONTEXT_TOKENS;
+  const compactionThreshold = Math.floor(maxContextTokens * COMPACTION_RATIO);
+  return { maxContextTokens, compactionThreshold };
+}
 
 // Status event types
 export type AgentStatus = {
@@ -29,6 +36,7 @@ type SDKOptions = {
   model?: string;
   cwd?: string;
   maxTurns?: number;
+  maxThinkingTokens?: number;
   abortController?: AbortController;
   tools?: string[] | { type: 'preset'; preset: 'claude_code' };
   allowedTools?: string[];
@@ -36,6 +44,14 @@ type SDKOptions = {
   systemPrompt?: string | { type: 'preset'; preset: 'claude_code'; append?: string };
   mcpServers?: Record<string, unknown>;
   settingSources?: ('project' | 'user')[];  // Load skills from .claude/skills/
+};
+
+// Thinking level to token budget mapping
+const THINKING_BUDGETS: Record<string, number | undefined> = {
+  'none': 0,
+  'minimal': 2048,
+  'normal': 10000,
+  'extended': 32000,
 };
 
 // Dynamic SDK loader
@@ -149,14 +165,15 @@ class AgentManagerClass extends EventEmitter {
     let wasCompacted = false;
 
     try {
+      const { maxContextTokens, compactionThreshold } = getTokenLimits();
       const statsBefore = this.memory.getStats();
-      if (statsBefore.estimatedTokens > COMPACTION_THRESHOLD) {
+      if (statsBefore.estimatedTokens > compactionThreshold) {
         console.log('[AgentManager] Token limit approaching, running compaction...');
         await this.runCompaction();
         wasCompacted = true;
       }
 
-      const context = await this.memory.getConversationContext(MAX_CONTEXT_TOKENS);
+      const context = await this.memory.getConversationContext(maxContextTokens);
       const factsContext = this.memory.getFactsForContext();
 
       console.log(`[AgentManager] Loaded ${context.messages.length} messages (${context.totalTokens} tokens)`);
@@ -179,7 +196,7 @@ class AgentManagerClass extends EventEmitter {
 
       const options = await this.buildOptions(factsContext);
 
-      console.log('[AgentManager] Calling query()...');
+      console.log('[AgentManager] Calling query() with model:', options.model, 'thinking:', options.maxThinkingTokens || 'default');
       this.emitStatus({ type: 'thinking', message: 'hmm let me think 🤔' });
 
       const queryResult = query({ prompt: fullPrompt, options });
@@ -219,6 +236,11 @@ class AgentManagerClass extends EventEmitter {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.error('[AgentManager] Query failed:', errorMsg);
+      if (error instanceof Error && error.stack) {
+        console.error('[AgentManager] Stack trace:', error.stack);
+      }
+      // Log full error object for debugging
+      console.error('[AgentManager] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
       // Only save user message if not aborted
       if (!this.currentAbortController?.signal.aborted) {
@@ -279,10 +301,15 @@ class AgentManagerClass extends EventEmitter {
       appendParts.push(capabilities);
     }
 
+    // Get thinking level and convert to token budget
+    const thinkingLevel = SettingsManager.get('agent.thinkingLevel') || 'normal';
+    const thinkingBudget = THINKING_BUDGETS[thinkingLevel];
+
     const options: SDKOptions = {
       model: this.model,
       cwd: this.workspace,  // Use isolated workspace for agent file operations
       maxTurns: 20,
+      ...(thinkingBudget !== undefined && thinkingBudget > 0 && { maxThinkingTokens: thinkingBudget }),
       abortController: this.currentAbortController || new AbortController(),
       tools: { type: 'preset', preset: 'claude_code' },
       settingSources: ['project'],  // Load skills from .claude/skills/
@@ -823,7 +850,8 @@ pty_exec(command="htop", timeout=30000)
     // Before compaction, extract and save important facts from recent messages
     await this.extractFactsBeforeCompaction();
 
-    await this.memory.getConversationContext(MAX_CONTEXT_TOKENS);
+    const { maxContextTokens } = getTokenLimits();
+    await this.memory.getConversationContext(maxContextTokens);
     const stats = this.memory.getStats();
     console.log(`[AgentManager] Compaction complete. Now at ${stats.estimatedTokens} tokens`);
   }

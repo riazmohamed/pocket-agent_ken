@@ -51,6 +51,30 @@ export interface InstallOption {
   os?: string[];
 }
 
+export interface SkillSetupInput {
+  id: string;
+  label: string;
+  placeholder?: string;
+}
+
+export interface SkillSetupStep {
+  id: string;
+  title: string;
+  description?: string;
+  action: 'info' | 'file_upload' | 'cli_command' | 'cli_interactive';
+  command?: string;
+  inputs?: SkillSetupInput[];
+  file_type?: string;
+  help_url?: string;
+  verify?: boolean;
+}
+
+export interface SkillSetup {
+  type: 'oauth' | 'qr' | 'device' | 'browser_import' | 'config';
+  title: string;
+  steps: SkillSetupStep[];
+}
+
 export interface SkillDependency {
   bins: string[];
   os: string[];
@@ -58,6 +82,7 @@ export interface SkillDependency {
   requires_config?: string[];
   requires_env?: string[];
   requires_permissions?: PermissionType[];
+  setup?: SkillSetup;
 }
 
 export interface SkillsManifest {
@@ -584,5 +609,141 @@ export function checkPrerequisites(): {
     node: hasNode(),
     uv: hasUv(),
     git: isBinAvailable('git'),
+  };
+}
+
+/**
+ * Uninstall a dependency using the specified method
+ */
+export async function uninstallDependency(
+  option: InstallOption,
+  onProgress?: (message: string) => void
+): Promise<{ success: boolean; error?: string }> {
+  const log = onProgress || console.log;
+
+  try {
+    switch (option.kind) {
+      case 'brew': {
+        if (!option.formula || !isSafeIdentifier(option.formula)) {
+          return { success: false, error: 'Invalid formula name' };
+        }
+        log(`Removing ${option.formula} via Homebrew...`);
+        await execAsync(`brew uninstall ${escapeShellArg(option.formula)}`);
+        return { success: true };
+      }
+
+      case 'brew-cask': {
+        if (!option.cask || !isSafeIdentifier(option.cask)) {
+          return { success: false, error: 'Invalid cask name' };
+        }
+        log(`Removing ${option.cask} via Homebrew Cask...`);
+        await execAsync(`brew uninstall --cask ${escapeShellArg(option.cask)}`);
+        return { success: true };
+      }
+
+      case 'node': {
+        if (!option.package || !isSafeIdentifier(option.package)) {
+          return { success: false, error: 'Invalid package name' };
+        }
+        log(`Removing ${option.package} via npm...`);
+        await execAsync(`npm uninstall -g ${escapeShellArg(option.package)}`);
+        return { success: true };
+      }
+
+      case 'go': {
+        // Go binaries are in ~/go/bin, remove them directly
+        if (!option.bins || option.bins.length === 0) {
+          return { success: false, error: 'No binaries specified' };
+        }
+        const home = os.homedir();
+        for (const bin of option.bins) {
+          if (!isSafeIdentifier(bin)) continue;
+          const binPath = path.join(home, 'go', 'bin', bin);
+          if (fs.existsSync(binPath)) {
+            log(`Removing ${bin} from ~/go/bin...`);
+            fs.unlinkSync(binPath);
+          }
+        }
+        return { success: true };
+      }
+
+      case 'uv': {
+        if (!option.package || !isSafeIdentifier(option.package)) {
+          return { success: false, error: 'Invalid package name' };
+        }
+        log(`Removing ${option.package} via uv...`);
+        await execAsync(`uv tool uninstall ${escapeShellArg(option.package)}`);
+        return { success: true };
+      }
+
+      case 'apt': {
+        if (PLATFORM !== 'linux') {
+          return { success: false, error: 'apt only available on Linux' };
+        }
+        if (!option.package || !isSafeIdentifier(option.package)) {
+          return { success: false, error: 'Invalid package name' };
+        }
+        log(`Removing ${option.package} via apt...`);
+        await execAsync(`sudo apt-get remove -y ${escapeShellArg(option.package)}`);
+        return { success: true };
+      }
+
+      case 'download': {
+        // For downloads, remove the bins directly if specified
+        if (!option.bins || option.bins.length === 0) {
+          return { success: false, error: 'No binaries specified for removal' };
+        }
+        for (const bin of option.bins) {
+          if (!isSafeIdentifier(bin)) continue;
+          // Check common locations
+          const locations = ['/usr/local/bin', `${os.homedir()}/.local/bin`];
+          for (const loc of locations) {
+            const binPath = path.join(loc, bin);
+            if (fs.existsSync(binPath)) {
+              log(`Removing ${bin} from ${loc}...`);
+              fs.unlinkSync(binPath);
+            }
+          }
+        }
+        return { success: true };
+      }
+
+      default:
+        return { success: false, error: `Unknown install kind: ${option.kind}` };
+    }
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: errorMsg };
+  }
+}
+
+/**
+ * Uninstall all dependencies for a skill
+ */
+export async function uninstallSkillDependencies(
+  status: SkillStatus,
+  onProgress?: (message: string) => void
+): Promise<{ success: boolean; removed: string[]; failed: string[] }> {
+  const removed: string[] = [];
+  const failed: string[] = [];
+
+  if (!status.available) {
+    return { success: false, removed, failed: ['Skill not installed'] };
+  }
+
+  // Try to uninstall using each install option
+  for (const opt of status.installOptions) {
+    const result = await uninstallDependency(opt, onProgress);
+    if (result.success) {
+      removed.push(opt.label || opt.formula || opt.package || opt.cask || 'unknown');
+    } else {
+      failed.push(opt.label || result.error || 'unknown');
+    }
+  }
+
+  return {
+    success: failed.length === 0,
+    removed,
+    failed,
   };
 }

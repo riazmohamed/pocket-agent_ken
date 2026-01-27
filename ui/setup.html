@@ -861,6 +861,18 @@
       showStep('step-auth');
     }
 
+    // Key format validators
+    const keyValidators = {
+      anthropic: {
+        pattern: /^sk-ant-[A-Za-z0-9_-]{90,}$/,
+        hint: 'Anthropic keys start with "sk-ant-"'
+      },
+      openai: {
+        pattern: /^sk-[A-Za-z0-9_-]{40,}$/,
+        hint: 'OpenAI keys start with "sk-"'
+      }
+    };
+
     async function validateAndSave() {
       const anthropicKey = document.getElementById('anthropic-key').value.trim();
       const openaiKey = document.getElementById('openai-key-api').value.trim();
@@ -872,6 +884,28 @@
           <div class="status error">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Please enter your Anthropic API key
+          </div>
+        `;
+        return;
+      }
+
+      // Validate Anthropic key format
+      if (!keyValidators.anthropic.pattern.test(anthropicKey)) {
+        statusDiv.innerHTML = `
+          <div class="status error">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            ${keyValidators.anthropic.hint}
+          </div>
+        `;
+        return;
+      }
+
+      // Validate OpenAI key format if provided
+      if (openaiKey && !keyValidators.openai.pattern.test(openaiKey)) {
+        statusDiv.innerHTML = `
+          <div class="status error">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            ${keyValidators.openai.hint}
           </div>
         `;
         return;

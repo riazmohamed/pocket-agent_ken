@@ -32,6 +32,7 @@
       "output": "release"
     },
     "mac": {
+      "icon": "build/icon.icns",
       "category": "public.app-category.productivity",
       "target": [
         {
@@ -50,19 +51,29 @@
       "notarize": true
     },
     "dmg": {
+      "background": "build/background.png",
+      "icon": "build/icon.icns",
+      "iconSize": 80,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
       "contents": [
         {
           "x": 130,
-          "y": 220
+          "y": 190
         },
         {
           "x": 410,
-          "y": 220,
+          "y": 190,
           "type": "link",
           "path": "/Applications"
         }
       ]
     },
+    "asar": false,
+    "afterPack": "./build/afterPack.js",
+    "afterAllArtifactBuild": "./build/afterAllArtifactBuild.js",
     "files": [
       "dist/**/*",
       "ui/**/*",
@@ -73,6 +84,10 @@
       {
         "from": "assets/",
         "to": "assets/"
+      },
+      {
+        "from": ".claude/",
+        "to": "app/.claude/"
       }
     ]
   },

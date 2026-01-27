@@ -117,7 +117,37 @@
       "os": [],
       "install": [
         {"id": "brew", "kind": "brew", "formula": "steipete/tap/gogcli", "bins": ["gog"], "label": "Install gog (brew)"}
-      ]
+      ],
+      "setup": {
+        "type": "oauth",
+        "title": "Google Workspace",
+        "steps": [
+          {
+            "id": "credentials",
+            "title": "OAuth Credentials",
+            "description": "Upload your client_secret.json from Google Cloud Console",
+            "action": "file_upload",
+            "file_type": ".json",
+            "help_url": "https://gogcli.sh/setup"
+          },
+          {
+            "id": "auth",
+            "title": "Sign In",
+            "description": "Sign in with your Google account",
+            "action": "cli_command",
+            "command": "gog auth add {{email}} --services gmail,calendar,drive,contacts,docs,sheets",
+            "inputs": [{"id": "email", "label": "Google Email", "placeholder": "you@gmail.com"}]
+          },
+          {
+            "id": "verify",
+            "title": "Verify",
+            "description": "Checking connection...",
+            "action": "cli_command",
+            "command": "gog auth list",
+            "verify": true
+          }
+        ]
+      }
     },
     "goplaces": {
       "bins": ["goplaces"],
@@ -218,7 +248,35 @@
       "os": [],
       "install": [
         {"id": "brew", "kind": "brew", "formula": "openhue/cli/openhue-cli", "bins": ["openhue"], "label": "Install OpenHue CLI (brew)"}
-      ]
+      ],
+      "setup": {
+        "type": "device",
+        "title": "Philips Hue",
+        "steps": [
+          {
+            "id": "discover",
+            "title": "Find Bridge",
+            "description": "Searching for Hue bridges on your network...",
+            "action": "cli_command",
+            "command": "openhue discover"
+          },
+          {
+            "id": "pair",
+            "title": "Press Bridge Button",
+            "description": "Press the button on your Hue Bridge, then click Continue",
+            "action": "cli_interactive",
+            "command": "openhue setup"
+          },
+          {
+            "id": "verify",
+            "title": "Verify",
+            "description": "Checking connection...",
+            "action": "cli_command",
+            "command": "openhue get light --json",
+            "verify": true
+          }
+        ]
+      }
     },
     "oracle": {
       "bins": ["oracle"],
@@ -298,7 +356,34 @@
       "install": [
         {"id": "brew", "kind": "brew", "formula": "steipete/tap/spogo", "bins": ["spogo"], "label": "Install spogo (brew)"},
         {"id": "brew-alt", "kind": "brew", "formula": "spotify_player", "bins": ["spotify_player"], "label": "Install spotify_player (brew)"}
-      ]
+      ],
+      "setup": {
+        "type": "browser_import",
+        "title": "Spotify",
+        "steps": [
+          {
+            "id": "signin",
+            "title": "Sign In to Spotify",
+            "description": "Make sure you're signed into Spotify in Chrome, then click Continue",
+            "action": "info"
+          },
+          {
+            "id": "import",
+            "title": "Import Session",
+            "description": "Importing Spotify session from Chrome...",
+            "action": "cli_command",
+            "command": "spogo auth import --browser chrome"
+          },
+          {
+            "id": "verify",
+            "title": "Verify",
+            "description": "Checking connection...",
+            "action": "cli_command",
+            "command": "spogo status",
+            "verify": true
+          }
+        ]
+      }
     },
     "summarize": {
       "bins": ["summarize"],
@@ -349,7 +434,28 @@
       "install": [
         {"id": "brew", "kind": "brew", "formula": "steipete/tap/wacli", "bins": ["wacli"], "label": "Install wacli (brew)"},
         {"id": "go", "kind": "go", "module": "github.com/steipete/wacli/cmd/wacli@latest", "bins": ["wacli"], "label": "Install wacli (go)"}
-      ]
+      ],
+      "setup": {
+        "type": "qr",
+        "title": "WhatsApp",
+        "steps": [
+          {
+            "id": "auth",
+            "title": "Scan QR Code",
+            "description": "Open WhatsApp on your phone, go to Settings → Linked Devices → Link a Device, then scan the QR code",
+            "action": "cli_interactive",
+            "command": "wacli auth"
+          },
+          {
+            "id": "verify",
+            "title": "Verify",
+            "description": "Checking connection...",
+            "action": "cli_command",
+            "command": "wacli doctor",
+            "verify": true
+          }
+        ]
+      }
     },
     "weather": {
       "bins": ["curl"],

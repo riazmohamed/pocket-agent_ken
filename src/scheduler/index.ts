@@ -4,6 +4,13 @@ import { AgentManager } from '../agent';
 import { MemoryManager, CronJob } from '../memory';
 import type { TelegramBot } from '../channels/telegram';
 
+/**
+ * Silent acknowledgment token for scheduled tasks.
+ * When the agent responds with only this token, the scheduler
+ * skips notification - useful for "nothing to report" scenarios.
+ */
+export const HEARTBEAT_OK = 'HEARTBEAT_OK';
+
 interface CalendarEvent {
   id: number;
   title: string;
@@ -251,7 +258,7 @@ export class CronScheduler {
           }
         }
 
-        const fullPrompt = job.prompt + contextText;
+        const fullPrompt = job.prompt + contextText + '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
 
         // Execute through agent
         if (!AgentManager.isInitialized()) {
@@ -372,9 +379,17 @@ export class CronScheduler {
   }
 
   /**
-   * Route job response to appropriate channel
+   * Route job response to appropriate channel.
+   * Skips notification if response is just HEARTBEAT_OK (nothing to report).
    */
   private async routeJobResponse(jobName: string, prompt: string, response: string, channel: string): Promise<void> {
+    // Check for silent acknowledgment - agent has nothing to report
+    const trimmed = response.trim();
+    if (trimmed === HEARTBEAT_OK || trimmed.startsWith(HEARTBEAT_OK + '\n') || trimmed.endsWith('\n' + HEARTBEAT_OK)) {
+      console.log(`[Scheduler] Job ${jobName} returned HEARTBEAT_OK, skipping notification`);
+      return;
+    }
+
     if (channel === 'telegram' && this.telegramBot) {
       await this.telegramBot.broadcast(`📅 ${jobName}\n\n${response}`);
     } else {

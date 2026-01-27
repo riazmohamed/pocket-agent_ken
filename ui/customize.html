@@ -47,7 +47,7 @@
 
     header {
       background: var(--bg-secondary);
-      padding: 16px 24px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -56,7 +56,7 @@
 
     header h1 {
       font-family: 'Sora', sans-serif;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
@@ -110,14 +110,39 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .header-actions button.warning {
-      background: linear-gradient(135deg, var(--orange) 0%, #ea580c 100%);
-      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+    .header-actions button.reboot {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      box-shadow: none;
+      opacity: 0.5;
+      cursor: not-allowed;
+      transition: all 0.3s ease;
     }
 
-    .header-actions button.warning:hover {
-      background: linear-gradient(135deg, #fb923c 0%, var(--orange) 100%);
-      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+    .header-actions button.reboot:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .header-actions button.reboot.active {
+      opacity: 1;
+      cursor: pointer;
+      color: var(--text-primary);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 24px rgba(168, 85, 247, 0.2);
+      animation: rebootGlow 2s ease-in-out infinite;
+    }
+
+    .header-actions button.reboot.active:hover {
+      background: var(--border);
+      transform: translateY(-2px);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.5), 0 0 32px rgba(168, 85, 247, 0.3);
+    }
+
+    @keyframes rebootGlow {
+      0%, 100% { box-shadow: 0 0 12px rgba(168, 85, 247, 0.4), 0 0 24px rgba(168, 85, 247, 0.2); }
+      50% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.6), 0 0 32px rgba(168, 85, 247, 0.3); }
     }
 
     .container {
@@ -553,10 +578,10 @@
 </head>
 <body>
   <header>
-    <h1><span>Make It Yours</span> ✨</h1>
+    <h1><span>Personalize</span></h1>
     <div class="header-actions">
       <button class="secondary" onclick="window.close()">Done</button>
-      <button class="warning" onclick="restartAgent()" title="Reboot to apply changes">
+      <button id="reboot-btn" class="reboot" onclick="restartAgent()" disabled title="Reboot to apply changes">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
           <path d="M21 2v6h-6"/>
           <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
@@ -814,6 +839,7 @@
           status.textContent = 'Saved';
           status.className = 'status saved';
           showToast('Saved! Reboot me to apply ✨', 'success');
+          activateReboot();
         } else {
           status.textContent = 'Error';
           status.className = 'status modified';
@@ -841,6 +867,7 @@
           status.textContent = 'Saved';
           status.className = 'status saved';
           showToast('Saved! Reboot me to apply ✨', 'success');
+          activateReboot();
         } else {
           status.textContent = 'Error';
           status.className = 'status modified';
@@ -854,11 +881,33 @@
       }
     }
 
+    // Activate reboot button when changes are saved
+    function activateReboot() {
+      const btn = document.getElementById('reboot-btn');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.add('active');
+      }
+    }
+
+    // Deactivate reboot button
+    function deactivateReboot() {
+      const btn = document.getElementById('reboot-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.remove('active');
+      }
+    }
+
     // Restart agent
     async function restartAgent() {
+      const btn = document.getElementById('reboot-btn');
+      if (btn && btn.disabled) return;
+
       showToast('Rebooting... 🔄', 'success');
       try {
         await window.pocketAgent.restartAgent();
+        deactivateReboot();
         showToast('Back online! ✨', 'success');
       } catch (error) {
         showToast('Failed to restart agent', 'error');
@@ -959,6 +1008,7 @@
 
         status.textContent = 'Saved! Reboot me to apply ✨';
         showToast('Got it! Reboot me to apply ✨', 'success');
+        activateReboot();
       } catch (error) {
         status.textContent = 'Failed to save profile';
         showToast('Failed to save profile', 'error');
