@@ -384,8 +384,8 @@ export class CronScheduler {
    */
   private async routeJobResponse(jobName: string, prompt: string, response: string, channel: string): Promise<void> {
     // Check for silent acknowledgment - agent has nothing to report
-    const trimmed = response.trim();
-    if (trimmed === HEARTBEAT_OK || trimmed.startsWith(HEARTBEAT_OK + '\n') || trimmed.endsWith('\n' + HEARTBEAT_OK)) {
+    // Match HEARTBEAT_OK anywhere in response (case-insensitive)
+    if (response.toUpperCase().includes(HEARTBEAT_OK)) {
       console.log(`[Scheduler] Job ${jobName} returned HEARTBEAT_OK, skipping notification`);
       return;
     }

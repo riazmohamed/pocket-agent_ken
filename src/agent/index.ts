@@ -148,7 +148,7 @@ class AgentManagerClass extends EventEmitter {
 
   async processMessage(
     userMessage: string,
-    _channel: string = 'default'
+    channel: string = 'default'
   ): Promise<ProcessResult> {
     if (!this.memory) {
       throw new Error('AgentManager not initialized - call initialize() first');
@@ -217,10 +217,17 @@ class AgentManagerClass extends EventEmitter {
         response = 'I processed your request but have no text response.';
       }
 
-      this.memory.saveMessage('user', userMessage);
-      this.memory.saveMessage('assistant', response);
+      // Skip saving HEARTBEAT_OK responses from scheduled jobs to memory/chat
+      const isScheduledJob = channel.startsWith('cron:');
+      const isHeartbeat = response.toUpperCase().includes('HEARTBEAT_OK');
 
-      console.log('[AgentManager] Saved messages to SQLite');
+      if (isScheduledJob && isHeartbeat) {
+        console.log('[AgentManager] Skipping HEARTBEAT_OK from scheduled job - not saving to memory');
+      } else {
+        this.memory.saveMessage('user', userMessage);
+        this.memory.saveMessage('assistant', response);
+        console.log('[AgentManager] Saved messages to SQLite');
+      }
 
       this.extractAndStoreFacts(userMessage);
 
