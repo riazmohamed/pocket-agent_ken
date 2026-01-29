@@ -250,42 +250,41 @@ export class CronScheduler {
       try {
         console.log(`[Scheduler] Executing job: ${job.name}`);
 
-        // Get context messages if requested (from the job's session)
         const sessionId = job.session_id || 'default';
-        let contextText = '';
-        if (job.context_messages > 0 && this.memory) {
-          const history = this.memory.getRecentMessages(job.context_messages, sessionId);
-          if (history.length > 0) {
-            const lines = history.map(m => {
-              const role = m.role === 'user' ? 'User' : 'Assistant';
-              const text = m.content.length > 200 ? m.content.slice(0, 200) + '...' : m.content;
-              return `- ${role}: ${text}`;
-            });
-            contextText = '\n\nRecent context:\n' + lines.join('\n');
-          }
-        }
+        let response: string;
 
-        // Build the full prompt based on job type
-        let fullPrompt: string;
         if (job.job_type === 'reminder') {
-          // Reminders: deliver the message directly, NO HEARTBEAT_OK (always notify)
-          // Be explicit this is a delivery, not a request to schedule
-          fullPrompt = `[SCHEDULED REMINDER - DELIVER NOW]\nThe user previously asked to be reminded about: "${job.prompt}"\n\nDeliver this reminder to them now in a friendly way. Do NOT create a new reminder - just tell them the message.`;
+          // Reminders: display the pre-composed message directly, NO LLM call
+          response = job.prompt;
+          console.log(`[Scheduler] Reminder (no LLM): ${job.name}`);
         } else {
-          // Routines: existing behavior with HEARTBEAT_OK
-          fullPrompt = job.prompt + contextText + '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
-        }
+          // Routines: call LLM with context
+          let contextText = '';
+          if (job.context_messages > 0 && this.memory) {
+            const history = this.memory.getRecentMessages(job.context_messages, sessionId);
+            if (history.length > 0) {
+              const lines = history.map(m => {
+                const role = m.role === 'user' ? 'User' : 'Assistant';
+                const text = m.content.length > 200 ? m.content.slice(0, 200) + '...' : m.content;
+                return `- ${role}: ${text}`;
+              });
+              contextText = '\n\nRecent context:\n' + lines.join('\n');
+            }
+          }
 
-        // Execute through agent (using the job's session)
-        if (!AgentManager.isInitialized()) {
-          throw new Error('AgentManager not initialized');
-        }
+          const fullPrompt = job.prompt + contextText + '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
 
-        const result = await AgentManager.processMessage(
-          fullPrompt,
-          `cron:${job.name}`,
-          sessionId
-        );
+          if (!AgentManager.isInitialized()) {
+            throw new Error('AgentManager not initialized');
+          }
+
+          const result = await AgentManager.processMessage(
+            fullPrompt,
+            `cron:${job.name}`,
+            sessionId
+          );
+          response = result.response;
+        }
 
         const duration = Date.now() - startTime;
 
@@ -311,11 +310,11 @@ export class CronScheduler {
         }
 
         // Route response to the job's session
-        await this.routeJobResponse(job.name, job.prompt, result.response, job.channel, sessionId);
+        await this.routeJobResponse(job.name, job.prompt, response, job.channel, sessionId);
 
         this.addToHistory({
           jobName: job.name,
-          response: result.response,
+          response: response,
           channel: job.channel,
           success: true,
           timestamp: now,

@@ -419,12 +419,12 @@ Schedule formats:
 - One-time: "in 10 minutes", "tomorrow 3pm", "monday 9am"
 - Recurring: "30m", "2h", or cron "0 9 * * *"
 
-IMPORTANT: The 'reminder' field is a PROMPT for a future LLM instance.
-Write it as an instruction telling the LLM what to remind the user about.
-- GOOD: "Remind Ken to take a shower now!"
-- GOOD: "Let Ken know it's time to call mom"
-- BAD: "take a shower" (too minimal, not a prompt)
-- BAD: "Time to take a shower! 🚿" (this is output, not an instruction)`,
+IMPORTANT: The 'reminder' field is the FINAL MESSAGE shown to the user.
+Compose a friendly, complete reminder message - it will be displayed directly with NO further LLM processing.
+- GOOD: "Hey Ken! Time to take a shower 🚿"
+- GOOD: "Don't forget to call mom! 📱"
+- BAD: "take a shower" (too minimal)
+- BAD: "Remind Ken to take a shower" (this is an instruction, not a message)`,
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -438,7 +438,7 @@ Write it as an instruction telling the LLM what to remind the user about.
         },
         reminder: {
           type: 'string',
-          description: 'Prompt for a future LLM. Examples: "Remind Ken to take a shower now!", "Let Ken know it\'s time to call mom". Write as an instruction, not final output.',
+          description: 'The final message to display. Examples: "Hey Ken! Time to take a shower 🚿", "Don\'t forget to call mom! 📱". Compose a friendly, complete message.',
         },
         channel: {
           type: 'string',
