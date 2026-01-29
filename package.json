@@ -1,6 +1,6 @@
 {
   "name": "pocket-agent",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Desktop AI agent with persistent memory powered by Claude Agent SDK",
   "main": "dist/main/index.js",
   "scripts": {
@@ -38,6 +38,7 @@
       "repo": "pocket-agent"
     },
     "mac": {
+      "artifactName": "Pocket-Agent-${version}-${arch}-mac.${ext}",
       "icon": "build/icon.icns",
       "category": "public.app-category.productivity",
       "target": [
@@ -63,6 +64,7 @@
       "notarize": true
     },
     "dmg": {
+      "artifactName": "Pocket-Agent-${version}-${arch}.${ext}",
       "background": "build/background.png",
       "icon": "build/icon.icns",
       "iconSize": 80,
