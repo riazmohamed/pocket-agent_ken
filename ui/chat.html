@@ -392,6 +392,144 @@
       margin: 4px 0;
     }
 
+    /* About Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      width: 90%;
+      max-width: 360px;
+      overflow: hidden;
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-secondary);
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .modal-title h2 {
+      font-family: 'Pixelify Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .modal-title p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin: 2px 0 0;
+    }
+
+    .modal-close {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover { color: var(--text-primary); }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .about-content {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .about-content p {
+      margin: 0 0 12px;
+    }
+
+    .about-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .about-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .about-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .about-link:hover {
+      border-color: var(--accent);
+      background: rgba(255, 136, 0, 0.1);
+    }
+
+    .about-link svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .about-link span {
+      flex: 1;
+    }
+
+    .about-link small {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
     /* Messages Container */
     #messages {
       flex: 1;
@@ -1467,10 +1605,62 @@
             </svg>
             Settings
           </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" onclick="playNormalClick(); openAbout(); closeMenu();">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Who made me?
+          </button>
         </div>
       </div>
     </div>
   </header>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" id="about-modal" onclick="if(event.target === this) closeAbout();">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">🐱</div>
+        <div class="modal-title">
+          <h2>who made me?</h2>
+          <p>the human behind franky</p>
+        </div>
+        <button class="modal-close" onclick="playNormalClick(); closeAbout();">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="about-content">
+          <p>hey, i'm <strong>Ken Kai</strong> - the guy who built me. he's been obsessed with AI and AI development for over 10 years now</p>
+          <p>he runs a youtube channel where he shares everything he learns, and teaches on skool too</p>
+          <p>if you want to learn more about AI dev, agents, and building cool stuff like me - check him out:</p>
+        </div>
+        <div class="about-links">
+          <a class="about-link" onclick="playNormalClick(); window.pocketAgent.openExternal('https://www.youtube.com/@kenkaidoesai')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <span>@kenkaidoesai</span>
+            <small>YouTube</small>
+          </a>
+          <a class="about-link" onclick="playNormalClick(); window.pocketAgent.openExternal('https://www.skool.com/kenkai')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+            </svg>
+            <span>skool.com/kenkai</span>
+            <small>Learn AI Dev</small>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="tabs-container" id="tabs-container">
     <!-- Tabs will be populated by JavaScript -->
@@ -2070,6 +2260,17 @@
       const contentDiv = document.createElement('div');
       contentDiv.className = 'message-content';
       contentDiv.innerHTML = formatContent(content);
+      // Intercept link clicks to open in external browser
+      contentDiv.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href]');
+        if (link) {
+          e.preventDefault();
+          const href = link.getAttribute('href');
+          if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+            window.pocketAgent.openExternal(href);
+          }
+        }
+      });
       wrapper.appendChild(contentDiv);
 
       // Add timestamp
@@ -2504,6 +2705,17 @@
         while (contentDiv.firstChild) {
           div.appendChild(contentDiv.firstChild);
         }
+        // Intercept link clicks to open in external browser
+        div.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href]');
+          if (link) {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+              window.pocketAgent.openExternal(href);
+            }
+          }
+        });
       }
 
       // Add timestamp (unless explicitly disabled)
@@ -3104,6 +3316,14 @@
       } catch (err) {
         console.error('Failed to open docs:', err);
       }
+    }
+
+    function openAbout() {
+      document.getElementById('about-modal').classList.add('show');
+    }
+
+    function closeAbout() {
+      document.getElementById('about-modal').classList.remove('show');
     }
   </script>
 </body>
