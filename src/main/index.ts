@@ -1,4 +1,4 @@
-import { app, Tray, Menu, nativeImage, BrowserWindow, ipcMain, Notification, globalShortcut, shell } from 'electron';
+import { app, Tray, Menu, nativeImage, BrowserWindow, ipcMain, Notification, globalShortcut, shell, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { spawn, ChildProcess } from 'child_process';
@@ -1458,6 +1458,24 @@ function setupIPC(): void {
     };
   });
 
+  // File dialog for skill setup (e.g., uploading credentials files)
+  ipcMain.handle(
+    'skills:selectFile',
+    async (_, options: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) => {
+      const result = await dialog.showOpenDialog({
+        title: options.title || 'Select File',
+        properties: ['openFile'],
+        filters: options.filters || [{ name: 'All Files', extensions: ['*'] }],
+      });
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, canceled: true };
+      }
+
+      return { success: true, filePath: result.filePaths[0] };
+    }
+  );
+
   // Secure setup command execution - validates against manifest and sanitizes inputs
   ipcMain.handle(
     'skills:runSetupCommand',
@@ -1548,6 +1566,10 @@ function setupIPC(): void {
         `${home}/.local/bin`,
       ].join(':');
 
+      // Get API keys from settings to pass as environment variables
+      const { SettingsManager } = await import('../settings');
+      const apiKeysEnv = SettingsManager.getApiKeysAsEnv();
+
       return new Promise<{ success: boolean; output: string; error?: string }>((resolve) => {
         let stdout = '';
         let stderr = '';
@@ -1555,6 +1577,7 @@ function setupIPC(): void {
         const child: ChildProcess = spawn(binary, args, {
           env: {
             ...process.env,
+            ...apiKeysEnv, // Include API keys from settings
             PATH: `${extraPaths}:${process.env.PATH}`,
           },
           timeout: 60000,

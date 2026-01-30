@@ -107,6 +107,8 @@ contextBridge.exposeInMainWorld('pocketAgent', {
   getSkillSetupConfig: (skillName: string) => ipcRenderer.invoke('skills:getSetupConfig', skillName),
   runSkillSetupCommand: (params: { skillName: string; stepId: string; inputs?: Record<string, string> }) =>
     ipcRenderer.invoke('skills:runSetupCommand', params),
+  selectFile: (options?: { title?: string; filters?: Array<{ name: string; extensions: string[] }> }) =>
+    ipcRenderer.invoke('skills:selectFile', options || {}),
 
   // Updates
   checkForUpdates: () => ipcRenderer.invoke('updater:checkForUpdates'),

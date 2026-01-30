@@ -427,7 +427,15 @@ export async function handlePtyExecTool(input: unknown): Promise<string> {
     return JSON.stringify({ success: false, error: 'command is required' });
   }
 
-  const result = await execWithPty(params);
+  // Inject API keys from settings into the environment
+  // This allows skills to access API keys configured via the settings UI
+  const { SettingsManager } = await import('../settings');
+  const apiKeysEnv = SettingsManager.getApiKeysAsEnv();
+
+  const result = await execWithPty({
+    ...params,
+    env: { ...apiKeysEnv, ...params.env },
+  });
   return JSON.stringify(result);
 }
 

@@ -1259,6 +1259,46 @@
     let currentStepIndex = 0;
     let setupInputValues = {};
 
+    // File selection for file_upload steps
+    async function selectFile(fileType) {
+      try {
+        // Build filters based on file type
+        let filters = [{ name: 'All Files', extensions: ['*'] }];
+        if (fileType === '.json') {
+          filters = [
+            { name: 'JSON Files', extensions: ['json'] },
+            { name: 'All Files', extensions: ['*'] }
+          ];
+        }
+
+        const result = await window.pocketAgent.selectFile({
+          title: 'Select Credentials File',
+          filters
+        });
+
+        if (result.success && result.filePath) {
+          setupInputValues['file_path'] = result.filePath;
+          const display = document.getElementById('file-path-display');
+          if (display) {
+            display.value = result.filePath;
+          }
+          // Hide the info status since we now have a file
+          const statusDiv = document.getElementById('step-status');
+          if (statusDiv) {
+            statusDiv.style.display = 'none';
+          }
+          toast('File selected', 'success');
+        } else if (result.canceled) {
+          // User canceled, do nothing
+        } else {
+          toast('Failed to select file', 'error');
+        }
+      } catch (e) {
+        console.error('File selection error:', e);
+        toast('Failed to open file dialog', 'error');
+      }
+    }
+
     async function openSetup(skillName) {
       try {
         const result = await window.pocketAgent.getSkillSetupConfig(skillName);
@@ -1330,6 +1370,7 @@
           </div>
         `;
       } else if (step.action === 'file_upload') {
+        const fileType = step.file_type || '*';
         actionHtml = `
           <div class="setup-info">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1338,6 +1379,21 @@
             <span>${esc(step.description)}</span>
           </div>
           ${step.help_url ? `<a href="${esc(step.help_url)}" target="_blank" class="help-link">Setup guide →</a>` : ''}
+          <div class="setup-input" style="margin-top: 10px;">
+            <label>Selected file</label>
+            <div class="key-input">
+              <input type="text" id="file-path-display" readonly placeholder="No file selected"
+                value="${esc(setupInputValues['file_path'] || '')}">
+              <button type="button" onclick="selectFile('${esc(fileType)}')">Browse...</button>
+            </div>
+          </div>
+          <div class="setup-status info" id="step-status" style="display: ${setupInputValues['file_path'] ? 'none' : 'flex'};">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>Select a file to continue</span>
+          </div>
+          <div class="terminal-output" id="terminal-output" style="display: none;"></div>
         `;
       } else if (step.action === 'cli_command' || step.action === 'cli_interactive') {
         actionHtml = `
@@ -1396,10 +1452,21 @@
         return;
       }
 
-      // For file upload, show instruction and proceed (manual step)
+      // For file upload with command, run the command with the file path
       if (step.action === 'file_upload') {
-        nextStep();
-        return;
+        // If no command specified, just proceed
+        if (!step.command) {
+          nextStep();
+          return;
+        }
+
+        // Must have a file selected
+        if (!setupInputValues['file_path']) {
+          toast('Please select a file first', 'error');
+          return;
+        }
+
+        // Continue below to run the command with the file_path input
       }
 
       // Validate inputs

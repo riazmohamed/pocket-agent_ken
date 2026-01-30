@@ -64,17 +64,6 @@
       ],
       "requires_permissions": ["camera"]
     },
-    "coding-agent": {
-      "bins": [],
-      "os": [],
-      "install": []
-    },
-    "discord": {
-      "bins": [],
-      "os": [],
-      "install": [],
-      "requires_config": ["channels.discord"]
-    },
     "eightctl": {
       "bins": ["eightctl"],
       "os": [],
@@ -125,10 +114,11 @@
           {
             "id": "credentials",
             "title": "OAuth Credentials",
-            "description": "Upload your client_secret.json from Google Cloud Console",
+            "description": "Select your client_secret.json downloaded from Google Cloud Console",
             "action": "file_upload",
             "file_type": ".json",
-            "help_url": "https://gogcli.sh/setup"
+            "help_url": "https://gogcli.sh/setup",
+            "command": "gog auth credentials set {{file_path}}"
           },
           {
             "id": "auth",
@@ -330,12 +320,6 @@
       "os": [],
       "install": []
     },
-    "slack": {
-      "bins": [],
-      "os": [],
-      "install": [],
-      "requires_config": ["channels.slack"]
-    },
     "songsee": {
       "bins": ["songsee"],
       "os": [],
@@ -422,12 +406,6 @@
         {"id": "brew", "kind": "brew", "formula": "ffmpeg", "bins": ["ffmpeg"], "label": "Install ffmpeg (brew)"}
       ]
     },
-    "voice-call": {
-      "bins": [],
-      "os": [],
-      "install": [],
-      "requires_config": ["voice_call_plugin"]
-    },
     "wacli": {
       "bins": ["wacli"],
       "os": [],
@@ -459,17 +437,6 @@
     },
     "weather": {
       "bins": ["curl"],
-      "os": [],
-      "install": []
-    },
-    "bluebubbles": {
-      "bins": [],
-      "os": [],
-      "install": [],
-      "requires_config": ["bluebubbles_server"]
-    },
-    "canvas": {
-      "bins": [],
       "os": [],
       "install": []
     }
