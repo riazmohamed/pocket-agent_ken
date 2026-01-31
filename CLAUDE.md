@@ -6,17 +6,17 @@ A persistent desktop AI assistant powered by Claude Agent SDK that runs 24/7 as 
 
 ```
 src/
-├── main/           # Electron main process (app lifecycle, tray, windows)
+├── main/           # Electron main process (app lifecycle, tray, windows, IPC)
 ├── agent/          # Claude Agent SDK wrapper and orchestration
 ├── memory/         # SQLite persistence (messages, facts, embeddings)
 ├── channels/       # Communication channels (Telegram, desktop)
-├── scheduler/      # Cron job management
+├── scheduler/      # Cron job management with reminders
 ├── browser/        # 2-tier browser automation (Electron + CDP)
-├── tools/          # Agent tool implementations
+├── tools/          # Agent tool implementations (MCP servers)
 ├── config/         # Configuration and identity loading
-├── settings/       # User preferences management
+├── settings/       # User preferences management (encrypted)
 ├── auth/           # OAuth flows for integrations
-├── permissions/    # System permissions handling (macOS)
+├── permissions/    # System permissions handling (cross-platform)
 ├── cli/            # Command-line interfaces
 ├── mcp/            # Model Context Protocol servers
 └── skills/         # Skill system for extensibility
@@ -26,6 +26,14 @@ tests/unit/         # Vitest unit tests
 assets/             # Tray icons and static assets
 .claude/            # Claude Code commands and skills
 ```
+
+## Tech Stack
+
+**Core:** Electron 40 • TypeScript 5.7 • Node.js
+**AI:** Claude Agent SDK • OpenAI API (embeddings)
+**Database:** SQLite3 (better-sqlite3)
+**Integrations:** Grammy (Telegram) • Puppeteer (browser automation)
+**Tools:** ESLint • Prettier • Vitest • electron-builder
 
 ## Organization Rules
 
@@ -42,7 +50,7 @@ assets/             # Tray icons and static assets
 - Single responsibility per file
 - Clear, descriptive file names
 - Group related functionality together
-- Avoid monolithic files
+- Avoid monolithic files (split at 300 LOC guideline)
 
 ## Code Quality - Zero Tolerance
 
@@ -72,3 +80,5 @@ Fix ALL errors/warnings before continuing.
 **Channel System:** Abstracts Telegram and desktop UI communication
 
 **Scheduler:** Cron-based task automation with SQLite persistence
+
+**Cross-Platform:** Supports macOS and Linux/WSL with platform-aware features
