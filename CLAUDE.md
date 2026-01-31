@@ -81,4 +81,4 @@ Fix ALL errors/warnings before continuing.
 
 **Scheduler:** Cron-based task automation with SQLite persistence
 
-**Cross-Platform:** Supports macOS and Linux/WSL with platform-aware features
+**Cross-Platform:** Supports macOS, Windows, and Linux/WSL with platform-aware features

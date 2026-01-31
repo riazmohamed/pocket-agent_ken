@@ -12,13 +12,28 @@ exports.default = async function(context) {
 
   console.log(`[afterPack] Cleaning up for ${platform}-${arch}...`);
 
-  const resourcesPath = path.join(appOutDir, 'Pocket Agent.app', 'Contents', 'Resources');
+  // Platform-specific paths
+  let resourcesPath;
+  if (platform === 'darwin') {
+    // macOS: Pocket Agent.app/Contents/Resources
+    resourcesPath = path.join(appOutDir, 'Pocket Agent.app', 'Contents', 'Resources');
+  } else {
+    // Windows and Linux: resources/
+    resourcesPath = path.join(appOutDir, 'resources');
+  }
+
   const appPath = path.join(resourcesPath, 'app');
 
   // 1. Remove unused ripgrep platform binaries (~41MB savings)
   const ripgrepPath = path.join(appPath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'vendor', 'ripgrep');
   if (fs.existsSync(ripgrepPath)) {
-    const keepPlatform = `${arch}-darwin`;
+    // Determine which platform binary to keep
+    const platformMap = {
+      'darwin': `${arch}-darwin`,
+      'win32': `${arch}-windows`,
+      'linux': `${arch}-linux`,
+    };
+    const keepPlatform = platformMap[platform] || `${arch}-${platform}`;
     const entries = fs.readdirSync(ripgrepPath);
 
     for (const entry of entries) {
@@ -32,12 +47,14 @@ exports.default = async function(context) {
     }
   }
 
-  // 2. Remove unused locale files (keep only en)
-  const localeFiles = fs.readdirSync(resourcesPath).filter(f => f.endsWith('.lproj') && f !== 'en.lproj');
-  for (const locale of localeFiles) {
-    const localePath = path.join(resourcesPath, locale);
-    console.log(`[afterPack] Removing locale ${locale}`);
-    fs.rmSync(localePath, { recursive: true, force: true });
+  // 2. Remove unused locale files (keep only en) - macOS only
+  if (platform === 'darwin' && fs.existsSync(resourcesPath)) {
+    const localeFiles = fs.readdirSync(resourcesPath).filter(f => f.endsWith('.lproj') && f !== 'en.lproj');
+    for (const locale of localeFiles) {
+      const localePath = path.join(resourcesPath, locale);
+      console.log(`[afterPack] Removing locale ${locale}`);
+      fs.rmSync(localePath, { recursive: true, force: true });
+    }
   }
 
   // 3. Remove unnecessary files from node_modules

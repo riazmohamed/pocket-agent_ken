@@ -25,7 +25,9 @@
     "test:coverage": "vitest run --coverage",
     "dist": "npm run build && electron-builder --mac",
     "dist:local": "npm run build && electron-builder --mac --config.mac.identity=null",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:windows": "npm run build && electron-builder --windows",
+    "dist:all": "npm run build && electron-builder --mac --linux --windows"
   },
   "build": {
     "appId": "com.unstablemind.pocket-agent",
@@ -107,6 +109,33 @@
         }
       ]
     },
+    "win": {
+      "artifactName": "Pocket-Agent-${version}-${arch}-win.${ext}",
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
     "asar": false,
     "afterPack": "./build/afterPack.js",
     "afterAllArtifactBuild": "./build/afterAllArtifactBuild.js",
@@ -153,6 +182,7 @@
     "electron-builder": "^26.4.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
+    "png-to-ico": "^3.0.1",
     "prettier": "^3.8.1",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
