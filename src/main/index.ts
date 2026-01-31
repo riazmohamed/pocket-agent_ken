@@ -26,20 +26,34 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Fix PATH for packaged apps - node/npm binaries aren't in PATH when launched from Finder
+// Fix PATH for packaged apps - node/npm binaries aren't in PATH when launched from Finder/Desktop
 if (app.isPackaged) {
-  const fixedPath = [
-    '/opt/homebrew/bin',        // Apple Silicon Homebrew
-    '/usr/local/bin',           // Intel Homebrew / standard location
-    '/usr/bin',
-    '/bin',
-    '/usr/sbin',
-    '/sbin',
-    process.env.HOME + '/.nvm/versions/node/*/bin', // nvm
-    process.env.HOME + '/.local/bin',
-  ].join(':');
+  const pathComponents = process.platform === 'darwin'
+    ? [
+        '/opt/homebrew/bin',        // Apple Silicon Homebrew
+        '/usr/local/bin',           // Intel Homebrew / standard location
+        '/usr/bin',
+        '/bin',
+        '/usr/sbin',
+        '/sbin',
+        process.env.HOME + '/.nvm/versions/node/*/bin', // nvm
+        process.env.HOME + '/.local/bin',
+      ]
+    : [
+        '/usr/local/bin',           // Standard Linux location
+        '/usr/bin',
+        '/bin',
+        '/usr/local/sbin',
+        '/usr/sbin',
+        '/sbin',
+        process.env.HOME + '/.nvm/versions/node/*/bin', // nvm
+        process.env.HOME + '/.local/bin',
+        process.env.HOME + '/.npm-global/bin', // npm global
+      ];
+
+  const fixedPath = pathComponents.join(':');
   process.env.PATH = fixedPath + ':' + (process.env.PATH || '');
-  console.log('[Main] Fixed PATH for packaged app');
+  console.log(`[Main] Fixed PATH for packaged app (${process.platform})`);
 }
 
 // Month name mapping for birthday parsing
@@ -321,10 +335,14 @@ async function createTray(): Promise<void> {
       icon = nativeImage.createEmpty();
       icon.addRepresentation({ scaleFactor: 1, width: 22, height: 22, buffer: icon1x.resize({ width: 22, height: 22 }).toPNG() });
       icon.addRepresentation({ scaleFactor: 2, width: 44, height: 44, buffer: icon2x.resize({ width: 44, height: 44 }).toPNG() });
-      icon.setTemplateImage(true); // For macOS menu bar
+      if (process.platform === 'darwin') {
+        icon.setTemplateImage(true); // For macOS menu bar
+      }
     } else if (!icon1x.isEmpty()) {
       icon = icon1x.resize({ width: 22, height: 22 });
-      icon.setTemplateImage(true);
+      if (process.platform === 'darwin') {
+        icon.setTemplateImage(true);
+      }
     } else {
       icon = createDefaultIcon();
     }
@@ -394,7 +412,9 @@ function createDefaultIcon(): Electron.NativeImage {
   fillRect(5, 10, 10, 11);
 
   const icon = nativeImage.createFromBuffer(canvas, { width: size, height: size });
-  icon.setTemplateImage(true); // For macOS menu bar
+  if (process.platform === 'darwin') {
+    icon.setTemplateImage(true); // For macOS menu bar
+  }
   return icon;
 }
 
@@ -417,7 +437,9 @@ function updateTrayMenu(): void {
       menuIcon = nativeImage.createEmpty();
       menuIcon.addRepresentation({ scaleFactor: 1, width: 16, height: 16, buffer: rawIcon.resize({ width: 16, height: 16 }).toPNG() });
       menuIcon.addRepresentation({ scaleFactor: 2, width: 32, height: 32, buffer: rawIcon.resize({ width: 32, height: 32 }).toPNG() });
-      menuIcon.setTemplateImage(true);
+      if (process.platform === 'darwin') {
+        menuIcon.setTemplateImage(true);
+      }
     } else {
       menuIcon = undefined;
     }

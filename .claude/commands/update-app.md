@@ -55,4 +55,5 @@ Ensure a fresh install works:
 rm -rf node_modules package-lock.json
 npm install
 ```
-Verify ZERO warnings/errors.
+
+Verify ZERO warnings/errors and all dependencies resolve correctly.

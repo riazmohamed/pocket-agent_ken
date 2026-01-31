@@ -24,7 +24,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "dist": "npm run build && electron-builder --mac",
-    "dist:local": "npm run build && electron-builder --mac --config.mac.identity=null"
+    "dist:local": "npm run build && electron-builder --mac --config.mac.identity=null",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "build": {
     "appId": "com.unstablemind.pocket-agent",
@@ -82,6 +83,27 @@
           "y": 190,
           "type": "link",
           "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "artifactName": "Pocket-Agent-${version}-${arch}-linux.${ext}",
+      "icon": "assets/icon.png",
+      "category": "Utility",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
