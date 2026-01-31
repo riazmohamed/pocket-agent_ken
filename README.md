@@ -75,16 +75,35 @@ Edit the identity file to change how it talks. Make it formal, casual, terse, ve
 
 ### Download
 
-| Mac | Link |
-|-----|------|
-| Apple Silicon (M1/M2/M3/M4) | [Download](https://github.com/KenKaiii/pocket-agent/releases/latest) |
-| Intel | [Download](https://github.com/KenKaiii/pocket-agent/releases/latest) |
+**[📥 Download Latest Release](https://github.com/KenKaiii/pocket-agent/releases/latest)**
+
+| Platform | Architecture | File Type |
+|----------|--------------|-----------|
+| **macOS** | Apple Silicon (M1/M2/M3/M4) | `.dmg` |
+| **macOS** | Intel | `.dmg` |
+| **Windows** | x64 | `.exe` |
+| **Windows** | ARM64 | `.exe` |
+| **Linux** | x64 | `.AppImage` or `.deb` |
+| **Linux** | ARM64 | `.AppImage` or `.deb` |
 
 ### Setup
 
-1. Drag to Applications, launch it
-2. It shows up in your menu bar
-3. Click it, paste your Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com))
+**macOS:**
+1. Open the DMG and drag Pocket Agent to Applications
+2. Launch it - it shows up in your menu bar
+3. Click the icon, paste your Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com))
+4. Start chatting
+
+**Windows:**
+1. Run the `.exe` installer
+2. Launch Pocket Agent - it shows up in your system tray
+3. Click the icon, paste your Anthropic API key
+4. Start chatting
+
+**Linux:**
+1. Make the AppImage executable: `chmod +x Pocket-Agent-*.AppImage` (or install the `.deb`)
+2. Run the app - it shows up in your system tray
+3. Click the icon, paste your Anthropic API key
 4. Start chatting
 
 That's it.

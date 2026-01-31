@@ -5,8 +5,12 @@ const { createDmg } = require('./createDmg');
 
 /**
  * Verify if a DMG file is valid by attempting to attach it
+ * macOS only - returns true on other platforms
  */
 function isDmgValid(dmgPath) {
+  if (process.platform !== 'darwin') {
+    return true;
+  }
   try {
     // Try to attach the DMG in readonly mode without mounting
     execSync(`hdiutil verify "${dmgPath}"`, { stdio: 'pipe' });
@@ -31,9 +35,16 @@ function getArchFromFilename(filename) {
 /**
  * electron-builder afterAllArtifactBuild hook
  * Validates and rebuilds corrupted DMG files for all architectures
+ * macOS only - no-op on Windows/Linux
  */
 exports.default = async function(context) {
   const { outDir, artifactPaths } = context;
+
+  // DMG validation is macOS-only
+  if (process.platform !== 'darwin') {
+    console.log('[afterAllArtifactBuild] Skipping DMG validation on non-macOS platform');
+    return artifactPaths;
+  }
 
   for (const artifactPath of artifactPaths) {
     // Only process DMG files

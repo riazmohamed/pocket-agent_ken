@@ -1,8 +1,9 @@
 /**
- * macOS Permission Detection and Management
+ * Platform Permission Detection and Management
  *
- * Handles checking and requesting macOS system permissions
- * required by various skills.
+ * Handles checking and requesting system permissions
+ * required by various skills. Supports macOS and gracefully
+ * handles other platforms (Linux, Windows).
  */
 
 import { systemPreferences, shell } from 'electron';

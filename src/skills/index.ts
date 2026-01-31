@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { SettingsManager } from '../settings';
-import { PermissionType, getMissingPermissions, isMacOS } from '../permissions/macos';
+import { PermissionType, getMissingPermissions, isMacOS } from '../permissions/permissions';
 
 /**
  * Validate that a string is a safe identifier (binary name, package name, etc.)
@@ -35,7 +35,7 @@ function escapeShellArg(arg: string): string {
 }
 
 // Re-export PermissionType for external use
-export type { PermissionType } from '../permissions/macos';
+export type { PermissionType } from '../permissions/permissions';
 
 // Types
 export interface InstallOption {
