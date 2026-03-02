@@ -26,6 +26,8 @@ vi.mock('../../src/settings', () => ({
       return undefined;
     }),
     getFormattedProfile: vi.fn(() => ''),
+    getFormattedIdentity: vi.fn(() => '# Frankie\n\nYou are a personal AI assistant.'),
+    getFormattedUserContext: vi.fn(() => ''),
   },
 }));
 
@@ -33,12 +35,8 @@ vi.mock('../../src/memory', () => ({
   MemoryManager: vi.fn(),
 }));
 
-vi.mock('../../src/config/identity', () => ({
-  loadIdentity: vi.fn(() => 'Test identity'),
-}));
-
-vi.mock('../../src/config/instructions', () => ({
-  loadInstructions: vi.fn(() => 'Test instructions'),
+vi.mock('../../src/config/system-guidelines', () => ({
+  SYSTEM_GUIDELINES: 'Test system guidelines',
 }));
 
 vi.mock('../../src/agent/chat-providers', () => ({
@@ -183,7 +181,8 @@ describe('ChatEngine', () => {
       // The content should have been converted to array with cache_control
       expect(Array.isArray(capturedLastUserContent)).toBe(true);
       expect(capturedLastUserContent[0].type).toBe('text');
-      expect(capturedLastUserContent[0].text).toBe('hi');
+      // Text may include an inline timestamp prefix like "[Mon, Mar 2, 12:09 PM] hi"
+      expect(capturedLastUserContent[0].text).toContain('hi');
       expect(capturedLastUserContent[0].cache_control).toEqual({ type: 'ephemeral' });
     });
 
@@ -206,8 +205,8 @@ describe('ChatEngine', () => {
       // Only the last user message should have it
       const firstUserMsg = messages[0];
       if (typeof firstUserMsg.content === 'string') {
-        // Clean — it was reverted to string
-        expect(firstUserMsg.content).toBe('hi');
+        // Clean — it was reverted to string (may include timestamp prefix)
+        expect(firstUserMsg.content).toContain('hi');
       } else if (Array.isArray(firstUserMsg.content)) {
         // If still array, it shouldn't have cache_control
         for (const block of firstUserMsg.content) {

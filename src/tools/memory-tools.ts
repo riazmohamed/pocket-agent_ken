@@ -19,7 +19,7 @@ export function setMemoryManager(memory: MemoryManager): void {
 export function getRememberToolDefinition() {
   return {
     name: 'remember',
-    description: 'Save important information to long-term memory. Use proactively when user shares personal info, preferences, projects, people, or decisions. Categories: user_info, preferences, projects, people, work, notes, decisions.',
+    description: 'Save a fact to long-term memory. Keep each fact atomic (under 30 words, one piece of info per call). Use specific keys like "partner_name" not "family". Save proactively when user shares something meaningful.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -29,11 +29,11 @@ export function getRememberToolDefinition() {
         },
         subject: {
           type: 'string',
-          description: 'Short identifier for this fact (e.g., "name", "coffee_preference", "project_x")',
+          description: 'Specific, descriptive key (e.g., "partner_name", "coffee_preference", "current_project")',
         },
         content: {
           type: 'string',
-          description: 'The fact to remember',
+          description: 'The fact to remember (max 25-30 words, one piece of info only)',
         },
       },
       required: ['category', 'subject', 'content'],
@@ -261,13 +261,13 @@ export async function handleMemorySearchTool(input: unknown): Promise<string> {
 export function getDailyLogToolDefinition() {
   return {
     name: 'daily_log',
-    description: "Add an entry to today's daily log. Record significant conversations, completed tasks, user mood, or key events.",
+    description: "Add an entry to today's daily log. Log completed tasks, decisions, mood, or key events at natural breakpoints.",
     input_schema: {
       type: 'object' as const,
       properties: {
         entry: {
           type: 'string',
-          description: 'The log entry to add (will be timestamped automatically)',
+          description: 'One concise line describing what happened (auto-timestamped)',
         },
       },
       required: ['entry'],

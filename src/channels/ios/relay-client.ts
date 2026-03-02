@@ -695,16 +695,20 @@ export class iOSRelayClient {
         break;
       }
       case 'customize:get': {
-        const customize = this.onGetCustomize?.() || { identity: '', instructions: '' };
+        const customize = this.onGetCustomize?.() || { agentName: 'Frankie', personality: '', goals: '', struggles: '', funFacts: '', systemGuidelines: '' };
         this.sendToRelay(client.relayClientId, { type: 'customize', ...customize });
         break;
       }
       case 'customize:save': {
-        const identity = 'identity' in message ? (message as { identity: string }).identity : undefined;
-        const instructions = 'instructions' in message ? (message as { instructions: string }).instructions : undefined;
-        const profile = 'profile' in message ? (message as { profile: { name?: string; occupation?: string; location?: string; timezone?: string; birthday?: string; custom?: string } }).profile : undefined;
-        this.onSaveCustomize?.(identity, instructions, profile);
-        const updated = this.onGetCustomize?.() || { identity: '', instructions: '' };
+        const saveData: Record<string, unknown> = {};
+        if ('agentName' in message) saveData.agentName = (message as { agentName: string }).agentName;
+        if ('personality' in message) saveData.personality = (message as { personality: string }).personality;
+        if ('goals' in message) saveData.goals = (message as { goals: string }).goals;
+        if ('struggles' in message) saveData.struggles = (message as { struggles: string }).struggles;
+        if ('funFacts' in message) saveData.funFacts = (message as { funFacts: string }).funFacts;
+        if ('profile' in message) saveData.profile = (message as { profile: Record<string, string> }).profile;
+        this.onSaveCustomize?.(saveData as Parameters<NonNullable<typeof this.onSaveCustomize>>[0]);
+        const updated = this.onGetCustomize?.() || { agentName: 'Frankie', personality: '', goals: '', struggles: '', funFacts: '', systemGuidelines: '' };
         this.sendToRelay(client.relayClientId, { type: 'customize', ...updated });
         break;
       }

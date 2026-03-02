@@ -28,11 +28,7 @@
       --radius-sm: 10px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
@@ -58,7 +54,6 @@
       font-family: 'Pixelify Sans', sans-serif;
       font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0;
     }
 
     header h1 span {
@@ -68,10 +63,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
+    .header-actions { display: flex; gap: 8px; }
 
     .header-actions button {
       padding: 6px 14px;
@@ -92,9 +84,7 @@
       box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
     }
 
-    .header-actions button:active {
-      transform: translateY(0);
-    }
+    .header-actions button:active { transform: translateY(0); }
 
     .header-actions button.secondary {
       background: var(--bg-tertiary);
@@ -120,10 +110,7 @@
       transition: all 0.3s ease;
     }
 
-    .header-actions button.reboot:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    .header-actions button.reboot:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .header-actions button.reboot.active {
       opacity: 1;
@@ -145,11 +132,7 @@
       50% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.6), 0 0 32px rgba(168, 85, 247, 0.3); }
     }
 
-    .container {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
+    .container { flex: 1; display: flex; overflow: hidden; }
 
     /* Sidebar */
     .sidebar {
@@ -174,10 +157,7 @@
       border-left: 3px solid transparent;
     }
 
-    .nav-item:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
+    .nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 
     .nav-item.active {
       background: linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, transparent 100%);
@@ -185,47 +165,17 @@
       border-left-color: var(--accent);
     }
 
-    .nav-item svg {
-      width: 16px;
-      height: 16px;
-      opacity: 0.7;
-    }
+    .nav-item svg { width: 16px; height: 16px; opacity: 0.7; }
 
     /* Content */
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 24px;
-    }
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 24px; }
 
-    .tab-content {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
 
-    .tab-content.active {
-      display: flex;
-    }
-
-    .section-header {
-      margin-bottom: 16px;
-    }
-
-    .section-header h2 {
-      font-family: 'Pixelify Sans', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .section-header p {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
+    .section-header { margin-bottom: 16px; }
+    .section-header h2 { font-family: 'Pixelify Sans', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .section-header p { font-size: 13px; color: var(--text-secondary); }
 
     .editor-container {
       flex: 1;
@@ -235,39 +185,6 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-    }
-
-    .editor-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: var(--bg-tertiary);
-      border-bottom: 1px solid var(--border);
-      border-radius: var(--radius) var(--radius) 0 0;
-    }
-
-    .editor-toolbar .file-path {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .editor-toolbar .status {
-      font-size: 11px;
-      font-weight: 500;
-    }
-
-    .editor-toolbar .status.saved {
-      color: var(--success);
-    }
-
-    .editor-toolbar .status.modified {
-      color: var(--warning);
-    }
-
-    .editor-toolbar .status.saving {
-      color: var(--text-muted);
     }
 
     textarea.editor {
@@ -282,25 +199,72 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
       line-height: 1.6;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: var(--radius);
     }
 
-    textarea.editor::-webkit-scrollbar {
-      width: 8px;
-    }
+    textarea.editor::-webkit-scrollbar { width: 8px; }
+    textarea.editor::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    textarea.editor::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    textarea.editor::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-    textarea.editor::-webkit-scrollbar-track {
+    /* Read-only display */
+    .readonly-display {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
       background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
     }
 
-    textarea.editor::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
+    .readonly-display::-webkit-scrollbar { width: 8px; }
+    .readonly-display::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    .readonly-display::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .readonly-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
     }
 
-    textarea.editor::-webkit-scrollbar-thumb:hover {
-      background: var(--text-muted);
+    .readonly-badge svg { width: 12px; height: 12px; }
+
+    /* Name input */
+    .name-input-container { margin-bottom: 20px; }
+
+    .name-input {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Sora', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.15s ease;
     }
+
+    .name-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15), 0 0 20px rgba(168, 85, 247, 0.1);
+    }
+
+    .name-input::placeholder { color: var(--text-muted); }
 
     .action-bar {
       display: flex;
@@ -311,15 +275,9 @@
       border-top: 1px solid var(--border);
     }
 
-    .action-bar .info {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
+    .action-bar .info { font-size: 12px; color: var(--text-muted); }
 
-    .action-bar .buttons {
-      display: flex;
-      gap: 8px;
-    }
+    .action-bar .buttons { display: flex; gap: 8px; }
 
     .action-bar button {
       padding: 8px 16px;
@@ -340,25 +298,8 @@
       box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
     }
 
-    .action-bar button:active {
-      transform: translateY(0);
-    }
-
-    .action-bar button.secondary {
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-    }
-
-    .action-bar button.secondary:hover {
-      background: var(--border);
-      color: var(--text-primary);
-    }
-
-    .action-bar button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    .action-bar button:active { transform: translateY(0); }
+    .action-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Form fields for profile */
     .form-section {
@@ -369,24 +310,13 @@
       margin-bottom: 16px;
     }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group.full-width {
-      grid-column: 1 / -1;
-    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full-width { grid-column: 1 / -1; }
 
     .form-group label {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--text-secondary);
       text-transform: uppercase;
@@ -395,13 +325,14 @@
 
     .form-group input,
     .form-group textarea {
-      padding: 10px 12px;
+      padding: 12px 14px;
       background: var(--bg-tertiary);
       color: var(--text-primary);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       font-family: 'Sora', sans-serif;
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.5;
       outline: none;
       transition: border-color 0.15s ease;
     }
@@ -413,31 +344,18 @@
     }
 
     .form-group input::placeholder,
-    .form-group textarea::placeholder {
-      color: var(--text-muted);
-    }
+    .form-group textarea::placeholder { color: var(--text-muted); }
 
-    .form-group textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: 'Sora', sans-serif;
-      line-height: 1.5;
-    }
-
-    .form-group .hint {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
+    .form-group .hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
     .form-group select {
-      padding: 10px 36px 10px 12px;
+      padding: 12px 36px 12px 14px;
       background-color: var(--bg-tertiary);
       color: var(--text-primary);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       font-family: 'Sora', sans-serif;
-      font-size: 14px;
+      font-size: 15px;
       outline: none;
       cursor: pointer;
       transition: border-color 0.15s ease;
@@ -451,23 +369,11 @@
       background-size: 16px;
     }
 
-    .form-group select:focus {
-      border-color: var(--accent);
-    }
+    .form-group select:focus { border-color: var(--accent); }
+    .form-group select option { background: var(--bg-secondary); color: var(--text-primary); }
 
-    .form-group select option {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-
-    .autocomplete-wrapper {
-      position: relative;
-      width: 100%;
-    }
-
-    .autocomplete-wrapper input {
-      width: 100%;
-    }
+    .autocomplete-wrapper { position: relative; width: 100%; }
+    .autocomplete-wrapper input { width: 100%; }
 
     .autocomplete-dropdown {
       position: absolute;
@@ -484,9 +390,7 @@
       display: none;
     }
 
-    .autocomplete-dropdown.show {
-      display: block;
-    }
+    .autocomplete-dropdown.show { display: block; }
 
     .autocomplete-item {
       padding: 10px 12px;
@@ -496,58 +400,21 @@
       transition: background 0.1s ease;
     }
 
-    .autocomplete-item:last-child {
-      border-bottom: none;
-    }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover { background: var(--bg-tertiary); }
+    .autocomplete-item .city { color: var(--text-primary); font-weight: 500; }
+    .autocomplete-item .details { color: var(--text-muted); font-size: 11px; margin-top: 2px; }
 
-    .autocomplete-item:hover {
-      background: var(--bg-tertiary);
-    }
+    .birthday-picker { display: flex; gap: 8px; }
+    .birthday-picker select { flex: 1; }
+    .birthday-picker select:first-child { flex: 1.5; }
 
-    .autocomplete-item .city {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
+    .profile-content { flex: 1; overflow-y: auto; padding-right: 8px; }
+    .profile-content::-webkit-scrollbar { width: 6px; }
+    .profile-content::-webkit-scrollbar-track { background: transparent; }
+    .profile-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    .autocomplete-item .details {
-      color: var(--text-muted);
-      font-size: 11px;
-      margin-top: 2px;
-    }
-
-    .birthday-picker {
-      display: flex;
-      gap: 8px;
-    }
-
-    .birthday-picker select {
-      flex: 1;
-    }
-
-    .birthday-picker select:first-child {
-      flex: 1.5;
-    }
-
-    .profile-content {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 8px;
-    }
-
-    .profile-content::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .profile-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .profile-content::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    /* Toast - Premium glassmorphism design */
+    /* Toast */
     .toast {
       position: fixed;
       bottom: 24px;
@@ -568,9 +435,7 @@
       animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 1000;
       overflow: hidden;
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
       color: var(--text-primary);
     }
 
@@ -587,90 +452,36 @@
     }
 
     .toast.success {
-      box-shadow:
-        0 8px 32px rgba(34, 197, 94, 0.15),
-        0 0 0 1px rgba(34, 197, 94, 0.2) inset,
-        0 0 20px rgba(34, 197, 94, 0.1);
+      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.15), 0 0 0 1px rgba(34, 197, 94, 0.2) inset, 0 0 20px rgba(34, 197, 94, 0.1);
     }
-
-    .toast.success::before {
-      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
-    }
-
-    .toast.success .toast-icon {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
-      color: #4ade80;
-    }
+    .toast.success::before { background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%); }
+    .toast.success .toast-icon { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%); color: #4ade80; }
 
     .toast.error {
-      box-shadow:
-        0 8px 32px rgba(239, 68, 68, 0.15),
-        0 0 0 1px rgba(239, 68, 68, 0.2) inset,
-        0 0 20px rgba(239, 68, 68, 0.1);
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.2) inset, 0 0 20px rgba(239, 68, 68, 0.1);
     }
-
-    .toast.error::before {
-      background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-    }
-
-    .toast.error .toast-icon {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%);
-      color: #f87171;
-    }
+    .toast.error::before { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
+    .toast.error .toast-icon { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%); color: #f87171; }
 
     .toast-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%);
     }
+    .toast-icon svg { width: 18px; height: 18px; }
+    .toast-content { flex: 1; min-width: 0; }
+    .toast-message { color: var(--text-primary); line-height: 1.4; white-space: nowrap; }
 
-    .toast-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .toast-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .toast-message {
-      color: var(--text-primary);
-      line-height: 1.4;
-      white-space: nowrap;
-    }
-
-    .toast.exiting {
-      animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-    }
+    .toast.exiting { animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards; }
 
     @keyframes toastSlideIn {
-      0% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
-      100% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
+      0% { transform: translateX(100%) scale(0.8); opacity: 0; }
+      100% { transform: translateX(0) scale(1); opacity: 1; }
     }
-
     @keyframes toastSlideOut {
-      0% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
-      100% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
+      0% { transform: translateX(0) scale(1); opacity: 1; }
+      100% { transform: translateX(100%) scale(0.8); opacity: 0; }
     }
-
     @keyframes toastProgress {
       from { transform: scaleX(1); }
       to { transform: scaleX(0); }
@@ -699,82 +510,77 @@
 
   <div class="container">
     <nav class="sidebar">
-      <div class="nav-item active" data-tab="identity">
+      <div class="nav-item active" data-tab="agent-name">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
+          <rect x="3" y="4" width="18" height="12" rx="2"/>
+          <path d="M9 8h0M15 8h0"/>
+          <path d="M9 12h6"/>
+          <path d="M8 16v2M16 16v2"/>
+          <path d="M7 2h2M15 2h2"/>
         </svg>
-        Who Am I
-      </div>
-      <div class="nav-item" data-tab="instructions">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-        My Playbook
+        Agent's Name
       </div>
       <div class="nav-item" data-tab="profile">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
-        About You
+        Your Details
+      </div>
+      <div class="nav-item" data-tab="personality">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        How I Act
+      </div>
+      <div class="nav-item" data-tab="world">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        Your World
+      </div>
+      <div class="nav-item" data-tab="system-prompt">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        System Prompt
       </div>
     </nav>
 
     <main class="content">
-      <!-- Identity Tab -->
-      <div class="tab-content active" id="tab-identity">
+      <!-- Agent's Name Tab -->
+      <div class="tab-content active" id="tab-agent-name">
         <div class="section-header">
-          <h2>Who Am I</h2>
-          <p>Give me a name and personality! Who should I be?</p>
+          <h2>Agent's Name</h2>
+          <p>What should I be called?</p>
         </div>
-        <div class="editor-container">
-          <div class="editor-toolbar">
-            <span class="file-path" id="identity-file-path">~/Documents/Pocket-agent/identity.md</span>
-            <span class="status saved" id="identity-status">Saved</span>
+        <div class="name-input-container">
+          <input type="text" class="name-input" id="agent-name-input" placeholder="Frankie">
+        </div>
+        <div class="form-section" style="margin-top: 20px;">
+          <div class="form-group">
+            <label for="agent-description">Brief Description</label>
+            <textarea id="agent-description" rows="3" placeholder="Who is this agent? What do they do?" style="resize: vertical;"></textarea>
+            <span class="hint">A short intro injected into the system prompt</span>
           </div>
-          <textarea class="editor" id="identity-editor" placeholder="waking up..."></textarea>
         </div>
+        <div style="flex: 1;"></div>
         <div class="action-bar">
           <span class="info">Reboot me to apply changes!</span>
           <div class="buttons">
-            <button class="secondary" onclick="playNormalClick(); reloadIdentity()">Undo</button>
-            <button onclick="playNormalClick(); saveIdentity()" id="save-identity-btn">Save</button>
+            <button onclick="playNormalClick(); saveAgentName()">Save</button>
           </div>
         </div>
       </div>
 
-      <!-- Instructions Tab -->
-      <div class="tab-content" id="tab-instructions">
-        <div class="section-header">
-          <h2>My Playbook</h2>
-          <p>Set my rules and what tools I can use</p>
-        </div>
-        <div class="editor-container">
-          <div class="editor-toolbar">
-            <span class="file-path" id="instructions-file-path">~/Documents/Pocket-agent/CLAUDE.md</span>
-            <span class="status saved" id="instructions-status">Saved</span>
-          </div>
-          <textarea class="editor" id="instructions-editor" placeholder="waking up..."></textarea>
-        </div>
-        <div class="action-bar">
-          <span class="info">Reboot me to apply changes!</span>
-          <div class="buttons">
-            <button class="secondary" onclick="playNormalClick(); reloadInstructions()">Undo</button>
-            <button onclick="playNormalClick(); saveInstructions()" id="save-instructions-btn">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profile Tab -->
+      <!-- Your Details Tab -->
       <div class="tab-content" id="tab-profile">
         <div class="section-header">
-          <h2>About You</h2>
-          <p>Tell me about yourself so I can personalize things!</p>
+          <h2>Your Details</h2>
+          <p>Basic info so I can personalize things for you</p>
         </div>
         <div class="profile-content">
           <div class="form-section">
@@ -824,22 +630,83 @@
                     <option value="">day</option>
                   </select>
                 </div>
-                <span class="hint">I'll wish you happy birthday! 🎂</span>
-              </div>
-              <div class="form-group full-width">
-                <label for="profile-custom">Fun Facts</label>
-                <textarea id="profile-custom" placeholder="tell me about yourself! ✨&#10;&#10;examples:&#10;- I have a golden retriever named Max&#10;- I'm learning to play guitar&#10;- My partner's name is Sarah&#10;- I'm vegetarian&#10;- My fave coffee is oat milk latte"></textarea>
-                <span class="hint">Your interests, preferences, people in your life - the good stuff!</span>
               </div>
             </div>
           </div>
         </div>
         <div class="action-bar">
-          <span class="info" id="profile-status">I'll remember this! 🧠</span>
+          <span class="info" id="profile-status">I'll remember this!</span>
           <div class="buttons">
             <button onclick="playNormalClick(); saveProfile()">Save</button>
           </div>
         </div>
+      </div>
+
+      <!-- How I Act Tab -->
+      <div class="tab-content" id="tab-personality">
+        <div class="section-header">
+          <h2>How I Act</h2>
+          <p>My personality, communication style, and vibes</p>
+        </div>
+        <div class="editor-container">
+          <textarea class="editor" id="personality-editor" placeholder="waking up..."></textarea>
+        </div>
+        <div class="action-bar">
+          <span class="info">Reboot me to apply changes!</span>
+          <div class="buttons">
+            <button onclick="playNormalClick(); savePersonality()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Your World Tab -->
+      <div class="tab-content" id="tab-world">
+        <div class="section-header">
+          <h2>Your World</h2>
+          <p>Help me understand what matters to you</p>
+        </div>
+        <div class="profile-content">
+          <div class="form-section">
+            <div class="form-group">
+              <label for="world-goals">Goals</label>
+              <textarea id="world-goals" rows="4" placeholder="what are you working toward?&#10;&#10;e.g. launch my startup, get fit, learn piano"></textarea>
+            </div>
+          </div>
+          <div class="form-section">
+            <div class="form-group">
+              <label for="world-struggles">Struggles</label>
+              <textarea id="world-struggles" rows="4" placeholder="what are you dealing with?&#10;&#10;e.g. time management, staying focused, burnout"></textarea>
+            </div>
+          </div>
+          <div class="form-section">
+            <div class="form-group">
+              <label for="world-funfacts">Fun Facts</label>
+              <textarea id="world-funfacts" rows="6" placeholder="interests, hobbies, people in your life&#10;&#10;e.g. I have a golden retriever named Max&#10;my partner's name is Sarah&#10;I'm vegetarian, oat milk latte lover"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="action-bar">
+          <span class="info">Reboot me to apply changes!</span>
+          <div class="buttons">
+            <button onclick="playNormalClick(); saveWorld()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Prompt Tab -->
+      <div class="tab-content" id="tab-system-prompt">
+        <div class="section-header">
+          <h2>System Prompt</h2>
+          <p>Core guidelines and capabilities - managed by the developer, updated with app releases</p>
+        </div>
+        <div class="readonly-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Read-only - managed by developer
+        </div>
+        <div class="readonly-display" id="system-prompt-display"></div>
       </div>
     </main>
   </div>
@@ -862,145 +729,103 @@
       }
     });
 
-    // Track original content for detecting changes
-    let originalIdentity = '';
-    let originalInstructions = '';
-
     // Tab navigation
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', () => {
         const tab = item.dataset.tab;
-
-        // Update nav
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         item.classList.add('active');
-
-        // Update content
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
       });
     });
 
-    // Track changes
-    document.getElementById('identity-editor').addEventListener('input', () => {
-      const current = document.getElementById('identity-editor').value;
-      const status = document.getElementById('identity-status');
-      if (current !== originalIdentity) {
-        status.textContent = 'Modified';
-        status.className = 'status modified';
-      } else {
-        status.textContent = 'Saved';
-        status.className = 'status saved';
-      }
-    });
-
-    document.getElementById('instructions-editor').addEventListener('input', () => {
-      const current = document.getElementById('instructions-editor').value;
-      const status = document.getElementById('instructions-status');
-      if (current !== originalInstructions) {
-        status.textContent = 'Modified';
-        status.className = 'status modified';
-      } else {
-        status.textContent = 'Saved';
-        status.className = 'status saved';
-      }
-    });
-
-    // Load content
-    async function loadIdentity() {
+    // === Agent Name ===
+    async function loadAgentName() {
       try {
-        const content = await window.pocketAgent.getIdentity();
-        originalIdentity = content;
-        document.getElementById('identity-editor').value = content;
-        document.getElementById('identity-status').textContent = 'Saved';
-        document.getElementById('identity-status').className = 'status saved';
+        const name = await window.pocketAgent.getSetting('personalize.agentName');
+        document.getElementById('agent-name-input').value = name || 'Frankie';
+        const description = await window.pocketAgent.getSetting('personalize.description');
+        document.getElementById('agent-description').value = description || '';
       } catch (error) {
-        showToast('Couldn\'t load identity', 'error');
-        console.error('Error loading identity:', error);
+        console.error('Error loading agent name:', error);
       }
     }
 
-    async function loadInstructions() {
+    async function saveAgentName() {
+      const name = document.getElementById('agent-name-input').value.trim() || 'Frankie';
+      const description = document.getElementById('agent-description').value.trim();
       try {
-        const content = await window.pocketAgent.getInstructions();
-        originalInstructions = content;
-        document.getElementById('instructions-editor').value = content;
-        document.getElementById('instructions-status').textContent = 'Saved';
-        document.getElementById('instructions-status').className = 'status saved';
+        await window.pocketAgent.setSetting('personalize.agentName', name);
+        await window.pocketAgent.setSetting('personalize.description', description);
+        showToast('Saved! Reboot me to apply', 'success');
+        activateReboot();
       } catch (error) {
-        showToast('Couldn\'t load playbook', 'error');
-        console.error('Error loading instructions:', error);
+        showToast('Couldn\'t save name', 'error');
+        console.error('Error saving agent name:', error);
       }
     }
 
-    async function reloadIdentity() {
-      await loadIdentity();
-      showToast('Undone!', 'success');
-    }
-
-    async function reloadInstructions() {
-      await loadInstructions();
-      showToast('Undone!', 'success');
-    }
-
-    // Save content
-    async function saveIdentity() {
-      const content = document.getElementById('identity-editor').value;
-      const status = document.getElementById('identity-status');
-
-      status.textContent = 'Saving...';
-      status.className = 'status saving';
-
+    // === Personality ===
+    async function loadPersonality() {
       try {
-        const result = await window.pocketAgent.saveIdentity(content);
-        if (result.success) {
-          originalIdentity = content;
-          status.textContent = 'Saved';
-          status.className = 'status saved';
-          showToast('Saved! Reboot me to apply ✨', 'success');
-          activateReboot();
-        } else {
-          status.textContent = 'Error';
-          status.className = 'status modified';
-          showToast('Couldn\'t save that', 'error');
-        }
+        const personality = await window.pocketAgent.getSetting('personalize.personality');
+        document.getElementById('personality-editor').value = personality || '';
       } catch (error) {
-        status.textContent = 'Error';
-        status.className = 'status modified';
-        showToast('Couldn\'t save that', 'error');
-        console.error('Error saving identity:', error);
+        console.error('Error loading personality:', error);
       }
     }
 
-    async function saveInstructions() {
-      const content = document.getElementById('instructions-editor').value;
-      const status = document.getElementById('instructions-status');
-
-      status.textContent = 'Saving...';
-      status.className = 'status saving';
-
+    async function savePersonality() {
+      const content = document.getElementById('personality-editor').value;
       try {
-        const result = await window.pocketAgent.saveInstructions(content);
-        if (result.success) {
-          originalInstructions = content;
-          status.textContent = 'Saved';
-          status.className = 'status saved';
-          showToast('Saved! Reboot me to apply ✨', 'success');
-          activateReboot();
-        } else {
-          status.textContent = 'Error';
-          status.className = 'status modified';
-          showToast('Couldn\'t save playbook', 'error');
-        }
+        await window.pocketAgent.setSetting('personalize.personality', content);
+        showToast('Saved! Reboot me to apply', 'success');
+        activateReboot();
       } catch (error) {
-        status.textContent = 'Error';
-        status.className = 'status modified';
-        showToast('Couldn\'t save playbook', 'error');
-        console.error('Error saving instructions:', error);
+        showToast('Couldn\'t save personality', 'error');
+        console.error('Error saving personality:', error);
       }
     }
 
-    // Activate reboot button when changes are saved
+    // === World (Goals, Struggles, Fun Facts) ===
+    async function loadWorld() {
+      try {
+        const goals = await window.pocketAgent.getSetting('personalize.goals');
+        const struggles = await window.pocketAgent.getSetting('personalize.struggles');
+        const funFacts = await window.pocketAgent.getSetting('personalize.funFacts');
+        document.getElementById('world-goals').value = goals || '';
+        document.getElementById('world-struggles').value = struggles || '';
+        document.getElementById('world-funfacts').value = funFacts || '';
+      } catch (error) {
+        console.error('Error loading world:', error);
+      }
+    }
+
+    async function saveWorld() {
+      try {
+        await window.pocketAgent.setSetting('personalize.goals', document.getElementById('world-goals').value);
+        await window.pocketAgent.setSetting('personalize.struggles', document.getElementById('world-struggles').value);
+        await window.pocketAgent.setSetting('personalize.funFacts', document.getElementById('world-funfacts').value);
+        showToast('Saved! Reboot me to apply', 'success');
+        activateReboot();
+      } catch (error) {
+        showToast('Couldn\'t save world', 'error');
+        console.error('Error saving world:', error);
+      }
+    }
+
+    // === System Prompt ===
+    async function loadSystemPrompt() {
+      try {
+        const content = await window.pocketAgent.getSystemPrompt();
+        document.getElementById('system-prompt-display').textContent = content || '(agent not initialized)';
+      } catch (error) {
+        console.error('Error loading system prompt:', error);
+      }
+    }
+
+    // === Reboot ===
     function activateReboot() {
       const btn = document.getElementById('reboot-btn');
       if (btn) {
@@ -1009,7 +834,6 @@
       }
     }
 
-    // Deactivate reboot button
     function deactivateReboot() {
       const btn = document.getElementById('reboot-btn');
       if (btn) {
@@ -1018,28 +842,24 @@
       }
     }
 
-    // Restart agent
     async function restartAgent() {
       const btn = document.getElementById('reboot-btn');
       if (btn && btn.disabled) return;
-
-      showToast('Rebooting... 🔄', 'success');
+      showToast('Rebooting...', 'success');
       try {
         await window.pocketAgent.restartAgent();
         deactivateReboot();
-        showToast('Back online! ✨', 'success');
+        showToast('Back online!', 'success');
       } catch (error) {
         showToast('Couldn\'t restart', 'error');
         console.error('Error restarting agent:', error);
       }
     }
 
-    // Profile functions
-    // Note: 'birthday' is handled separately with the picker
-    const profileFields = ['name', 'location', 'timezone', 'occupation', 'custom'];
+    // === Profile ===
+    const profileFields = ['name', 'location', 'timezone', 'occupation'];
     let locationLookupTimeout = null;
 
-    // Populate birthday day dropdown
     function setupBirthdayPicker() {
       const daySelect = document.getElementById('profile-birthday-day');
       for (let i = 1; i <= 31; i++) {
@@ -1054,16 +874,12 @@
       try {
         const timezones = await window.pocketAgent.getTimezones();
         const select = document.getElementById('profile-timezone');
-
-        // Group timezones by region
         const grouped = {};
         timezones.forEach(tz => {
           const [region] = tz.split('/');
           if (!grouped[region]) grouped[region] = [];
           grouped[region].push(tz);
         });
-
-        // Add options grouped by region
         Object.keys(grouped).sort().forEach(region => {
           const optgroup = document.createElement('optgroup');
           optgroup.label = region;
@@ -1082,16 +898,11 @@
 
     async function loadProfile() {
       try {
-        // Load regular fields
         for (const field of profileFields) {
           const value = await window.pocketAgent.getSetting(`profile.${field}`);
           const input = document.getElementById(`profile-${field}`);
-          if (input) {
-            input.value = value || '';
-          }
+          if (input) input.value = value || '';
         }
-
-        // Load birthday specially (parse "March 15" format)
         const birthday = await window.pocketAgent.getSetting('profile.birthday');
         if (birthday) {
           const match = birthday.match(/^([A-Za-z]+)\s+(\d{1,2})$/);
@@ -1109,24 +920,17 @@
     async function saveProfile() {
       const status = document.getElementById('profile-status');
       status.textContent = 'Saving...';
-
       try {
-        // Save regular fields
         for (const field of profileFields) {
           const input = document.getElementById(`profile-${field}`);
-          if (input) {
-            await window.pocketAgent.setSetting(`profile.${field}`, input.value);
-          }
+          if (input) await window.pocketAgent.setSetting(`profile.${field}`, input.value);
         }
-
-        // Save birthday from dropdowns (combine into "Month Day" format)
         const month = document.getElementById('profile-birthday-month').value;
         const day = document.getElementById('profile-birthday-day').value;
         const birthday = month && day ? `${month} ${day}` : '';
         await window.pocketAgent.setSetting('profile.birthday', birthday);
-
-        status.textContent = 'Saved! Reboot me to apply ✨';
-        showToast('Got it! Reboot me to apply ✨', 'success');
+        status.textContent = 'Saved! Reboot me to apply';
+        showToast('Got it! Reboot me to apply', 'success');
         activateReboot();
       } catch (error) {
         status.textContent = 'Failed to save profile';
@@ -1142,29 +946,14 @@
 
       input.addEventListener('input', (e) => {
         const query = e.target.value.trim();
+        if (locationLookupTimeout) clearTimeout(locationLookupTimeout);
+        if (query.length < 2) { dropdown.classList.remove('show'); return; }
 
-        // Clear previous timeout
-        if (locationLookupTimeout) {
-          clearTimeout(locationLookupTimeout);
-        }
-
-        // Hide dropdown if query is too short
-        if (query.length < 2) {
-          dropdown.classList.remove('show');
-          return;
-        }
-
-        // Debounce the lookup
         locationLookupTimeout = setTimeout(async () => {
           try {
             const results = await window.pocketAgent.lookupLocation(query);
+            if (results.length === 0) { dropdown.classList.remove('show'); return; }
 
-            if (results.length === 0) {
-              dropdown.classList.remove('show');
-              return;
-            }
-
-            // Build dropdown items
             dropdown.innerHTML = results.map(r => `
               <div class="autocomplete-item" data-display="${r.display}" data-timezone="${r.timezone}">
                 <div class="city">${r.city}</div>
@@ -1172,16 +961,13 @@
               </div>
             `).join('');
 
-            // Add click handlers
             dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
               item.addEventListener('click', () => {
                 input.value = item.dataset.display;
-                const timezoneSelect = document.getElementById('profile-timezone');
-                timezoneSelect.value = item.dataset.timezone;
+                document.getElementById('profile-timezone').value = item.dataset.timezone;
                 dropdown.classList.remove('show');
               });
             });
-
             dropdown.classList.add('show');
           } catch (error) {
             console.error('Error looking up location:', error);
@@ -1189,19 +975,10 @@
         }, 300);
       });
 
-      // Hide dropdown when clicking outside
       document.addEventListener('click', (e) => {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.classList.remove('show');
-        }
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
       });
-
-      // Hide dropdown on escape
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          dropdown.classList.remove('show');
-        }
-      });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Escape') dropdown.classList.remove('show'); });
     }
 
     // Toast notifications
@@ -1227,7 +1004,6 @@
         </div>
       `;
       document.body.appendChild(toast);
-
       setTimeout(() => {
         toast.classList.add('exiting');
         setTimeout(() => toast.remove(), 300);
@@ -1236,32 +1012,21 @@
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      // Cmd/Ctrl + S to save current tab
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         const activeTab = document.querySelector('.tab-content.active');
-        if (activeTab.id === 'tab-identity') {
-          saveIdentity();
-        } else if (activeTab.id === 'tab-instructions') {
-          saveInstructions();
-        } else if (activeTab.id === 'tab-profile') {
-          saveProfile();
-        }
+        if (activeTab.id === 'tab-agent-name') saveAgentName();
+        else if (activeTab.id === 'tab-personality') savePersonality();
+        else if (activeTab.id === 'tab-world') saveWorld();
+        else if (activeTab.id === 'tab-profile') saveProfile();
       }
-
-    });
-
-    // Set actual file paths (cross-platform)
-    window.pocketAgent.getIdentityPath().then(p => {
-      document.getElementById('identity-file-path').textContent = p;
-    });
-    window.pocketAgent.getInstructionsPath().then(p => {
-      document.getElementById('instructions-file-path').textContent = p;
     });
 
     // Initialize
-    loadIdentity();
-    loadInstructions();
+    loadAgentName();
+    loadPersonality();
+    loadWorld();
+    loadSystemPrompt();
     setupBirthdayPicker();
     loadTimezones().then(() => loadProfile());
     setupLocationAutocomplete();

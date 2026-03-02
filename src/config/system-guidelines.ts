@@ -1,22 +1,12 @@
 /**
- * Agent Instructions Configuration
+ * System Guidelines — Developer-controlled agent instructions
  *
- * Loads agent instructions from ~/Documents/Pocket-agent/CLAUDE.md
- * This is the workspace CLAUDE.md that the SDK reads AND the user can customize.
- * Single source of truth for agent behavior instructions.
+ * This content is hardcoded and ships with app updates.
+ * Users cannot edit this — it's displayed read-only in the "System Prompt" tab.
+ * User-customizable content lives in SQLite via personalize.* settings.
  */
 
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-
-// Workspace CLAUDE.md - SDK reads this, user edits this via UI
-const INSTRUCTIONS_DIR = path.join(os.homedir(), 'Documents', 'Pocket-agent');
-const INSTRUCTIONS_FILE = path.join(INSTRUCTIONS_DIR, 'CLAUDE.md');
-
-export const DEFAULT_INSTRUCTIONS = `# Pocket Agent Guidelines
-
-## Memory - Use Proactively
+export const SYSTEM_GUIDELINES = `## Memory - Use Proactively
 
 You MUST save important information as you learn it - don't wait to be asked. When they share something meaningful, save it immediately with \`remember\`.
 
@@ -29,7 +19,21 @@ You MUST save important information as you learn it - don't wait to be asked. Wh
 
 **Don't save:** Casual remarks, temporary context, things they're just thinking out loud.
 
+**Keep facts small and atomic:**
+- Max 25-30 words per fact. Many will be under 10.
+- One fact = one piece of information. Never bundle multiple things into one fact.
+- Use specific, descriptive keys (e.g. \`partner_name\`, \`coffee_preference\`, \`current_project\`)
+- If you learn several things at once, save them as separate facts
+
+**Bad:** category: people, key: family, value: "has a partner Sarah who works in marketing, a dog Max who is a golden retriever, mom lives in Melbourne"
+**Good:**
+- category: people, key: partner → "Sarah, works in marketing"
+- category: people, key: pet → "golden retriever named Max"
+- category: people, key: mom_location → "Melbourne"
+
 Use \`memory_search\` before asking something you might already know. When info changes, update it.
+
+**Categories:** user_info, preferences, projects, people, work, notes, decisions
 
 ## Soul - Record What You Learn About Working Together
 
@@ -92,64 +96,4 @@ Use \`daily_log\` to maintain a running journal of what happens each day. The la
 - At natural breakpoints — not every single message
 
 **Keep entries concise** — one line per entry. These are log entries, not transcripts.
-
-## Proactive Behavior
-
-- Save to memory as you learn things - don't batch it
-- Record soul aspects when you genuinely learn something
-- Log daily activity as conversations happen — don't wait until end of day
-- Offer to create tasks/reminders when plans are mentioned
 `;
-
-/**
- * Load instructions from CLAUDE.md
- * This file is created by ensureAgentWorkspace() and editable via the UI.
- * No migration needed - workspace CLAUDE.md is the single source of truth.
- */
-export function loadInstructions(): string {
-  try {
-    if (!fs.existsSync(INSTRUCTIONS_DIR)) {
-      fs.mkdirSync(INSTRUCTIONS_DIR, { recursive: true });
-      console.log('[Instructions] Created directory:', INSTRUCTIONS_DIR);
-    }
-
-    if (fs.existsSync(INSTRUCTIONS_FILE)) {
-      const content = fs.readFileSync(INSTRUCTIONS_FILE, 'utf-8');
-      console.log('[Instructions] Loaded from:', INSTRUCTIONS_FILE);
-      return content;
-    } else {
-      // This shouldn't happen - ensureAgentWorkspace() creates CLAUDE.md
-      // But create a default just in case
-      fs.writeFileSync(INSTRUCTIONS_FILE, DEFAULT_INSTRUCTIONS);
-      console.log('[Instructions] Created default at:', INSTRUCTIONS_FILE);
-      return DEFAULT_INSTRUCTIONS;
-    }
-  } catch (error) {
-    console.error('[Instructions] Error loading:', error);
-    return DEFAULT_INSTRUCTIONS;
-  }
-}
-
-/**
- * Save instructions to file
- */
-export function saveInstructions(content: string): boolean {
-  try {
-    if (!fs.existsSync(INSTRUCTIONS_DIR)) {
-      fs.mkdirSync(INSTRUCTIONS_DIR, { recursive: true });
-    }
-    fs.writeFileSync(INSTRUCTIONS_FILE, content);
-    console.log('[Instructions] Saved to:', INSTRUCTIONS_FILE);
-    return true;
-  } catch (error) {
-    console.error('[Instructions] Error saving:', error);
-    return false;
-  }
-}
-
-/**
- * Get instructions file path
- */
-export function getInstructionsPath(): string {
-  return INSTRUCTIONS_FILE;
-}

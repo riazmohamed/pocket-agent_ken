@@ -19,7 +19,7 @@ export function setSoulMemoryManager(memory: MemoryManager): void {
 export function getSoulSetToolDefinition() {
   return {
     name: 'soul_set',
-    description: 'Set or update an aspect of your soul/identity. Use for communication style, boundaries, relationship dynamics, and learned preferences. Setting an existing aspect updates it.',
+    description: 'Record what you learn about working with this user. Not facts about them, but about your dynamic together: communication corrections, frustrations, boundaries, working style.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -71,9 +71,7 @@ export async function handleSoulSetTool(input: unknown): Promise<string> {
 export function getSoulGetToolDefinition() {
   return {
     name: 'soul_get',
-    description: `Get a specific aspect of your soul/identity.
-
-Use to recall specific aspects you've recorded about yourself.`,
+    description: 'Retrieve a specific soul aspect by name.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -124,9 +122,7 @@ export async function handleSoulGetTool(input: unknown): Promise<string> {
 export function getSoulListToolDefinition() {
   return {
     name: 'soul_list',
-    description: `List all aspects of your soul/identity.
-
-Use when you want to review your current self-understanding.`,
+    description: 'List all recorded soul aspects.',
     input_schema: {
       type: 'object' as const,
       properties: {},
@@ -171,9 +167,7 @@ export async function handleSoulListTool(): Promise<string> {
 export function getSoulDeleteToolDefinition() {
   return {
     name: 'soul_delete',
-    description: `Delete an aspect of your soul/identity.
-
-Use when an aspect is no longer relevant or needs to be completely removed.`,
+    description: 'Delete a soul aspect that is no longer relevant.',
     input_schema: {
       type: 'object' as const,
       properties: {

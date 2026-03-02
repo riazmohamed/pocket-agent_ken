@@ -1,8 +1,7 @@
 import { MemoryManager, Message, DailyLog } from '../memory';
 import { buildMCPServers, buildSdkMcpServers, setMemoryManager, setSoulMemoryManager, ToolsConfig, validateToolsConfig, getCurrentSessionId } from '../tools';
 import { closeBrowserManager } from '../browser';
-import { loadIdentity } from '../config/identity';
-import { loadInstructions } from '../config/instructions';
+import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
 import { SettingsManager } from '../settings';
 import { EventEmitter } from 'events';
 import fs from 'fs';
@@ -349,8 +348,6 @@ class AgentManagerClass extends EventEmitter {
   private chatEngine: ChatEngine | null = null;
   private toolsConfig: ToolsConfig | null = null;
   private initialized: boolean = false;
-  private identity: string = '';
-  private instructions: string = '';
   private abortControllersBySession: Map<string, AbortController> = new Map();
   private processingBySession: Map<string, boolean> = new Map();
   private lastSuggestedPromptBySession: Map<string, string | undefined> = new Map();
@@ -401,8 +398,6 @@ class AgentManagerClass extends EventEmitter {
       process.env.CLAUDE_CONFIG_DIR = path.join(config.dataDir, '.claude');
     }
 
-    this.identity = loadIdentity();
-    this.instructions = loadInstructions();
     setMemoryManager(this.memory);
     setSoulMemoryManager(this.memory);
 
@@ -415,8 +410,6 @@ class AgentManagerClass extends EventEmitter {
     console.log('[AgentManager] Project root:', this.projectRoot);
     console.log('[AgentManager] Workspace:', this.workspace);
     console.log('[AgentManager] Model:', this.model);
-    console.log('[AgentManager] Identity loaded:', this.identity.length, 'chars');
-    console.log('[AgentManager] Instructions loaded:', this.instructions.length, 'chars');
 
     if (this.toolsConfig) {
       const validation = validateToolsConfig(this.toolsConfig);
@@ -1317,17 +1310,28 @@ class AgentManagerClass extends EventEmitter {
     // Including it here would inject it twice.
     const staticParts: string[] = [];
 
-    // Identity, profile, and capabilities are only needed for general (personal assistant) mode
+    // Personalize, guidelines, and profile are only needed for general (personal assistant) mode
+    if (isCoder) {
+      console.log(`[AgentManager] Coder mode — skipping identity, user context, guidelines, capabilities (SDK uses workspace CLAUDE.md)`);
+    }
     if (!isCoder) {
-      if (this.identity) {
-        staticParts.push(this.identity);
+      // 1. Agent Identity: name, description, personality
+      const identity = SettingsManager.getFormattedIdentity();
+      if (identity) {
+        staticParts.push(identity);
+        console.log(`[AgentManager] Identity injected: ${identity.length} chars`);
       }
 
-      // Add user profile from settings
-      const userProfile = SettingsManager.getFormattedProfile();
-      if (userProfile) {
-        staticParts.push(userProfile);
+      // 2. User Context: profile + world
+      const userContext = SettingsManager.getFormattedUserContext();
+      if (userContext) {
+        staticParts.push(userContext);
+        console.log(`[AgentManager] User context injected: ${userContext.length} chars`);
       }
+
+      // 3. System Guidelines: developer-controlled instructions
+      staticParts.push(SYSTEM_GUIDELINES);
+      console.log(`[AgentManager] System guidelines injected: ${SYSTEM_GUIDELINES.length} chars`);
     }
 
     // Look up per-session working directory (falls back to global workspace)
@@ -1335,12 +1339,11 @@ class AgentManagerClass extends EventEmitter {
     const effectiveCwd = sessionWorkingDir || this.workspace;
     console.log(`[AgentManager] buildPersistentOptions session=${sessionId} mode=${sessionMode} | sessionWorkingDir=${sessionWorkingDir || 'null'} | effectiveCwd=${effectiveCwd}`);
 
-    // Capabilities prompt only for general mode
-    if (!isCoder) {
-      const capabilities = this.buildCapabilitiesPrompt(effectiveCwd);
-      if (capabilities) {
-        staticParts.push(capabilities);
-      }
+    // Log prompt summary for the mode
+    if (isCoder) {
+      console.log(`[AgentManager] Coder mode prompt — static: ${staticParts.join('').length} chars (SDK reads CLAUDE.md from workspace cwd)`);
+    } else {
+      console.log(`[AgentManager] General mode prompt — static: ${staticParts.join('\n\n').length} chars`);
     }
 
     // Get thinking level config — only Anthropic models support thinking/effort.
@@ -1534,124 +1537,6 @@ class AgentManagerClass extends EventEmitter {
     return options;
   }
 
-  private buildCapabilitiesPrompt(workspaceOverride?: string): string {
-    const effectiveWorkspace = workspaceOverride || this.workspace;
-    return `## Your Capabilities as Pocket Agent
-
-You are a persistent personal AI assistant with special capabilities.
-
-### Your Workspace
-Your working directory is: ${effectiveWorkspace}
-This is an isolated environment separate from the application code.
-All file operations (reading, writing, creating projects) happen here by default.
-Feel free to create subdirectories, projects, and files as needed.
-
-### Scheduling & Reminders
-Use the schedule_task tool to create reminders. Three schedule formats are supported:
-
-- One-time: "in 10 minutes", "in 2 hours", "tomorrow 3pm", "monday 9am"
-- Interval: "30m", "2h", "1d" (runs every X)
-- Cron: "0 9 * * *" (minute hour day month weekday)
-
-Examples:
-- schedule_task(name="call_mom", schedule="in 2 hours", prompt="Time to call mom!")
-- schedule_task(name="water", schedule="2h", prompt="Time to drink water!")
-- schedule_task(name="standup", schedule="0 9 * * 1-5", prompt="Daily standup time")
-
-Use list_scheduled_tasks to see all scheduled tasks.
-Use delete_scheduled_task to remove a task.
-
-RULES:
-- Use short, clean names (water, standup, break) - NO timestamps
-- One-time jobs auto-delete after running
-
-### Calendar Events
-Use calendar tools to manage events with reminders:
-
-- calendar_add: Create an event with optional reminder
-- calendar_list: List events for a date
-- calendar_upcoming: Show upcoming events
-- calendar_delete: Remove an event
-
-Time formats: "today 3pm", "tomorrow 9am", "monday 2pm", "in 2 hours", ISO format
-Reminders trigger automatically before the event starts.
-
-### Tasks / Todos
-Use task tools to manage tasks with due dates and priorities:
-
-- task_add: Create a task with optional due date, priority (low/medium/high), reminder
-- task_list: List tasks by status (pending/completed/all)
-- task_complete: Mark a task as done
-- task_delete: Remove a task
-- task_due: Show tasks due soon
-
-Priorities: low, medium, high
-Status: pending, in_progress, completed
-
-### Memory & Facts
-You have persistent memory! PROACTIVELY save important info when the user shares it.
-
-Use memory tools:
-- remember: Save a fact (category, key, value)
-- forget: Delete a fact
-- list_facts: List all facts or by category
-- memory_search: Search facts by keyword
-
-Categories: user_info, preferences, projects, people, work, notes, decisions
-
-IMPORTANT: Save facts PROACTIVELY when user mentions:
-- Personal info (name, birthday, location)
-- Preferences (favorite things, likes/dislikes)
-- Projects they're working on
-- People important to them
-- Work/job details
-
-### Browser Automation
-You have a browser tool for JS rendering and authenticated sessions:
-
-\`\`\`
-Actions:
-- navigate: Go to URL
-- screenshot: Capture page image
-- click: Click an element
-- type: Enter text in input
-- evaluate: Run JavaScript
-- extract: Get page data (text/html/links/tables/structured)
-- scroll: Scroll page or element (up/down/left/right)
-- hover: Hover over element (triggers dropdowns)
-- download: Download a file
-- upload: Upload file to input
-- tabs_list: List open tabs (CDP tier only)
-- tabs_open: Open new tab (CDP tier only)
-- tabs_close: Close a tab (CDP tier only)
-- tabs_focus: Switch to tab (CDP tier only)
-
-Tiers:
-- Electron (default): Hidden window for JS rendering
-- CDP: Connects to user's Chrome for logged-in sessions + multi-tab
-
-Set requires_auth=true for pages needing login.
-For CDP, user must start Chrome with: --remote-debugging-port=9222
-\`\`\`
-
-### Image Display
-When you take screenshots or generate images, the image will be automatically displayed
-in the chat (both desktop and Telegram). You can reference screenshots in your responses
-and the user will see them inline.
-
-### Native Notifications
-You can send native desktop notifications:
-
-\`\`\`bash
-# Use the notify tool to alert the user
-notify(title="Task Complete", body="Your download has finished")
-notify(title="Reminder", body="Meeting in 5 minutes", urgency="critical")
-\`\`\`
-
-### Limitations
-- Cannot send SMS or make calls
-- For full desktop automation, user needs to enable Computer Use (Docker-based)`;
-  }
 
   private extractFromMessage(message: unknown, current: string): string {
     const msg = message as { type?: string; subtype?: string; message?: { content?: unknown }; output?: string; result?: string; errors?: string[] };
@@ -2429,6 +2314,23 @@ notify(title="Reminder", body="Meeting in 5 minutes", urgency="critical")
 
   saveFact(category: string, subject: string, content: string): void {
     this.memory?.saveFact(category, subject, content);
+  }
+
+  /**
+   * Get the assembled General mode system prompt for display in the UI.
+   */
+  getSystemPrompt(): { staticPrompt: string; dynamicPrompt: string } | null {
+    if (!this.chatEngine) return null;
+    return this.chatEngine.buildSystemPrompt();
+  }
+
+  /**
+   * Get only developer-controlled prompt sections (Ken's Settings + Capabilities).
+   * Excludes user-editable content and dynamic injections.
+   */
+  getDeveloperPrompt(): string | null {
+    if (!this.chatEngine) return null;
+    return this.chatEngine.getDeveloperPrompt();
   }
 
   getAllFacts(): Array<{ id: number; category: string; subject: string; content: string }> {

@@ -12,8 +12,7 @@ import type { ConnectedDevice, ClientChatMessage } from '../channels/ios/types';
 import { transcribeAudio } from '../utils/transcribe';
 import { SettingsManager, SETTINGS_SCHEMA } from '../settings';
 import { THEMES } from '../settings/themes';
-import { loadIdentity, saveIdentity, getIdentityPath, DEFAULT_IDENTITY } from '../config/identity';
-import { loadInstructions, saveInstructions, getInstructionsPath, DEFAULT_INSTRUCTIONS } from '../config/instructions';
+import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
 import { DEFAULT_COMMANDS } from '../config/commands';
 import { loadWorkflowCommands, loadWorkflowCommandsFromDir } from '../config/commands-loader';
 import { closeTaskDb } from '../tools';
@@ -394,9 +393,77 @@ function ensureCoderWorkingDirectory(sessionId: string): void {
 }
 
 /**
+ * Migrate identity.md content into personalize.* SQLite settings.
+ * One-time migration: parses agent name from heading, extracts personality sections,
+ * migrates profile.custom to personalize.world, renames identity.md to .migrated.
+ */
+function migratePersonalizeFromIdentity(): void {
+  if (SettingsManager.get('personalize._migrated')) return;
+
+  const workspace = getAgentWorkspace();
+  const identityPath = path.join(workspace, 'identity.md');
+
+  try {
+    if (fs.existsSync(identityPath)) {
+      const content = fs.readFileSync(identityPath, 'utf-8');
+
+      // Parse agent name from "# Name" heading
+      const nameMatch = content.match(/^#\s+(.+?)(?:\s+the\s+\w+)?$/m);
+      if (nameMatch) {
+        const rawName = nameMatch[1].trim();
+        // Only set if it differs from default
+        if (rawName && rawName !== 'Franky the Cat') {
+          SettingsManager.set('personalize.agentName', rawName);
+          console.log(`[Migration] Set agent name: ${rawName}`);
+        }
+      }
+
+      // Extract personality: everything from ## Vibe through ## Don't section
+      const vibeMatch = content.match(/## Vibe[\s\S]*?(?=\n##[^#]|$)/);
+      const dontMatch = content.match(/## Don't[\s\S]*?(?=\n##[^#]|$)/);
+      if (vibeMatch || dontMatch) {
+        const parts: string[] = [];
+        if (vibeMatch) parts.push(vibeMatch[0].trim());
+        if (dontMatch) parts.push(dontMatch[0].trim());
+        const personality = parts.join('\n\n');
+        SettingsManager.set('personalize.personality', personality);
+        console.log(`[Migration] Set personality: ${personality.length} chars`);
+      }
+
+      // Rename identity.md
+      fs.renameSync(identityPath, identityPath + '.migrated');
+      console.log('[Migration] Renamed identity.md → identity.md.migrated');
+    }
+
+    // Migrate profile.custom → personalize.funFacts
+    const profileCustom = SettingsManager.get('profile.custom');
+    if (profileCustom) {
+      SettingsManager.set('personalize.funFacts', profileCustom);
+      SettingsManager.delete('profile.custom');
+      console.log(`[Migration] Moved profile.custom → personalize.funFacts: ${profileCustom.length} chars`);
+    }
+
+    // Migrate old personalize.world (from earlier migration) → personalize.funFacts
+    const oldWorld = SettingsManager.get('personalize.world');
+    if (oldWorld) {
+      const existing = SettingsManager.get('personalize.funFacts');
+      SettingsManager.set('personalize.funFacts', existing ? `${existing}\n\n${oldWorld}` : oldWorld);
+      SettingsManager.delete('personalize.world');
+      console.log(`[Migration] Moved personalize.world → personalize.funFacts: ${oldWorld.length} chars`);
+    }
+  } catch (err) {
+    console.error('[Migration] Personalize migration failed:', err);
+  }
+
+  // Set flag regardless of success to prevent re-running
+  SettingsManager.set('personalize._migrated', 'true');
+  console.log('[Migration] Personalize migration complete');
+}
+
+/**
  * Ensure the agent workspace directory exists.
  * Creates it if missing (on first run, after onboarding, or if deleted).
- * Sets up CLAUDE.md and .claude/commands for the SDK to load.
+ * Sets up .claude/commands for workflow commands.
  */
 function ensureAgentWorkspace(): string {
   const workspace = getAgentWorkspace();
@@ -426,8 +493,6 @@ function ensureAgentWorkspace(): string {
 
   // Repopulate config files on version update
   if (isVersionUpdate) {
-    const identityPath = path.join(workspace, 'identity.md');
-    const claudeMdPath = path.join(workspace, 'CLAUDE.md');
     const backupDir = path.join(workspace, '.backups');
 
     // Create backup directory
@@ -435,26 +500,8 @@ function ensureAgentWorkspace(): string {
       fs.mkdirSync(backupDir, { recursive: true });
     }
 
-    // Identity: only create if missing — never overwrite user customizations
-    if (fs.existsSync(identityPath)) {
-      // Save a backup of the latest defaults so users can reference what changed
-      const defaultsBackup = path.join(backupDir, `identity-defaults-${currentVersion}.md`);
-      fs.writeFileSync(defaultsBackup, DEFAULT_IDENTITY);
-      console.log(`[Main] Saved default identity.md for reference: ${defaultsBackup}`);
-    } else {
-      fs.writeFileSync(identityPath, DEFAULT_IDENTITY);
-      console.log('[Main] Created identity.md with defaults (first install)');
-    }
-
-    // Instructions: only create if missing — never overwrite user customizations
-    if (fs.existsSync(claudeMdPath)) {
-      const defaultsBackup = path.join(backupDir, `CLAUDE-defaults-${currentVersion}.md`);
-      fs.writeFileSync(defaultsBackup, DEFAULT_INSTRUCTIONS);
-      console.log(`[Main] Saved default CLAUDE.md for reference: ${defaultsBackup}`);
-    } else {
-      fs.writeFileSync(claudeMdPath, DEFAULT_INSTRUCTIONS);
-      console.log('[Main] Created CLAUDE.md with defaults (first install)');
-    }
+    // identity.md and CLAUDE.md are no longer managed here.
+    // Personalize settings are in SQLite. Coder mode generates its own CLAUDE.md per session.
 
     // Populate default workflow commands
     // If .claude is a symlink from a previous install, replace it with a real directory
@@ -1627,23 +1674,30 @@ function setupIPC(): void {
           iosChannel.setSoulDeleteHandler((id) => { memory?.deleteSoulAspectById(id); return true; });
           iosChannel.setFactsGraphHandler(async () => memory?.getFactsGraphData() || { nodes: [] as never[], links: [] as never[] });
           iosChannel.setCustomizeGetHandler(() => ({
-            identity: loadIdentity(), instructions: loadInstructions(),
+            agentName: SettingsManager.get('personalize.agentName') || 'Frankie',
+            personality: SettingsManager.get('personalize.personality') || '',
+            goals: SettingsManager.get('personalize.goals') || '',
+            struggles: SettingsManager.get('personalize.struggles') || '',
+            funFacts: SettingsManager.get('personalize.funFacts') || '',
+            systemGuidelines: SYSTEM_GUIDELINES,
             profile: {
               name: SettingsManager.get('profile.name') || '', occupation: SettingsManager.get('profile.occupation') || '',
               location: SettingsManager.get('profile.location') || '', timezone: SettingsManager.get('profile.timezone') || '',
-              birthday: SettingsManager.get('profile.birthday') || '', custom: SettingsManager.get('profile.custom') || '',
+              birthday: SettingsManager.get('profile.birthday') || '',
             },
           }));
-          iosChannel.setCustomizeSaveHandler((identity, instructions, profile) => {
-            if (identity !== undefined) saveIdentity(identity);
-            if (instructions !== undefined) saveInstructions(instructions);
-            if (profile) {
-              if (profile.name !== undefined) SettingsManager.set('profile.name', profile.name);
-              if (profile.occupation !== undefined) SettingsManager.set('profile.occupation', profile.occupation);
-              if (profile.location !== undefined) SettingsManager.set('profile.location', profile.location);
-              if (profile.timezone !== undefined) SettingsManager.set('profile.timezone', profile.timezone);
-              if (profile.birthday !== undefined) SettingsManager.set('profile.birthday', profile.birthday);
-              if (profile.custom !== undefined) SettingsManager.set('profile.custom', profile.custom);
+          iosChannel.setCustomizeSaveHandler((data) => {
+            if (data.agentName !== undefined) SettingsManager.set('personalize.agentName', data.agentName);
+            if (data.personality !== undefined) SettingsManager.set('personalize.personality', data.personality);
+            if (data.goals !== undefined) SettingsManager.set('personalize.goals', data.goals);
+            if (data.struggles !== undefined) SettingsManager.set('personalize.struggles', data.struggles);
+            if (data.funFacts !== undefined) SettingsManager.set('personalize.funFacts', data.funFacts);
+            if (data.profile) {
+              if (data.profile.name !== undefined) SettingsManager.set('profile.name', data.profile.name);
+              if (data.profile.occupation !== undefined) SettingsManager.set('profile.occupation', data.profile.occupation);
+              if (data.profile.location !== undefined) SettingsManager.set('profile.location', data.profile.location);
+              if (data.profile.timezone !== undefined) SettingsManager.set('profile.timezone', data.profile.timezone);
+              if (data.profile.birthday !== undefined) SettingsManager.set('profile.birthday', data.profile.birthday);
             }
           });
           iosChannel.setRoutinesListHandler(() => scheduler?.getAllJobs() || []);
@@ -1882,32 +1936,9 @@ function setupIPC(): void {
     }
   });
 
-  // Customize - Identity
-  ipcMain.handle('customize:getIdentity', async () => {
-    return loadIdentity();
-  });
-
-  ipcMain.handle('customize:saveIdentity', async (_, content: string) => {
-    const success = saveIdentity(content);
-    return { success };
-  });
-
-  ipcMain.handle('customize:getIdentityPath', async () => {
-    return getIdentityPath();
-  });
-
-  // Customize - Instructions
-  ipcMain.handle('customize:getInstructions', async () => {
-    return loadInstructions();
-  });
-
-  ipcMain.handle('customize:saveInstructions', async (_, content: string) => {
-    const success = saveInstructions(content);
-    return { success };
-  });
-
-  ipcMain.handle('customize:getInstructionsPath', async () => {
-    return getInstructionsPath();
+  // Customize - System prompt (read-only, developer-controlled content only)
+  ipcMain.handle('customize:getSystemPrompt', async () => {
+    return AgentManager.getDeveloperPrompt() || '';
   });
 
   // Location and timezone lookup
@@ -2655,23 +2686,30 @@ async function initializeAgent(): Promise<void> {
         iosChannel.setSoulDeleteHandler((id) => { memory?.deleteSoulAspectById(id); return true; });
         iosChannel.setFactsGraphHandler(async () => memory?.getFactsGraphData() || { nodes: [] as never[], links: [] as never[] });
         iosChannel.setCustomizeGetHandler(() => ({
-          identity: loadIdentity(), instructions: loadInstructions(),
+          agentName: SettingsManager.get('personalize.agentName') || 'Frankie',
+          personality: SettingsManager.get('personalize.personality') || '',
+          goals: SettingsManager.get('personalize.goals') || '',
+          struggles: SettingsManager.get('personalize.struggles') || '',
+          funFacts: SettingsManager.get('personalize.funFacts') || '',
+          systemGuidelines: SYSTEM_GUIDELINES,
           profile: {
             name: SettingsManager.get('profile.name') || '', occupation: SettingsManager.get('profile.occupation') || '',
             location: SettingsManager.get('profile.location') || '', timezone: SettingsManager.get('profile.timezone') || '',
-            birthday: SettingsManager.get('profile.birthday') || '', custom: SettingsManager.get('profile.custom') || '',
+            birthday: SettingsManager.get('profile.birthday') || '',
           },
         }));
-        iosChannel.setCustomizeSaveHandler((identity, instructions, profile) => {
-          if (identity !== undefined) saveIdentity(identity);
-          if (instructions !== undefined) saveInstructions(instructions);
-          if (profile) {
-            if (profile.name !== undefined) SettingsManager.set('profile.name', profile.name);
-            if (profile.occupation !== undefined) SettingsManager.set('profile.occupation', profile.occupation);
-            if (profile.location !== undefined) SettingsManager.set('profile.location', profile.location);
-            if (profile.timezone !== undefined) SettingsManager.set('profile.timezone', profile.timezone);
-            if (profile.birthday !== undefined) SettingsManager.set('profile.birthday', profile.birthday);
-            if (profile.custom !== undefined) SettingsManager.set('profile.custom', profile.custom);
+        iosChannel.setCustomizeSaveHandler((data) => {
+          if (data.agentName !== undefined) SettingsManager.set('personalize.agentName', data.agentName);
+          if (data.personality !== undefined) SettingsManager.set('personalize.personality', data.personality);
+          if (data.goals !== undefined) SettingsManager.set('personalize.goals', data.goals);
+          if (data.struggles !== undefined) SettingsManager.set('personalize.struggles', data.struggles);
+          if (data.funFacts !== undefined) SettingsManager.set('personalize.funFacts', data.funFacts);
+          if (data.profile) {
+            if (data.profile.name !== undefined) SettingsManager.set('profile.name', data.profile.name);
+            if (data.profile.occupation !== undefined) SettingsManager.set('profile.occupation', data.profile.occupation);
+            if (data.profile.location !== undefined) SettingsManager.set('profile.location', data.profile.location);
+            if (data.profile.timezone !== undefined) SettingsManager.set('profile.timezone', data.profile.timezone);
+            if (data.profile.birthday !== undefined) SettingsManager.set('profile.birthday', data.profile.birthday);
           }
         });
         iosChannel.setRoutinesListHandler(() => scheduler?.getAllJobs() || []);
@@ -3006,6 +3044,9 @@ app.whenReady().then(async () => {
     const oldConfigPath = path.join(userDataPath, 'config.json');
     await SettingsManager.migrateFromConfig(oldConfigPath);
     console.log('[Main] Settings initialized');
+
+    // Migrate identity.md → personalize settings (one-time)
+    migratePersonalizeFromIdentity();
 
     // Initialize memory (shared with settings)
     console.log('[Main] Initializing memory...');

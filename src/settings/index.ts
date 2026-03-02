@@ -403,6 +403,88 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     type: 'string',
   },
 
+  // Personalize settings (General mode identity + personality)
+  {
+    key: 'personalize.agentName',
+    defaultValue: 'Frankie',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Agent Name',
+    description: 'Your agent\'s name',
+    type: 'string',
+  },
+  {
+    key: 'personalize.description',
+    defaultValue: 'You are a personal AI assistant who lives inside Pocket Agent. You help with whatever the user needs, remember everything, and keep things fun along the way.',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Agent Description',
+    description: 'A brief description of who the agent is',
+    type: 'textarea',
+  },
+  {
+    key: 'personalize.personality',
+    defaultValue: `## Vibe
+
+Talk like texting a close friend. Chill, casual, real.
+
+- Lowercase always (except proper nouns, acronyms, or emphasis)
+- Skip periods at end of messages
+- Emojis sparingly
+- Direct and concise - no fluff, no corporate speak
+- Joke around, be a little sarcastic, keep it fun
+- If something's unclear, ask instead of guessing
+- Reference past convos naturally
+
+## Don't
+
+- Don't be cringe or try too hard
+- Don't over-explain or hedge
+- Don't be fake positive
+- Don't start every message the same way`,
+    encrypted: false,
+    category: 'personalize',
+    label: 'Personality',
+    description: 'How the agent acts and communicates',
+    type: 'textarea',
+  },
+  {
+    key: 'personalize.goals',
+    defaultValue: '',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Goals',
+    description: 'What you\'re working toward',
+    type: 'textarea',
+  },
+  {
+    key: 'personalize.struggles',
+    defaultValue: '',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Struggles',
+    description: 'What you\'re dealing with',
+    type: 'textarea',
+  },
+  {
+    key: 'personalize.funFacts',
+    defaultValue: '',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Fun Facts',
+    description: 'Interests, hobbies, people in your life',
+    type: 'textarea',
+  },
+  {
+    key: 'personalize._migrated',
+    defaultValue: '',
+    encrypted: false,
+    category: 'personalize',
+    label: 'Migration Flag',
+    description: 'Internal flag for identity.md migration',
+    type: 'string',
+  },
+
   // User Profile settings
   {
     key: 'profile.name',
@@ -448,15 +530,6 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     label: 'Birthday',
     description: 'Your birthday (e.g., March 15)',
     type: 'string',
-  },
-  {
-    key: 'profile.custom',
-    defaultValue: '',
-    encrypted: false,
-    category: 'profile',
-    label: 'Additional Info',
-    description: 'Any other information about yourself',
-    type: 'textarea',
   },
 ];
 
@@ -780,6 +853,71 @@ class SettingsManagerClass {
   }
 
   /**
+   * Get agent identity: name, description, personality (who am I).
+   */
+  getFormattedIdentity(): string {
+    const agentName = this.get('personalize.agentName') || 'Frankie';
+    const description = this.get('personalize.description');
+    const personality = this.get('personalize.personality');
+
+    const lines: string[] = [
+      `# ${agentName}`,
+    ];
+
+    if (description) {
+      lines.push('');
+      lines.push(description);
+    }
+
+    if (personality) {
+      lines.push('');
+      lines.push(personality);
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Get user context: profile details + world (goals, struggles, fun facts).
+   * Groups all "about the user" content together.
+   */
+  getFormattedUserContext(): string {
+    const profile = this.getFormattedProfile();
+    const goals = this.get('personalize.goals');
+    const struggles = this.get('personalize.struggles');
+    const funFacts = this.get('personalize.funFacts');
+
+    const parts: string[] = [];
+
+    if (profile) {
+      parts.push(profile);
+    }
+
+    const hasWorld = goals || struggles || funFacts;
+    if (hasWorld) {
+      const worldLines: string[] = ['## Your World'];
+      if (goals) {
+        worldLines.push('');
+        worldLines.push('### Goals');
+        worldLines.push(goals);
+      }
+      if (struggles) {
+        worldLines.push('');
+        worldLines.push('### Struggles');
+        worldLines.push(struggles);
+      }
+      if (funFacts) {
+        worldLines.push('');
+        worldLines.push('### Fun Facts');
+        worldLines.push(funFacts);
+      }
+      parts.push(worldLines.join('\n'));
+    }
+
+    return parts.join('\n\n');
+  }
+
+  /**
    * Get formatted user profile for agent context
    */
   getFormattedProfile(): string {
@@ -788,10 +926,9 @@ class SettingsManagerClass {
     const timezone = this.get('profile.timezone');
     const occupation = this.get('profile.occupation');
     const birthday = this.get('profile.birthday');
-    const custom = this.get('profile.custom');
 
     // If no profile data, return empty string
-    if (!name && !location && !timezone && !occupation && !birthday && !custom) {
+    if (!name && !location && !timezone && !occupation && !birthday) {
       return '';
     }
 
@@ -802,11 +939,6 @@ class SettingsManagerClass {
     if (timezone) lines.push(`- **Timezone:** ${timezone}`);
     if (occupation) lines.push(`- **Occupation:** ${occupation}`);
     if (birthday) lines.push(`- **Birthday:** ${birthday}`);
-    if (custom) {
-      lines.push('');
-      lines.push('### Additional Information');
-      lines.push(custom);
-    }
 
     return lines.join('\n');
   }

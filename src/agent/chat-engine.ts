@@ -9,8 +9,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { MemoryManager } from '../memory';
 import { ToolsConfig, setCurrentSessionId, runWithSessionId } from '../tools';
 import { SettingsManager } from '../settings';
-import { loadIdentity } from '../config/identity';
-import { loadInstructions } from '../config/instructions';
+import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
 import { createChatClient, getProviderForModel } from './chat-providers';
 import { getChatToolDefinitions, getWebSearchTool, ChatToolSet } from './chat-tools';
 import type { AgentStatus, ImageContent, AttachmentInfo, ProcessResult, MediaAttachment } from './index';
@@ -677,52 +676,60 @@ export class ChatEngine {
    * is inside the cached block, the model sees stale time in long conversations.
    * Splitting ensures the model always gets fresh dynamic context.
    */
-  private buildSystemPrompt(sessionId?: string): { staticPrompt: string; dynamicPrompt: string } {
+  buildSystemPrompt(sessionId?: string): { staticPrompt: string; dynamicPrompt: string } {
     // === Static context (cached) ===
+    // Order: Identity → User Context → Guidelines → Capabilities
     const staticParts: string[] = [];
 
-    const identity = loadIdentity();
+    // 1. Agent Identity: name, description, personality (who am I)
+    const identity = SettingsManager.getFormattedIdentity();
     if (identity) {
       staticParts.push(identity);
+      console.log(`[ChatEngine] Identity injected: ${identity.length} chars`);
     }
 
-    const instructions = loadInstructions();
-    if (instructions) {
-      staticParts.push(instructions);
+    // 2. User Context: profile + world (who is my user)
+    const userContext = SettingsManager.getFormattedUserContext();
+    if (userContext) {
+      staticParts.push(userContext);
+      console.log(`[ChatEngine] User context injected: ${userContext.length} chars`);
     }
 
-    const profile = SettingsManager.getFormattedProfile();
-    if (profile) {
-      staticParts.push(profile);
-    }
-
-    staticParts.push(this.buildCapabilitiesPrompt());
+    // 3. System Guidelines: developer-controlled instructions (how to behave)
+    staticParts.push(SYSTEM_GUIDELINES);
+    console.log(`[ChatEngine] System guidelines injected: ${SYSTEM_GUIDELINES.length} chars`);
 
     // === Dynamic context (never cached) ===
     const dynamicParts: string[] = [];
 
     const lastUserMsg = sessionId ? this.getLastUserMessageTimestamp(sessionId) : undefined;
-    dynamicParts.push(this.buildTemporalContext(lastUserMsg));
+    const temporal = this.buildTemporalContext(lastUserMsg);
+    dynamicParts.push(temporal);
+    console.log(`[ChatEngine] Temporal context injected: ${temporal.length} chars`);
 
     const facts = this.memory.getFactsForContext();
     if (facts) {
       dynamicParts.push(facts);
+      console.log(`[ChatEngine] Facts injected: ${facts.length} chars`);
     }
 
     const soul = this.memory.getSoulContext();
     if (soul) {
       dynamicParts.push(soul);
+      console.log(`[ChatEngine] Soul injected: ${soul.length} chars`);
     }
 
     const dailyLogs = this.memory.getDailyLogsContext(3);
     if (dailyLogs) {
       dynamicParts.push(dailyLogs);
+      console.log(`[ChatEngine] Daily logs injected: ${dailyLogs.length} chars`);
     }
 
-    return {
-      staticPrompt: staticParts.join('\n\n'),
-      dynamicPrompt: dynamicParts.join('\n\n'),
-    };
+    const staticPrompt = staticParts.join('\n\n');
+    const dynamicPrompt = dynamicParts.join('\n\n');
+    console.log(`[ChatEngine] General mode prompt assembled — static: ${staticPrompt.length} chars, dynamic: ${dynamicPrompt.length} chars, total: ${staticPrompt.length + dynamicPrompt.length} chars`);
+
+    return { staticPrompt, dynamicPrompt };
   }
 
   private getLastUserMessageTimestamp(sessionId: string): string | undefined {
@@ -804,43 +811,13 @@ export class ChatEngine {
     return lines.join('\n');
   }
 
-  private buildCapabilitiesPrompt(): string {
-    return `## Your Capabilities
-
-You are a persistent personal AI assistant with these tools available:
-
-### Memory & Facts
-- remember: Save a fact (category, key, value)
-- forget: Delete a fact
-- list_facts: List all facts or by category
-- memory_search: Search facts by keyword
-
-### Scheduling & Reminders
-- schedule_task: Create reminders with one-time, interval, or cron schedules
-- create_reminder: Quick reminder shortcut
-- list_scheduled_tasks: See all scheduled tasks
-- delete_scheduled_task: Remove a task
-
-### Calendar & Tasks
-- calendar_add, calendar_list, calendar_upcoming, calendar_delete
-- task_add, task_list, task_complete, task_delete, task_due
-
-### Browser Automation
-- browser: Navigate, screenshot, click, type, evaluate, extract, scroll, download
-
-### Shell Commands
-- shell_command: Execute shell commands (bash/PowerShell) for file operations, git, scripts, system tasks
-
-### Web Access
-- web_search: Search the web for current information
-- web_fetch: Fetch and read content from URLs
-
-### Notifications
-- notify: Send native desktop notifications
-
-### Important
-- Save facts PROACTIVELY when user mentions personal info, preferences, projects, people, or work details
-- Categories: user_info, preferences, projects, people, work, notes, decisions`;
+  /**
+   * Get the developer-controlled prompt (System Guidelines).
+   * This is what the "System Prompt" tab displays in the Personalize UI.
+   * Excludes user-editable content (personalize, profile) and dynamic injections.
+   */
+  getDeveloperPrompt(): string {
+    return SYSTEM_GUIDELINES;
   }
 
   /**

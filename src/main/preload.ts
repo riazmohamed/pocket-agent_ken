@@ -91,12 +91,7 @@ contextBridge.exposeInMainWorld('pocketAgent', {
   openImage: (src: string) => ipcRenderer.invoke('app:openImage', src),
 
   // Customize
-  getIdentity: () => ipcRenderer.invoke('customize:getIdentity'),
-  saveIdentity: (content: string) => ipcRenderer.invoke('customize:saveIdentity', content),
-  getIdentityPath: () => ipcRenderer.invoke('customize:getIdentityPath'),
-  getInstructions: () => ipcRenderer.invoke('customize:getInstructions'),
-  saveInstructions: (content: string) => ipcRenderer.invoke('customize:saveInstructions', content),
-  getInstructionsPath: () => ipcRenderer.invoke('customize:getInstructionsPath'),
+  getSystemPrompt: () => ipcRenderer.invoke('customize:getSystemPrompt'),
 
   // Location and timezone
   lookupLocation: (query: string) => ipcRenderer.invoke('location:lookup', query),
@@ -264,12 +259,7 @@ declare global {
       openPath: (filePath: string) => Promise<void>;
       openImage: (src: string) => Promise<void>;
       // Customize
-      getIdentity: () => Promise<string>;
-      saveIdentity: (content: string) => Promise<{ success: boolean }>;
-      getIdentityPath: () => Promise<string>;
-      getInstructions: () => Promise<string>;
-      saveInstructions: (content: string) => Promise<{ success: boolean }>;
-      getInstructionsPath: () => Promise<string>;
+      getSystemPrompt: () => Promise<string>;
       // Location and timezone
       lookupLocation: (query: string) => Promise<Array<{ city: string; country: string; province: string; timezone: string; display: string }>>;
       getTimezones: () => Promise<string[]>;
