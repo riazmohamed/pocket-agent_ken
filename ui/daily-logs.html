@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data:;">
   <title>Daily Logs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0b;
@@ -26,6 +28,32 @@
       --radius: 16px;
       --radius-sm: 10px;
     }
+
+    .notyf__toast {
+      background: rgba(28, 28, 30, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 0;
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      min-width: 200px; max-width: 360px;
+      overflow: visible;
+    }
+    .notyf__toast--success { box-shadow: 0 8px 32px rgba(34, 197, 94, 0.15), 0 0 0 1px rgba(34, 197, 94, 0.2) inset; }
+    .notyf__toast--error { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.2) inset; }
+    .notyf__ripple { display: none; }
+    .notyf__wrapper { padding: 14px 18px; display: flex; align-items: center; }
+    .notyf__icon { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+    .notyf__toast--success .notyf__icon { background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(74,222,128,0.1)); }
+    .notyf__toast--error .notyf__icon { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(248,113,113,0.1)); }
+    .notyf__message { color: var(--text-primary); line-height: 1.4; }
+    .notyf__dismiss { margin-right: 0; }
+    .notyf__dismiss-btn { color: var(--text-muted); opacity: 0.6; }
+    .notyf__dismiss-btn:hover { opacity: 1; }
 
     * {
       box-sizing: border-box;
@@ -219,117 +247,9 @@
     }
 
     /* Toast - Premium glassmorphism design */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      min-width: 200px;
-      max-width: 360px;
-      background: rgba(28, 28, 30, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 14px 18px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      z-index: 1000;
-      overflow: hidden;
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-      color: var(--text-primary);
-    }
-
-    .toast::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 100%;
-      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary) 100%);
-      animation: toastProgress 2.5s linear forwards;
-      transform-origin: left;
-    }
-
-    .toast.error {
-      box-shadow:
-        0 8px 32px rgba(239, 68, 68, 0.15),
-        0 0 0 1px rgba(239, 68, 68, 0.2) inset,
-        0 0 20px rgba(239, 68, 68, 0.1);
-    }
-
-    .toast.error::before {
-      background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-    }
-
-    .toast.error .toast-icon {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%);
-      color: #f87171;
-    }
-
-    .toast-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%);
-    }
-
-    .toast-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .toast-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .toast-message {
-      color: var(--text-primary);
-      line-height: 1.4;
-      white-space: nowrap;
-    }
-
-    .toast.exiting {
-      animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-    }
-
-    @keyframes toastSlideIn {
-      0% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
-      100% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
-    }
-
-    @keyframes toastSlideOut {
-      0% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
-      100% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
-    }
-
-    @keyframes toastProgress {
-      from { transform: scaleX(1); }
-      to { transform: scaleX(0); }
-    }
+    /* Utility classes */
+    .hidden { display: none !important; }
+    .flex-row { display: flex; align-items: center; }
   </style>
   <script>
     (function(){function _apply(p){var r=document.documentElement;if(!p){['bg-primary','bg-secondary','bg-tertiary','border','text-primary','text-secondary','text-muted','accent','accent-secondary','accent-hover','error','success','warning','orange','user-bubble','user-bubble-solid','assistant-bubble'].forEach(function(k){r.style.removeProperty('--'+k)});return}Object.keys(p).forEach(function(k){r.style.setProperty('--'+k,p[k])})}window.addEventListener('DOMContentLoaded',function(){if(!window.pocketAgent)return;Promise.all([window.pocketAgent.getThemes(),window.pocketAgent.getSkin()]).then(function(res){var themes=res[0],skinId=res[1],t=themes[skinId];if(t)_apply(t.palette);window.pocketAgent.onSkinChanged(function(id){var th=themes[id];if(th)_apply(th.palette)})}).catch(function(){})})})();
@@ -337,7 +257,7 @@
 </head>
 <body>
   <header>
-    <div style="display: flex; align-items: center;">
+    <div class="flex-row">
       <h1><span>Daily Logs</span></h1>
       <span class="log-count" id="log-count"></span>
     </div>
@@ -443,31 +363,16 @@
       return div.innerHTML;
     }
 
+    const notyf = new Notyf({
+      duration: 3000, position: { x: 'right', y: 'bottom' },
+      dismissible: true,
+      types: [
+        { type: 'success', background: '#4ade80' },
+        { type: 'error', background: '#f87171' }
+      ]
+    });
     function showToast(message, type = 'error') {
-      const existing = document.querySelector('.toast');
-      if (existing) {
-        existing.classList.add('exiting');
-        setTimeout(() => existing.remove(), 300);
-      }
-
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `
-        <div class="toast-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-          </svg>
-        </div>
-        <div class="toast-content">
-          <div class="toast-message">${escapeHtml(message)}</div>
-        </div>
-      `;
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.add('exiting');
-        setTimeout(() => toast.remove(), 300);
-      }, 2500);
+      notyf[type === 'error' ? 'error' : 'success'](message);
     }
 
     // Initialize

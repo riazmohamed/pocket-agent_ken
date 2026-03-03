@@ -51,6 +51,7 @@ export interface ServerStatusMessage {
   toolName?: string;
   toolInput?: string;
   partialText?: string;
+  partialReplace?: boolean;
   agentCount?: number;
   teammateName?: string;
   taskSubject?: string;

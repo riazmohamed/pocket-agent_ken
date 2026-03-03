@@ -315,7 +315,7 @@ export class iOSWebSocketServer {
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.wss = new WebSocketServer({ port: this.port });
+        this.wss = new WebSocketServer({ port: this.port, host: '127.0.0.1' });
 
         this.wss.on('listening', () => {
           console.log(`[iOS] WebSocket server listening on port ${this.port}`);
@@ -607,9 +607,13 @@ export class iOSWebSocketServer {
           }
           case 'facts:graph': {
             this.onGetFactsGraph?.().then((graph) => {
-              ws.send(JSON.stringify({ type: 'facts:graph', ...graph }));
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'facts:graph', ...graph }));
+              }
             }).catch(() => {
-              ws.send(JSON.stringify({ type: 'facts:graph', nodes: [], links: [] }));
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'facts:graph', nodes: [], links: [] }));
+              }
             });
             break;
           }
@@ -639,10 +643,14 @@ export class iOSWebSocketServer {
           case 'routines:create': {
             const m = message as unknown as { name: string; schedule: string; prompt: string; channel: string; sessionId: string };
             this.onCreateRoutine?.(m.name, m.schedule, m.prompt, m.channel || 'default', m.sessionId || 'default').then(() => {
-              const updatedJobs = this.onGetRoutines?.() || [];
-              ws.send(JSON.stringify({ type: 'routines', jobs: updatedJobs }));
+              if (ws.readyState === WebSocket.OPEN) {
+                const updatedJobs = this.onGetRoutines?.() || [];
+                ws.send(JSON.stringify({ type: 'routines', jobs: updatedJobs }));
+              }
             }).catch(() => {
-              ws.send(JSON.stringify({ type: 'error', message: 'Failed to create routine' }));
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'error', message: 'Failed to create routine' }));
+              }
             });
             break;
           }
@@ -665,9 +673,13 @@ export class iOSWebSocketServer {
             if ('name' in message) {
               const routineName = (message as { name: string }).name;
               this.onRunRoutine?.(routineName).then((result) => {
-                ws.send(JSON.stringify({ type: 'routine:result', name: routineName, ...result }));
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: 'routine:result', name: routineName, ...result }));
+                }
               }).catch((err) => {
-                ws.send(JSON.stringify({ type: 'routine:result', name: routineName, success: false, error: String(err) }));
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: 'routine:result', name: routineName, success: false, error: String(err) }));
+                }
               });
             }
             break;
@@ -762,7 +774,7 @@ export class iOSWebSocketServer {
           }
           case 'chat:info': {
             const info = this.onChatInfo?.() || { username: '', adminKey: '' };
-            ws.send(JSON.stringify({ type: 'chat:info', username: info.username, adminKey: info.adminKey }));
+            ws.send(JSON.stringify({ type: 'chat:info', username: info.username }));
             break;
           }
         }

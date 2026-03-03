@@ -473,6 +473,7 @@ export class PersistentSDKSession extends EventEmitter {
   private waitForTurn(): Promise<TurnResult> {
     this.turnResponse = '';
     this.exitedPlanModeThisTurn = false;
+    this.turnErrors = undefined;
 
     return new Promise<TurnResult>((resolve, reject) => {
       this.turnResolve = resolve;

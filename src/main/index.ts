@@ -664,6 +664,25 @@ function createDefaultIcon(): Electron.NativeImage {
   return icon;
 }
 
+// Cached tray menu icon — built once, reused on every updateTrayMenu() call
+let cachedMenuIcon: Electron.NativeImage | undefined;
+function getMenuIcon(): Electron.NativeImage | undefined {
+  if (cachedMenuIcon !== undefined) return cachedMenuIcon;
+  try {
+    const menuIconPath = path.join(__dirname, '../../assets/tray-icon@2x.png');
+    const rawIcon = nativeImage.createFromPath(menuIconPath);
+    if (!rawIcon.isEmpty()) {
+      cachedMenuIcon = nativeImage.createEmpty();
+      cachedMenuIcon.addRepresentation({ scaleFactor: 1, width: 16, height: 16, buffer: rawIcon.resize({ width: 16, height: 16 }).toPNG() });
+      cachedMenuIcon.addRepresentation({ scaleFactor: 2, width: 32, height: 32, buffer: rawIcon.resize({ width: 32, height: 32 }).toPNG() });
+      cachedMenuIcon.setTemplateImage(true);
+    }
+  } catch {
+    cachedMenuIcon = undefined;
+  }
+  return cachedMenuIcon;
+}
+
 function updateTrayMenu(): void {
   if (!tray) return;
 
@@ -673,23 +692,7 @@ function updateTrayMenu(): void {
     ? `Messages: ${stats?.messageCount || 0} | Facts: ${stats?.factCount || 0}`
     : 'Not initialized';
 
-  // Load menu icon (use @2x version for retina sharpness)
-  const menuIconPath = path.join(__dirname, '../../assets/tray-icon@2x.png');
-  let menuIcon: Electron.NativeImage | undefined;
-  try {
-    const rawIcon = nativeImage.createFromPath(menuIconPath);
-    if (!rawIcon.isEmpty()) {
-      // Create multi-resolution image for retina support
-      menuIcon = nativeImage.createEmpty();
-      menuIcon.addRepresentation({ scaleFactor: 1, width: 16, height: 16, buffer: rawIcon.resize({ width: 16, height: 16 }).toPNG() });
-      menuIcon.addRepresentation({ scaleFactor: 2, width: 32, height: 32, buffer: rawIcon.resize({ width: 32, height: 32 }).toPNG() });
-      menuIcon.setTemplateImage(true);
-    } else {
-      menuIcon = undefined;
-    }
-  } catch {
-    menuIcon = undefined;
-  }
+  const menuIcon = getMenuIcon();
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -944,11 +947,8 @@ function openSettingsWindow(tab?: string): void {
 
   settingsWindow = new BrowserWindow(windowOptions);
 
-  // Clear cache to ensure fresh HTML loads during development
-  settingsWindow.webContents.session.clearCache().then(() => {
-    const hash = tab ? `#${tab}` : '';
-    settingsWindow?.loadFile(path.join(__dirname, '../../ui/settings.html'), { hash });
-  });
+  const hash = tab ? `#${tab}` : '';
+  settingsWindow.loadFile(path.join(__dirname, '../../ui/settings.html'), { hash });
 
   settingsWindow.once('ready-to-show', () => {
     settingsWindow?.show();
@@ -1613,6 +1613,7 @@ function setupIPC(): void {
                 toolName: status.toolName as string | undefined,
                 toolInput: status.toolInput as string | undefined,
                 partialText: status.partialText as string | undefined,
+                partialReplace: status.partialReplace as boolean | undefined,
                 agentCount: status.agentCount as number | undefined,
                 teammateName: status.teammateName as string | undefined,
                 taskSubject: status.taskSubject as string | undefined,
@@ -2284,7 +2285,17 @@ function setupIPC(): void {
   // Allowlisted command prefixes for security (only Pocket CLI operations)
   const ALLOWED_COMMAND_PREFIXES = IS_WINDOWS
     ? ['(Get-Command pocket', 'Invoke-RestMethod https://api.github.com/repos/KenKaiii/', '$installDir = Join-Path']
-    : ['which pocket', 'strings ', 'curl -fsSL https://api.github.com/repos/KenKaiii/pocket-agent-cli/', 'curl -fsSL https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.sh -o /tmp/pocket-cli-install.sh && sed'];
+    : ['which pocket', 'curl -fsSL https://api.github.com/repos/KenKaiii/pocket-agent-cli/', 'curl -fsSL https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.sh -o /tmp/pocket-cli-install.sh && sed'];
+
+  // Validate the `strings` version-check command: must have a safe path and the exact grep suffix
+  const STRINGS_CMD_SUFFIX = ` | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+$' | head -1`;
+  function isAllowedStringsCmd(cmd: string): boolean {
+    if (!cmd.startsWith('strings "') || !cmd.endsWith(STRINGS_CMD_SUFFIX)) return false;
+    // Extract the path between quotes
+    const pathPart = cmd.slice('strings "'.length, cmd.length - STRINGS_CMD_SUFFIX.length - 1);
+    // Path must only contain safe characters (alphanumeric, slashes, dots, dashes, underscores)
+    return /^[\w/.-]+$/.test(pathPart);
+  }
 
   ipcMain.handle('shell:runCommand', async (event, command: string) => {
     // Security: only allow calls from local file origins (not remote/injected content)
@@ -2294,7 +2305,8 @@ function setupIPC(): void {
       throw new Error('Access denied: shell commands only allowed from local UI');
     }
     // Security: only allow known command patterns
-    const isAllowed = ALLOWED_COMMAND_PREFIXES.some(prefix => command.startsWith(prefix));
+    const isAllowed = ALLOWED_COMMAND_PREFIXES.some(prefix => command.startsWith(prefix))
+      || (!IS_WINDOWS && isAllowedStringsCmd(command));
     if (!isAllowed) {
       console.warn('[Shell] Blocked non-allowlisted command:', command.slice(0, 80));
       throw new Error('Access denied: command not in allowlist');
@@ -2620,6 +2632,7 @@ async function initializeAgent(): Promise<void> {
               toolName: status.toolName as string | undefined,
               toolInput: status.toolInput as string | undefined,
               partialText: status.partialText as string | undefined,
+              partialReplace: status.partialReplace as boolean | undefined,
               agentCount: status.agentCount as number | undefined,
               teammateName: status.teammateName as string | undefined,
               taskSubject: status.taskSubject as string | undefined,

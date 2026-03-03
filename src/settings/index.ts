@@ -229,43 +229,6 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     description: 'Provider for semantic embeddings (openai)',
     type: 'string',
   },
-  {
-    key: 'memory.vectorWeight',
-    defaultValue: '0.7',
-    encrypted: false,
-    category: 'memory',
-    label: 'Vector Search Weight',
-    description: 'Weight for semantic similarity (0-1)',
-    type: 'number',
-  },
-  {
-    key: 'memory.keywordWeight',
-    defaultValue: '0.3',
-    encrypted: false,
-    category: 'memory',
-    label: 'Keyword Search Weight',
-    description: 'Weight for keyword matching (0-1)',
-    type: 'number',
-  },
-  {
-    key: 'memory.minScoreThreshold',
-    defaultValue: '0.35',
-    encrypted: false,
-    category: 'memory',
-    label: 'Min Score Threshold',
-    description: 'Minimum score for search results',
-    type: 'number',
-  },
-  {
-    key: 'memory.maxSearchResults',
-    defaultValue: '6',
-    encrypted: false,
-    category: 'memory',
-    label: 'Max Search Results',
-    description: 'Maximum number of search results',
-    type: 'number',
-  },
-
   // Browser settings
   {
     key: 'browser.enabled',

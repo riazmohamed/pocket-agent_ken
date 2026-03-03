@@ -169,6 +169,33 @@ function validateCron(schedule: string): boolean {
   return true;
 }
 
+// Match a cron field spec against a value (supports *, integers, steps, ranges, lists)
+function matchesCronField(spec: string, value: number, min: number, max: number): boolean {
+  if (spec === '*') return true;
+
+  return spec.split(',').some(part => {
+    const [range, stepStr] = part.split('/');
+    const step = stepStr ? parseInt(stepStr, 10) : 1;
+
+    let start: number, end: number;
+    if (range === '*') {
+      start = min;
+      end = max;
+    } else if (range.includes('-')) {
+      const [s, e] = range.split('-');
+      start = parseInt(s, 10);
+      end = parseInt(e, 10);
+    } else {
+      if (!stepStr) return value === parseInt(range, 10);
+      start = parseInt(range, 10);
+      end = max;
+    }
+
+    if (value < start || value > end) return false;
+    return (value - start) % step === 0;
+  });
+}
+
 // Calculate next run time
 function calculateNextRun(type: string, schedule: string | null, runAt: string | null, intervalMs: number | null): string | null {
   const now = new Date();
@@ -184,18 +211,30 @@ function calculateNextRun(type: string, schedule: string | null, runAt: string |
 
   if (type === 'cron' && schedule) {
     const parts = schedule.split(/\s+/);
-    const [min, hour] = parts;
-    const next = new Date(now);
-    next.setSeconds(0, 0);
+    if (parts.length !== 5) return null;
 
-    if (min !== '*') next.setMinutes(parseInt(min, 10));
-    if (hour !== '*') next.setHours(parseInt(hour, 10));
+    const [minSpec, hourSpec, domSpec, monSpec, dowSpec] = parts;
 
-    if (next <= now) {
-      next.setDate(next.getDate() + 1);
+    // Iterate minute-by-minute to find next matching time (max 48h lookahead)
+    const candidate = new Date(now);
+    candidate.setSeconds(0, 0);
+    candidate.setMinutes(candidate.getMinutes() + 1);
+    const maxTime = now.getTime() + 48 * 60 * 60 * 1000;
+
+    while (candidate.getTime() <= maxTime) {
+      if (
+        matchesCronField(minSpec, candidate.getMinutes(), 0, 59) &&
+        matchesCronField(hourSpec, candidate.getHours(), 0, 23) &&
+        matchesCronField(domSpec, candidate.getDate(), 1, 31) &&
+        matchesCronField(monSpec, candidate.getMonth() + 1, 1, 12) &&
+        matchesCronField(dowSpec, candidate.getDay(), 0, 6)
+      ) {
+        return candidate.toISOString();
+      }
+      candidate.setMinutes(candidate.getMinutes() + 1);
     }
 
-    return next.toISOString();
+    return null;
   }
 
   return null;

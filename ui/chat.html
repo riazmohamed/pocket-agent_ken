@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' wss://pocket-agent-chat-production.up.railway.app https://pocket-agent-chat-production.up.railway.app https://cdn.jsdelivr.net;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' wss://pocket-agent-chat-production.up.railway.app https://pocket-agent-chat-production.up.railway.app https://cdn.jsdelivr.net;">
   <title>Pocket Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <style>
@@ -27,9 +29,35 @@
       --assistant-bubble: #1c1c1e;
       --error: #ef4444;
       --success: #22c55e;
-      --radius: 20px;
+      --radius: 16px;
       --radius-sm: 10px;
     }
+
+    .notyf__toast {
+      background: rgba(28, 28, 30, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 0;
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      min-width: 200px; max-width: 360px;
+      overflow: visible;
+    }
+    .notyf__toast--success { box-shadow: 0 8px 32px rgba(34, 197, 94, 0.15), 0 0 0 1px rgba(34, 197, 94, 0.2) inset; }
+    .notyf__toast--error { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.2) inset; }
+    .notyf__ripple { display: none; }
+    .notyf__wrapper { padding: 14px 18px; display: flex; align-items: center; }
+    .notyf__icon { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+    .notyf__toast--success .notyf__icon { background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(74,222,128,0.1)); }
+    .notyf__toast--error .notyf__icon { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(248,113,113,0.1)); }
+    .notyf__message { color: var(--text-primary); line-height: 1.4; }
+    .notyf__dismiss { margin-right: 0; }
+    .notyf__dismiss-btn { color: var(--text-muted); opacity: 0.6; }
+    .notyf__dismiss-btn:hover { opacity: 1; }
 
     * {
       box-sizing: border-box;
@@ -306,7 +334,7 @@
       letter-spacing: 0;
       -webkit-text-fill-color: #ffffff;
       cursor: pointer;
-      display: none;
+      display: inline-block;
       animation: pulse-update 2s ease-in-out infinite;
     }
 
@@ -1882,7 +1910,7 @@
 
     /* Global Chat Header */
     #global-chat-header {
-      display: none;
+      display: flex;
       align-items: center;
       gap: 10px;
       padding: 8px 20px;
@@ -1955,7 +1983,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       padding: 20px;
-      display: none;
+      display: flex;
       flex-direction: column;
       gap: 16px;
       scroll-behavior: smooth;
@@ -2311,15 +2339,6 @@
       89% { opacity: 0; transform: none; clip-path: inset(0); }
     }
 
-    /* Tier toast (success-style, not error) */
-    .chat-toast.tier-toast::before {
-      background: linear-gradient(90deg, #a855f7 0%, #ec4899 100%);
-    }
-    .chat-toast.tier-toast .toast-icon {
-      background: linear-gradient(135deg, rgba(168,85,247,0.2) 0%, rgba(236,72,153,0.1) 100%);
-      color: #c084fc;
-    }
-
     /* Tier tooltip */
     .tier-tooltip {
       position: fixed;
@@ -2516,90 +2535,6 @@
     .atp-btn:hover {
       background: var(--accent);
       border-color: var(--accent);
-    }
-
-    .chat-toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      min-width: 200px;
-      max-width: 360px;
-      background: rgba(28, 28, 30, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 14px 18px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 500;
-      display: none;
-      align-items: center;
-      gap: 12px;
-      z-index: 1000;
-      overflow: hidden;
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-      color: var(--text-primary);
-    }
-
-    .chat-toast.show {
-      display: flex;
-      animation: chatToastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .chat-toast.exiting {
-      animation: chatToastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-    }
-
-    .chat-toast::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 100%;
-      background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-      animation: chatToastProgress 2.5s linear forwards;
-      transform-origin: left;
-    }
-
-    .chat-toast .toast-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%);
-      color: #f87171;
-    }
-
-    .chat-toast .toast-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .chat-toast .toast-message {
-      color: var(--text-primary);
-      line-height: 1.4;
-      white-space: nowrap;
-    }
-
-    @keyframes chatToastSlideIn {
-      0% { transform: translateX(100%) scale(0.8); opacity: 0; }
-      100% { transform: translateX(0) scale(1); opacity: 1; }
-    }
-
-    @keyframes chatToastSlideOut {
-      0% { transform: translateX(0) scale(1); opacity: 1; }
-      100% { transform: translateX(100%) scale(0.8); opacity: 0; }
-    }
-
-    @keyframes chatToastProgress {
-      from { transform: scaleX(1); }
-      to { transform: scaleX(0); }
     }
 
     .global-chat-empty {
@@ -3768,7 +3703,7 @@
       flex-shrink: 0;
     }
     .plan-feedback-input {
-      display: none;
+      display: block;
       width: 100%;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
@@ -3802,21 +3737,33 @@
       color: var(--text-secondary);
       border: 1px solid var(--border);
     }
+
+    /* Utility classes */
+    .hidden { display: none !important; }
+    .badge-attachment { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .button-row-right { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+    #send-btn .send-icon,
+    #send-btn .stop-icon { display: block; }
   </style>
   <script>
     (function(){function _apply(p){var r=document.documentElement;if(!p){['bg-primary','bg-secondary','bg-tertiary','border','text-primary','text-secondary','text-muted','accent','accent-secondary','accent-hover','error','success','warning','orange','user-bubble','user-bubble-solid','assistant-bubble'].forEach(function(k){r.style.removeProperty('--'+k)});return}Object.keys(p).forEach(function(k){r.style.setProperty('--'+k,p[k])})}window.addEventListener('DOMContentLoaded',function(){if(!window.pocketAgent)return;Promise.all([window.pocketAgent.getThemes(),window.pocketAgent.getSkin()]).then(function(res){var themes=res[0],skinId=res[1],t=themes[skinId];if(t)_apply(t.palette);window.pocketAgent.onSkinChanged(function(id){var th=themes[id];if(th)_apply(th.palette)})}).catch(function(){})})})();
+  </script>
+  <script type="module">
+    import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.9/+esm';
+    window._autoAnimate = autoAnimate;
+    window.dispatchEvent(new Event('autoAnimateReady'));
   </script>
 </head>
 <body>
   <header>
     <div class="header-left">
       <img src="../assets/tray-icon@2x.png" alt="" class="header-logo">
-      <h1>Pocket Agent<span id="version-badge" class="version-badge"></span><select id="model-badge" class="model-badge"></select><span id="update-badge" class="update-badge" onclick="openSettings('updates')">Update</span></h1>
+      <h1>Pocket Agent<span id="version-badge" class="version-badge"></span><select id="model-badge" class="model-badge"></select><span id="update-badge" class="update-badge hidden" onclick="openSettings('updates')">Update</span></h1>
     </div>
     <div class="header-right">
       <div class="stats" id="stats"></div>
-      <span class="chat-username-badge" id="chat-username-badge" style="display: none;"></span>
-      <div class="stats" id="chat-online-stats" style="display: none;">0 online · 0 in chat</div>
+      <span class="chat-username-badge hidden" id="chat-username-badge"></span>
+      <div class="stats hidden" id="chat-online-stats">0 online · 0 in chat</div>
       <div class="hamburger-menu">
         <button class="hamburger-btn" onclick="playNormalClick(); toggleMenu()" id="hamburger-btn">
           <span></span>
@@ -3959,8 +3906,8 @@
       <div class="plan-approval-header">plan ready for review</div>
       <div class="plan-approval-body" id="plan-approval-body"></div>
       <div class="plan-approval-actions">
-        <textarea class="plan-feedback-input" id="plan-feedback-input" placeholder="feedback..." rows="2"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+        <textarea class="plan-feedback-input hidden" id="plan-feedback-input" placeholder="feedback..." rows="2"></textarea>
+        <div class="button-row-right">
           <button class="plan-btn plan-btn-reject" id="plan-reject-btn" onclick="rejectPlan()">revise</button>
           <button class="plan-btn plan-btn-approve" id="plan-approve-btn" onclick="approvePlan()">approve</button>
         </div>
@@ -3973,7 +3920,7 @@
     <button class="new-tab-btn" onclick="playNormalClick(); createNewSession()" title="New chat">+</button>
   </div>
 
-  <div id="global-chat-header">
+  <div id="global-chat-header" class="hidden">
     <button class="chat-back-btn" onclick="playNormalClick(); toggleGlobalChat()" title="Back to agent">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"></polyline>
@@ -3981,7 +3928,7 @@
     </button>
     <span class="chat-title">global chat</span>
     <span class="chat-status" id="chat-status-dot"></span>
-    <div id="admin-menu-wrap" style="display:none;">
+    <div id="admin-menu-wrap" class="hidden">
       <button id="admin-gear-btn" class="chat-back-btn" title="Admin">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -4000,8 +3947,7 @@
   </div>
 
   <div id="messages"></div>
-  <div id="global-chat-messages"></div>
-  <div class="chat-toast" id="chat-toast"></div>
+  <div id="global-chat-messages" class="hidden"></div>
 
   <!-- Scroll Buttons -->
   <button id="scroll-top-btn" class="scroll-btn" onclick="playNormalClick(); scrollToTop()" title="Scroll to top">
@@ -4016,12 +3962,12 @@
   </button>
 
   <!-- Global Chat Scroll Buttons -->
-  <button id="gchat-scroll-top-btn" class="scroll-btn gchat-scroll-btn" onclick="playNormalClick(); gchatScrollToTop()" title="Scroll to top" style="display:none">
+  <button id="gchat-scroll-top-btn" class="scroll-btn gchat-scroll-btn hidden" onclick="playNormalClick(); gchatScrollToTop()" title="Scroll to top">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="18 15 12 9 6 15"></polyline>
     </svg>
   </button>
-  <button id="gchat-scroll-bottom-btn" class="scroll-btn gchat-scroll-btn" onclick="playNormalClick(); gchatScrollToBottom()" title="Scroll to bottom" style="display:none">
+  <button id="gchat-scroll-bottom-btn" class="scroll-btn gchat-scroll-btn hidden" onclick="playNormalClick(); gchatScrollToBottom()" title="Scroll to bottom">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 9 12 15 18 9"></polyline>
     </svg>
@@ -4104,7 +4050,7 @@
     </div>
 
     <!-- Background Tasks Indicator (pushed to right) -->
-    <div id="background-tasks-area" style="display: none;">
+    <div id="background-tasks-area" class="hidden">
       <button class="background-tasks-toggle" onclick="playNormalClick(); toggleBackgroundTasks()">
         <span class="bg-task-pulse"></span>
         <span class="bg-task-count">0</span>
@@ -4124,7 +4070,7 @@
     </div>
   </div>
 
-  <div id="gchat-typing-indicator" style="display:none">
+  <div id="gchat-typing-indicator" class="hidden">
     <span class="gchat-typing-text"></span>
     <span class="gchat-typing-dots">
       <span class="gchat-typing-dot"></span>
@@ -4163,7 +4109,7 @@
         <ellipse cx="10" cy="5.5" rx="1.8" ry="2.2"/>
         <ellipse cx="14" cy="5.5" rx="1.8" ry="2.2"/>
       </svg>
-      <svg class="stop-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+      <svg class="stop-icon hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <rect x="6" y="6" width="12" height="12" rx="2"/>
       </svg>
     </button>
@@ -4197,6 +4143,17 @@
     const statsDiv = document.getElementById('stats');
     const fileInput = document.getElementById('file-input');
 
+    let aaController = null;
+    let aaReady = false;
+    window.addEventListener('autoAnimateReady', () => {
+      if (window._autoAnimate && messagesDiv) {
+        aaController = window._autoAnimate(messagesDiv, { duration: 250 });
+        if (!aaReady) aaController.disable();
+      }
+    });
+    function disableAutoAnimate() { if (aaController) aaController.disable(); }
+    function enableAutoAnimate() { aaReady = true; requestAnimationFrame(() => { if (aaController) aaController.enable(); }); }
+
     let isLoadingBySession = new Map(); // Track loading state per session
     let pendingAttachmentsBySession = new Map(); // Track attachments per session
     let statusCleanupBySession = new Map(); // Track status listeners per session
@@ -4212,6 +4169,7 @@
     }
     let statusElBySession = new Map(); // Track status elements per session
     let streamingBubbleBySession = new Map(); // Track live-updating assistant bubble per session
+    let streamingTextBySession = new Map(); // Persist accumulated partial text across session switches
     let toolCountBySession = new Map(); // Track tool call count per session
     let suggestionBySession = new Map(); // Track ghost suggestions per session
     let inputTextBySession = new Map(); // Track input text per session
@@ -4421,12 +4379,9 @@
       });
 
       // Listen for Telegram messages (cross-channel sync)
-      console.log('[Chat] Setting up Telegram message listener');
       window.pocketAgent.onTelegramMessage((data) => {
-        console.log('[Chat] Received Telegram message:', data);
         handleTelegramMessage(data);
       });
-      console.log('[Chat] Telegram message listener set up');
 
       // Listen for iOS messages (cross-channel sync)
       window.pocketAgent.onIOSMessage((data) => {
@@ -4438,7 +4393,7 @@
       window.pocketAgent.onSessionCleared((sessionId) => {
         console.log('[Chat] Session cleared from iOS:', sessionId);
         if (sessionId === currentSessionId) {
-          messagesDiv.innerHTML = '';
+          disableAutoAnimate(); messagesDiv.innerHTML = ''; enableAutoAnimate();
           showEmptyState();
           updateStats();
         }
@@ -4577,7 +4532,7 @@
       });
 
       // Hide new tab button when at max capacity
-      newTabBtn.style.display = sessions.length >= MAX_TABS ? 'none' : '';
+      newTabBtn.classList.toggle('hidden', sessions.length >= MAX_TABS);
     }
 
     function updateSessionsOrder() {
@@ -4628,7 +4583,7 @@
       // Update mode toggle for this session
       updateModeUIForSession(sessionId);
 
-      messagesDiv.innerHTML = '';
+      disableAutoAnimate(); messagesDiv.innerHTML = ''; enableAutoAnimate();
       // Clear stale streaming bubble reference — the DOM element was just destroyed.
       // A fresh bubble will be created when partial_text events arrive for this session.
       streamingBubbleBySession.delete(sessionId);
@@ -4674,10 +4629,10 @@
       const savedSuggestion = getCurrentSuggestion();
       if (savedSuggestion) {
         ghostSuggestion.innerHTML = escapeHtml(savedSuggestion) + '<span class="tab-hint">Tab to accept</span>';
-        ghostSuggestion.style.display = 'block';
+        ghostSuggestion.classList.remove('hidden');
       } else {
         ghostSuggestion.innerHTML = '';
-        ghostSuggestion.style.display = 'none';
+        ghostSuggestion.classList.add('hidden');
       }
 
       // Restore search state for this session
@@ -4708,6 +4663,26 @@
           const statusEl = addStatusIndicator('*stretches paws* thinking...');
           statusElBySession.set(sessionId, statusEl);
         }
+
+        // Restore streaming bubble with accumulated partial text
+        const savedText = streamingTextBySession.get(sessionId);
+        if (savedText) {
+          const bubble = document.createElement('div');
+          bubble.className = 'message assistant streaming-bubble';
+          const currentStatusEl = statusElBySession.get(sessionId);
+          if (currentStatusEl && currentStatusEl.parentNode) {
+            currentStatusEl.parentNode.insertBefore(bubble, currentStatusEl);
+          } else {
+            messagesDiv.appendChild(bubble);
+          }
+          streamingBubbleBySession.set(sessionId, bubble);
+          const contentDiv = document.createElement('div');
+          contentDiv.innerHTML = formatContent(savedText);
+          while (contentDiv.firstChild) {
+            bubble.appendChild(contentDiv.firstChild);
+          }
+          scrollToBottom();
+        }
       }
 
       input.focus();
@@ -4737,7 +4712,7 @@
         sessions.push(result.session); // Add to end (right side)
         currentSessionId = result.session.id;
         renderTabs();
-        messagesDiv.innerHTML = '';
+        disableAutoAnimate(); messagesDiv.innerHTML = ''; enableAutoAnimate();
         showEmptyState();
         updateStats();
 
@@ -4868,7 +4843,7 @@
         if (sessionId === currentSessionId) {
           currentSessionId = sessions[0]?.id || 'default';
           localStorage.setItem('currentSessionId', currentSessionId);
-          messagesDiv.innerHTML = '';
+          disableAutoAnimate(); messagesDiv.innerHTML = ''; enableAutoAnimate();
           await loadHistory();
         }
 
@@ -5062,7 +5037,7 @@
     async function loadHistory() {
       try {
         const history = await window.pocketAgent.getHistory(100, currentSessionId);
-        messagesDiv.innerHTML = '';
+        disableAutoAnimate(); messagesDiv.innerHTML = '';
 
         if (history.length === 0) {
           showEmptyState();
@@ -5128,8 +5103,10 @@
           }
         }
 
+        enableAutoAnimate();
         scrollToBottom(true); // Instant scroll on initial load
       } catch (err) {
+        enableAutoAnimate();
         console.error('Failed to load history:', err);
         showEmptyState();
       }
@@ -5207,15 +5184,15 @@
         // Save new model setting
         await window.pocketAgent.setSetting('agent.model', newModel);
         // Flash badge to indicate switching
-        badge.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+        badge.classList.add('badge-attachment');
         // Restart agent with new model
         await window.pocketAgent.restartAgent();
         // Restore badge color
-        badge.style.background = '';
+        badge.classList.remove('badge-attachment');
         await updateModelBadge();
       } catch (err) {
         console.error('Failed to switch model:', err);
-        badge.style.background = '';
+        badge.classList.remove('badge-attachment');
         await updateModelBadge();
       }
     });
@@ -5241,14 +5218,14 @@
       if (loading) {
         sendBtn.classList.add('stop-btn');
         sendBtn.title = 'Stop it!';
-        sendIcon.style.display = 'none';
-        stopIcon.style.display = 'block';
+        sendIcon.classList.add('hidden');
+        stopIcon.classList.remove('hidden');
         sendBtn.disabled = false;
       } else {
         sendBtn.classList.remove('stop-btn');
         sendBtn.title = 'Send it!';
-        sendIcon.style.display = 'block';
-        stopIcon.style.display = 'none';
+        sendIcon.classList.remove('hidden');
+        stopIcon.classList.add('hidden');
       }
     }
 
@@ -5312,13 +5289,16 @@
       clearAttachments();
       if (workflow) clearWorkflow();
 
-      // Show user message - mark as queued if there's already a message processing
+      // Show user message instantly (no AutoAnimate entrance animation)
       const displayMessage = workflow ? `${workflow.name}${message ? ' ' + message : ''}` : message;
+      disableAutoAnimate();
       const userMsgEl = addMessage('user', displayMessage, true, attachments);
       userMsgEl.dataset.messageId = messageId;
       if (workflow) {
         userMsgEl.classList.add('from-workflow');
       }
+      // Re-enable AutoAnimate after user message is in DOM
+      requestAnimationFrame(() => enableAutoAnimate());
 
       // Track pending user message for session state restoration
       if (!pendingUserMessagesBySession.has(sessionId)) {
@@ -5413,10 +5393,13 @@
 
         // Always clean up streaming bubble reference (may be stale if user switched sessions)
         const streamBubble = streamingBubbleBySession.get(sessionId);
+        // Disable AutoAnimate for the bubble→final message swap to prevent exit/entrance flash
+        if (streamBubble) disableAutoAnimate();
         if (streamBubble) {
           streamBubble.remove();
           streamingBubbleBySession.delete(sessionId);
         }
+        streamingTextBySession.delete(sessionId);
 
         // Only update visible UI if still on same session
         if (currentSessionId === sessionId) {
@@ -5449,6 +5432,8 @@
           updateStats();
           scrollToBottom();
         }
+        // Re-enable AutoAnimate after bubble→final message swap is complete
+        if (streamBubble) requestAnimationFrame(() => enableAutoAnimate());
       } catch (err) {
         // If this message was queued, remove the queued state
         if (queuedMessageElements.has(messageId)) {
@@ -5559,7 +5544,7 @@
 
       try {
         await window.pocketAgent.clearConversation(currentSessionId);
-        messagesDiv.innerHTML = '';
+        disableAutoAnimate(); messagesDiv.innerHTML = ''; enableAutoAnimate();
         showEmptyState();
         updateStats();
       } catch (err) {
@@ -5826,8 +5811,8 @@
         }
       );
 
-      // Use marked for full markdown rendering
-      if (typeof marked !== 'undefined') {
+      // Use marked for full markdown rendering (only when DOMPurify is available to sanitize)
+      if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
         marked.setOptions({
           breaks: true, // Convert \n to <br>
           gfm: true, // GitHub flavored markdown
@@ -5837,15 +5822,13 @@
         html = html.replace(/<table>/g, '<div class="table-wrapper"><table>');
         html = html.replace(/<\/table>/g, '</table></div>');
         // Sanitize to prevent XSS from untrusted message sources (Telegram, iOS, agent responses)
-        if (typeof DOMPurify !== 'undefined') {
-          html = DOMPurify.sanitize(html, {
-            ADD_ATTR: ['data-path', 'target'],
-          });
-        }
+        html = DOMPurify.sanitize(html, {
+          ADD_ATTR: ['data-path', 'target'],
+        });
         return html;
       }
-      // Fallback if marked isn't loaded
-      return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // Fallback: escape HTML (when marked or DOMPurify isn't loaded)
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     function addTimestamp(date) {
@@ -5873,7 +5856,7 @@
           <div class="status-detail"></div>
           <div class="status-preview"></div>
         </div>
-        <div class="status-count" style="display:none"></div>
+        <div class="status-count hidden"></div>
       `;
       messagesDiv.appendChild(div);
       return div;
@@ -5882,6 +5865,10 @@
     function updateStatusIndicator(status, sessionId) {
       // Use status.sessionId (from the event) as authoritative source, fall back to listener's sessionId, then currentSessionId
       const targetSession = status.sessionId || sessionId || currentSessionId;
+
+      // GUARD: If the event has a sessionId, only the listener registered for that session should process it.
+      // Without this, multiple session listeners all accumulate partial_text, causing duplicates.
+      if (sessionId && status.sessionId && sessionId !== status.sessionId) return;
 
       // Allow notification sound for any session completing (even non-active)
       if (status.type === 'done' && targetSession !== currentSessionId) {
@@ -5925,7 +5912,7 @@
       // Clear preview when switching to a non-preview status
       if (status.type !== 'partial_text' && previewEl) {
         previewEl.textContent = '';
-        previewEl.style.display = 'none';
+        previewEl.classList.add('hidden');
       }
 
       if (status.type === 'thinking') {
@@ -5933,7 +5920,7 @@
         if (!statusEl.classList.contains('tool-blocked')) {
           actionEl.textContent = status.message || '*stretches paws* thinking...';
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
           statusEl.classList.remove('subagent-active');
           statusEl.classList.remove('pocket-cli-active');
           statusEl.classList.remove('team-active');
@@ -5945,17 +5932,17 @@
         toolCountBySession.set(targetSession, count);
         if (countEl) {
           countEl.textContent = count === 1 ? '1 tool' : `${count} tools`;
-          countEl.style.display = '';
+          countEl.classList.remove('hidden');
         }
 
         actionEl.textContent = status.toolName || 'pouncing on it...';
         if (status.toolInput) {
           detailEl.textContent = status.toolInput;
           detailEl.title = status.toolInput;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
         statusEl.classList.remove('subagent-active');
         statusEl.classList.remove('team-active');
@@ -5970,7 +5957,7 @@
         if (!statusEl.classList.contains('tool-blocked')) {
           actionEl.textContent = status.message || 'caught it! processing...';
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
           statusEl.classList.remove('subagent-active');
           statusEl.classList.remove('pocket-cli-active');
           statusEl.classList.remove('team-active');
@@ -5983,10 +5970,10 @@
         if (status.blockedReason) {
           detailEl.textContent = status.blockedReason;
           detailEl.title = status.blockedReason;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
         statusEl.classList.remove('subagent-active');
         statusEl.classList.remove('pocket-cli-active');
@@ -6000,16 +5987,16 @@
           const countBadge = status.agentCount > 1 ? ` (${status.agentCount} active)` : '';
           detailEl.textContent = status.toolInput + countBadge;
           detailEl.title = status.toolInput;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = status.agentCount > 1 ? `${status.agentCount} helpers active` : '';
-          detailEl.style.display = status.agentCount > 1 ? 'block' : 'none';
+          detailEl.classList.toggle('hidden', !(status.agentCount > 1));
         }
       } else if (status.type === 'subagent_update') {
         // Multiple subagents, one finished
         actionEl.textContent = status.message || `${status.agentCount} kitties on the job`;
         detailEl.textContent = '';
-        detailEl.style.display = 'none';
+        detailEl.classList.add('hidden');
       } else if (status.type === 'subagent_end') {
         // All subagents done
         statusEl.classList.remove('subagent-active');
@@ -6017,7 +6004,7 @@
         statusEl.classList.remove('team-active');
         actionEl.textContent = status.message || 'cat squad finished! ✨';
         detailEl.textContent = '';
-        detailEl.style.display = 'none';
+        detailEl.classList.add('hidden');
       } else if (status.type === 'teammate_start') {
         // Teammate spawned - show team status
         statusEl.classList.add('team-active');
@@ -6027,10 +6014,10 @@
         if (status.teammateName) {
           detailEl.textContent = status.teammateName + (status.toolInput ? ': ' + status.toolInput : '');
           detailEl.title = detailEl.textContent;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
       } else if (status.type === 'teammate_message') {
         // Message sent between teammates
@@ -6041,10 +6028,10 @@
         if (status.toolInput) {
           detailEl.textContent = status.toolInput;
           detailEl.title = status.toolInput;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
       } else if (status.type === 'teammate_idle') {
         // Teammate went idle
@@ -6054,10 +6041,10 @@
         actionEl.textContent = status.message || 'teammate idle';
         if (status.teammateName) {
           detailEl.textContent = status.teammateName + ' finished their part';
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
       } else if (status.type === 'task_completed') {
         // Team task completed
@@ -6069,10 +6056,10 @@
           const by = status.teammateName ? ` (by ${status.teammateName})` : '';
           detailEl.textContent = status.taskSubject + by;
           detailEl.title = detailEl.textContent;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
       } else if (status.type === 'plan_mode_entered') {
         statusEl.classList.add('plan-mode-active');
@@ -6081,12 +6068,12 @@
         statusEl.classList.remove('team-active');
         actionEl.textContent = status.message || 'planning the pounce...';
         detailEl.textContent = '';
-        detailEl.style.display = 'none';
+        detailEl.classList.add('hidden');
       } else if (status.type === 'plan_mode_exited') {
         statusEl.classList.remove('plan-mode-active');
         actionEl.textContent = status.message || 'plan ready for review';
         detailEl.textContent = '';
-        detailEl.style.display = 'none';
+        detailEl.classList.add('hidden');
       } else if (status.type === 'partial_text') {
         // Show live-updating assistant bubble with composed text
         if (status.partialText && status.sessionId) {
@@ -6102,10 +6089,13 @@
             }
             streamingBubbleBySession.set(status.sessionId, bubble);
           }
-          // Accumulate partial text (each event has one message's text)
-          const prev = bubble.dataset.accumulatedText || '';
-          const accumulated = prev ? prev + '\n\n' + status.partialText : status.partialText;
-          bubble.dataset.accumulatedText = accumulated;
+          // partialReplace: full text from coder mode (replace entirely)
+          // otherwise: delta from general mode (accumulate with separator)
+          const prev = streamingTextBySession.get(status.sessionId) || '';
+          const accumulated = status.partialReplace
+            ? status.partialText
+            : (prev ? prev + '\n\n' + status.partialText : status.partialText);
+          streamingTextBySession.set(status.sessionId, accumulated);
           // Re-render all accumulated text
           const contentDiv = document.createElement('div');
           contentDiv.innerHTML = formatContent(accumulated);
@@ -6118,7 +6108,7 @@
       } else if (status.type === 'responding') {
         actionEl.textContent = 'grooming my response... 🐈';
         detailEl.textContent = '';
-        detailEl.style.display = 'none';
+        detailEl.classList.add('hidden');
         statusEl.classList.remove('subagent-active');
         statusEl.classList.remove('pocket-cli-active');
         statusEl.classList.remove('team-active');
@@ -6127,10 +6117,10 @@
         actionEl.textContent = status.message || 'in the litter queue 📋';
         if (status.queuePosition) {
           detailEl.textContent = `Position #${status.queuePosition} in queue`;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
         statusEl.classList.remove('subagent-active');
         statusEl.classList.remove('pocket-cli-active');
@@ -6141,10 +6131,10 @@
         if (status.queuedMessage) {
           detailEl.textContent = status.queuedMessage;
           detailEl.title = status.queuedMessage;
-          detailEl.style.display = 'block';
+          detailEl.classList.remove('hidden');
         } else {
           detailEl.textContent = '';
-          detailEl.style.display = 'none';
+          detailEl.classList.add('hidden');
         }
         statusEl.classList.remove('subagent-active');
         statusEl.classList.remove('pocket-cli-active');
@@ -6213,9 +6203,9 @@
         closeWorkflows();
       } else {
         // Hide mode toggle, search and chat areas when workflows is open
-        document.getElementById('mode-toggle-area').style.display = 'none';
-        document.getElementById('search-area').style.display = 'none';
-        document.getElementById('chat-area').style.display = 'none';
+        document.getElementById('mode-toggle-area').classList.add('hidden');
+        document.getElementById('search-area').classList.add('hidden');
+        document.getElementById('chat-area').classList.add('hidden');
         area.classList.add('active');
         try {
           const commands = await window.pocketAgent.getCommands(currentSessionId);
@@ -6237,9 +6227,9 @@
 
     function closeWorkflows() {
       document.getElementById('workflows-area').classList.remove('active');
-      document.getElementById('mode-toggle-area').style.display = '';
-      document.getElementById('search-area').style.display = '';
-      document.getElementById('chat-area').style.display = '';
+      document.getElementById('mode-toggle-area').classList.remove('hidden');
+      document.getElementById('search-area').classList.remove('hidden');
+      document.getElementById('chat-area').classList.remove('hidden');
     }
 
     // Global Chat
@@ -6288,12 +6278,11 @@
       // Load admin key
       try {
         chatAdminKey = (await window.pocketAgent.getSetting('chat.adminKey')) || '';
-        console.log('[Chat] Admin key loaded, length:', chatAdminKey.length);
+        // Admin key loaded
       } catch (e) { console.log('[Chat] Admin key load failed:', e); chatAdminKey = ''; }
 
       try {
         const existing = await window.pocketAgent.getSetting('chat.username');
-        console.log('[Chat] Username loaded:', existing);
         if (existing) {
           const normalized = existing.toLowerCase();
           globalChatUsername = normalized;
@@ -6618,7 +6607,7 @@
         container.appendChild(btn);
       }
 
-      container.style.display = hasAny ? '' : 'none';
+      container.classList.toggle('hidden', !hasAny);
     }
 
     function createGlobalChatBubble(msg) {
@@ -6726,8 +6715,7 @@
 
       // Reaction display (below bubble, outside)
       const reactionsDiv = document.createElement('div');
-      reactionsDiv.className = 'gchat-reactions';
-      reactionsDiv.style.display = 'none';
+      reactionsDiv.className = 'gchat-reactions hidden';
       wrapper.appendChild(reactionsDiv);
       gchatUpdateReactionDisplay(msg, wrapper);
 
@@ -6759,7 +6747,6 @@
         if (dot) dot.classList.add('connected');
         const joinPayload = { type: 'join', username: globalChatUsername };
         if (chatAdminKey) joinPayload.adminKey = chatAdminKey;
-        console.log('[Chat WS] Joining as:', globalChatUsername, 'adminKey present:', !!chatAdminKey, 'keyLen:', chatAdminKey.length);
         chatWs.send(JSON.stringify(joinPayload));
         // Always subscribe to messages so unread notifications work
         chatWs.send(JSON.stringify({ type: 'enter_chat' }));
@@ -6775,7 +6762,7 @@
           updateHeaderTierBadge();
           // Show admin gear if admin
           const adminWrap = document.getElementById('admin-menu-wrap');
-          if (adminWrap) adminWrap.style.display = chatIsAdmin ? '' : 'none';
+          if (adminWrap) adminWrap.classList.toggle('hidden', !chatIsAdmin);
         } else if (data.type === 'tier_change') {
           const oldTier = globalChatSelfTier;
           globalChatSelfTier = data.tier || 0;
@@ -7085,54 +7072,20 @@
       sendChatWs({ type: 'message', text, replyTo });
     }
 
-    let chatToastTimer = null;
+    const notyf = new Notyf({
+      duration: 3000, position: { x: 'right', y: 'bottom' },
+      dismissible: true,
+      types: [
+        { type: 'success', background: '#4ade80' },
+        { type: 'error', background: '#f87171' }
+      ]
+    });
     function showChatToast(msg) {
-      const existing = document.getElementById('chat-toast');
-      // Clear any previous state
-      clearTimeout(chatToastTimer);
-      existing.classList.remove('show', 'exiting');
-
-      existing.innerHTML = `
-        <div class="toast-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-          </svg>
-        </div>
-        <div class="toast-message">${msg.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-      `;
-
-      // Force reflow so animation restarts
-      void existing.offsetWidth;
-      existing.classList.add('show');
-
-      chatToastTimer = setTimeout(() => {
-        existing.classList.add('exiting');
-        setTimeout(() => {
-          existing.classList.remove('show', 'exiting');
-        }, 300);
-      }, 2500);
+      notyf.error(msg);
     }
 
     function showTierToast(msg) {
-      const existing = document.getElementById('chat-toast');
-      clearTimeout(chatToastTimer);
-      existing.classList.remove('show', 'exiting', 'tier-toast');
-      existing.innerHTML = `
-        <div class="toast-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </div>
-        <div class="toast-message">${msg.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-      `;
-      void existing.offsetWidth;
-      existing.classList.add('show', 'tier-toast');
-      chatToastTimer = setTimeout(() => {
-        existing.classList.add('exiting');
-        setTimeout(() => {
-          existing.classList.remove('show', 'exiting', 'tier-toast');
-        }, 300);
-      }, 3500);
+      notyf.open({ type: 'success', message: msg, duration: 3500 });
     }
 
     function updateHeaderTierBadge() {
@@ -7140,7 +7093,9 @@
       if (!badge) return;
       const tier = globalChatSelfTier;
       const info = TIER_CONFIG[tier] || TIER_CONFIG[0];
+      const wasHidden = badge.classList.contains('hidden');
       badge.className = 'chat-username-badge';
+      if (wasHidden) badge.classList.add('hidden');
       if (chatIsAdmin) {
         badge.innerHTML = '';
         const tick = document.createElement('span');
@@ -7382,7 +7337,7 @@
       const el = document.getElementById('gchat-typing-indicator');
       if (!el) return;
       if (!globalChatMode || chatTypingUsers.size === 0) {
-        el.style.display = 'none';
+        el.classList.add('hidden');
         return;
       }
       const names = Array.from(chatTypingUsers.keys());
@@ -7392,7 +7347,7 @@
       } else {
         textEl.textContent = names.join(', ') + ' are typing';
       }
-      el.style.display = '';
+      el.classList.remove('hidden');
     }
 
     function clearAllTypingState() {
@@ -7449,28 +7404,28 @@
         updateHeaderTierBadge();
         document.getElementById('chat-username-badge').onclick = toggleTierTooltip;
 
-        tabsCont.style.display = 'none';
-        chatHeader.style.display = 'flex';
-        messagesEl.style.display = 'none';
-        globalMsgsEl.style.display = 'flex';
-        modelBadge.style.display = 'none';
-        versionBadge.style.display = 'none';
-        updateBadge.style.display = 'none';
-        statsEl.style.display = 'none';
-        chatUsernameBadge.style.display = '';
-        chatOnlineStats.style.display = '';
-        toolbarRow.style.display = 'none';
-        if (attachBtn) attachBtn.style.display = 'none';
-        if (workflowBadge) workflowBadge.style.display = 'none';
-        if (scrollTopBtn) scrollTopBtn.style.display = 'none';
-        if (scrollBottomBtn) scrollBottomBtn.style.display = 'none';
-        document.getElementById('gchat-scroll-top-btn').style.display = '';
-        document.getElementById('gchat-scroll-bottom-btn').style.display = '';
+        tabsCont.classList.add('hidden');
+        chatHeader.classList.remove('hidden');
+        messagesEl.classList.add('hidden');
+        globalMsgsEl.classList.remove('hidden');
+        modelBadge.classList.add('hidden');
+        versionBadge.classList.add('hidden');
+        updateBadge.classList.add('hidden');
+        statsEl.classList.add('hidden');
+        chatUsernameBadge.classList.remove('hidden');
+        chatOnlineStats.classList.remove('hidden');
+        toolbarRow.classList.add('hidden');
+        if (attachBtn) attachBtn.classList.add('hidden');
+        if (workflowBadge) workflowBadge.classList.add('hidden');
+        if (scrollTopBtn) scrollTopBtn.classList.add('hidden');
+        if (scrollBottomBtn) scrollBottomBtn.classList.add('hidden');
+        document.getElementById('gchat-scroll-top-btn').classList.remove('hidden');
+        document.getElementById('gchat-scroll-bottom-btn').classList.remove('hidden');
         input.placeholder = 'say something...';
 
         // Show admin gear if admin
         const adminWrap = document.getElementById('admin-menu-wrap');
-        if (adminWrap) adminWrap.style.display = chatIsAdmin ? '' : 'none';
+        if (adminWrap) adminWrap.classList.toggle('hidden', !chatIsAdmin);
 
         renderGlobalChatMessages();
         enterChatActive();
@@ -7483,27 +7438,27 @@
         gchatDismissMentionList();
         mentionHighlight.innerHTML = '';
         input.classList.remove('mention-active');
-        tabsCont.style.display = '';
-        chatHeader.style.display = 'none';
-        messagesEl.style.display = '';
-        globalMsgsEl.style.display = 'none';
-        modelBadge.style.display = '';
-        versionBadge.style.display = '';
-        updateBadge.style.display = '';
-        statsEl.style.display = '';
-        chatUsernameBadge.style.display = 'none';
-        chatOnlineStats.style.display = 'none';
-        toolbarRow.style.display = '';
+        tabsCont.classList.remove('hidden');
+        chatHeader.classList.add('hidden');
+        messagesEl.classList.remove('hidden');
+        globalMsgsEl.classList.add('hidden');
+        modelBadge.classList.remove('hidden');
+        versionBadge.classList.remove('hidden');
+        updateBadge.classList.remove('hidden');
+        statsEl.classList.remove('hidden');
+        chatUsernameBadge.classList.add('hidden');
+        chatOnlineStats.classList.add('hidden');
+        toolbarRow.classList.remove('hidden');
         // Only show bg tasks area if there are active tasks
         if (getBackgroundTaskCount(currentSessionId) > 0) {
-          bgTasksArea.style.display = '';
+          bgTasksArea.classList.remove('hidden');
         }
-        if (attachBtn) attachBtn.style.display = '';
-        if (workflowBadge) workflowBadge.style.display = '';
-        if (scrollTopBtn) scrollTopBtn.style.display = '';
-        if (scrollBottomBtn) scrollBottomBtn.style.display = '';
-        document.getElementById('gchat-scroll-top-btn').style.display = 'none';
-        document.getElementById('gchat-scroll-bottom-btn').style.display = 'none';
+        if (attachBtn) attachBtn.classList.remove('hidden');
+        if (workflowBadge) workflowBadge.classList.remove('hidden');
+        if (scrollTopBtn) scrollTopBtn.classList.remove('hidden');
+        if (scrollBottomBtn) scrollBottomBtn.classList.remove('hidden');
+        document.getElementById('gchat-scroll-top-btn').classList.add('hidden');
+        document.getElementById('gchat-scroll-bottom-btn').classList.add('hidden');
         gchatScrollTopBtn.classList.remove('visible');
         gchatScrollBottomBtn.classList.remove('visible');
         input.placeholder = "what's on your mind? \u{1F431}";
@@ -7534,12 +7489,12 @@
       const count = tasks ? tasks.size : 0;
 
       if (count === 0) {
-        area.style.display = 'none';
+        area.classList.add('hidden');
         area.classList.remove('active');
         return;
       }
 
-      area.style.display = '';
+      area.classList.remove('hidden');
       countEl.textContent = count;
 
       // Update vertical list — only current session's tasks
@@ -7587,8 +7542,9 @@
       activeWorkflow = command;
       closeWorkflows();
       const container = document.getElementById('workflow-badge-container');
-      container.innerHTML = `<span class="workflow-badge">${command.name}<button class="workflow-badge-remove" onclick="playNormalClick(); clearWorkflow()" title="Remove workflow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></span>`;
-      input.placeholder = `add context for /${command.name}...`;
+      const escapedName = command.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      container.innerHTML = `<span class="workflow-badge">${escapedName}<button class="workflow-badge-remove" onclick="playNormalClick(); clearWorkflow()" title="Remove workflow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></span>`;
+      input.placeholder = `add context for /${escapedName}...`;
       input.focus();
     }
 
@@ -7681,9 +7637,9 @@
         closeSearch();
       } else {
         // Hide mode toggle, workflows and chat when search is open
-        document.getElementById('mode-toggle-area').style.display = 'none';
-        document.getElementById('workflows-area').style.display = 'none';
-        document.getElementById('chat-area').style.display = 'none';
+        document.getElementById('mode-toggle-area').classList.add('hidden');
+        document.getElementById('workflows-area').classList.add('hidden');
+        document.getElementById('chat-area').classList.add('hidden');
         searchArea.classList.add('searching');
         searchInput.focus();
       }
@@ -7700,9 +7656,9 @@
       searchMatches = [];
       currentSearchIndex = -1;
       // Restore mode toggle, workflows and chat visibility
-      document.getElementById('mode-toggle-area').style.display = '';
-      document.getElementById('workflows-area').style.display = '';
-      document.getElementById('chat-area').style.display = '';
+      document.getElementById('mode-toggle-area').classList.remove('hidden');
+      document.getElementById('workflows-area').classList.remove('hidden');
+      document.getElementById('chat-area').classList.remove('hidden');
     }
 
     function handleSearchInput(event) {
@@ -8123,14 +8079,14 @@
       }
       setCurrentSuggestion(text);
       ghostSuggestion.innerHTML = escapeHtml(text) + '<span class="tab-hint">Tab to accept</span>';
-      ghostSuggestion.style.display = 'block';
+      ghostSuggestion.classList.remove('hidden');
       input.classList.add('has-suggestion');
     }
 
     function clearSuggestion() {
       setCurrentSuggestion(null);
       ghostSuggestion.innerHTML = '';
-      ghostSuggestion.style.display = 'none';
+      ghostSuggestion.classList.add('hidden');
       input.classList.remove('has-suggestion');
     }
 
@@ -8401,9 +8357,9 @@
         const updateBadge = document.getElementById('update-badge');
         if (result.status === 'available' && result.info?.version) {
           updateBadge.textContent = `v${result.info.version}`;
-          updateBadge.style.display = 'inline-block';
+          updateBadge.classList.remove('hidden');
         } else {
-          updateBadge.style.display = 'none';
+          updateBadge.classList.add('hidden');
         }
       } catch (err) {
         // Silently fail - update check is not critical
@@ -8507,7 +8463,7 @@
         body.textContent = content;
       }
 
-      feedbackInput.style.display = 'none';
+      feedbackInput.classList.add('hidden');
       feedbackInput.value = '';
       overlay.classList.add('show');
     }
@@ -8532,7 +8488,7 @@
         // First click: show feedback textarea
         planRejectState = 'feedback';
         const feedbackInput = document.getElementById('plan-feedback-input');
-        feedbackInput.style.display = 'block';
+        feedbackInput.classList.remove('hidden');
         feedbackInput.focus();
         document.getElementById('plan-reject-btn').textContent = 'send revision';
         return;
@@ -8583,10 +8539,12 @@
 
         // Remove streaming bubble if present
         const streamBubble = streamingBubbleBySession.get(sessionId);
+        if (streamBubble) disableAutoAnimate();
         if (streamBubble) {
           streamBubble.remove();
           streamingBubbleBySession.delete(sessionId);
         }
+        streamingTextBySession.delete(sessionId);
 
         if (currentSessionId === sessionId) {
           if (result.success && result.planPending) {
@@ -8607,6 +8565,7 @@
           updateStats();
           scrollToBottom();
         }
+        if (streamBubble) requestAnimationFrame(() => enableAutoAnimate());
       } catch (err) {
         console.error('Plan response failed:', err);
         const currentStatusEl = statusElBySession.get(sessionId);

@@ -170,6 +170,8 @@ export type AgentStatus = {
   message?: string;
   // Partial text preview (streamed as agent composes)
   partialText?: string;
+  // If true, partialText is the full accumulated text (replace, don't append)
+  partialReplace?: boolean;
   // Subagent tracking
   agentId?: string;
   agentType?: string;
@@ -355,7 +357,7 @@ class AgentManagerClass extends EventEmitter {
   private sdkSessionIdBySession: Map<string, string> = new Map();
   private persistentSessions: Map<string, PersistentSDKSession> = new Map();
   private contextUsageBySession: Map<string, { contextTokens: number; contextWindow: number }> = new Map();
-  private pendingMedia: MediaAttachment[] = [];
+  private pendingMediaBySession: Map<string, MediaAttachment[]> = new Map();
   private stoppedByUserSession: Set<string> = new Set();
   private sdkToolTimers: Map<string, { timer: ReturnType<typeof setTimeout>; sessionId: string }> = new Map();
   private pendingProjectSwitch: Set<string> = new Set();
@@ -614,7 +616,7 @@ class AgentManagerClass extends EventEmitter {
     this.processingBySession.set(sessionId, true);
     this.stoppedByUserSession.delete(sessionId);
     this.lastSuggestedPromptBySession.set(sessionId, undefined);
-    this.pendingMedia = [];
+    this.pendingMediaBySession.set(sessionId, []);
 
     try {
       const existingSession = this.persistentSessions.get(sessionId);
@@ -624,6 +626,7 @@ class AgentManagerClass extends EventEmitter {
       if (existingSession?.isAlive()) {
         // === Existing session: send via streamInput ===
         console.log(`[AgentManager] Sending to existing persistent session: ${sessionId}`);
+        this.lastPartialTextBySession.delete(sessionId);
         this.emitStatus({ type: 'thinking', sessionId, message: '*stretches paws* thinking...' });
 
         // Build content blocks for images
@@ -668,13 +671,14 @@ class AgentManagerClass extends EventEmitter {
         const options = await this.buildPersistentOptions(memory, sessionId, sdkSessionId);
 
         console.log('[AgentManager] Calling query() with model:', options.model, 'thinking:', JSON.stringify(options.thinking) || 'default', 'effort:', options.effort || 'default');
+        this.lastPartialTextBySession.delete(sessionId);
         this.emitStatus({ type: 'thinking', sessionId, message: '*stretches paws* thinking...' });
 
         // Create persistent session
         const session = new PersistentSDKSession(
           sessionId,
           (msg) => this.processStatusFromMessage(msg),
-          (msg, current) => this.extractFromMessage(msg, current)
+          (msg, current) => this.extractFromMessage(msg, current, sessionId)
         );
 
         this.setupSessionListeners(session, sessionId, memory);
@@ -726,7 +730,7 @@ class AgentManagerClass extends EventEmitter {
             const freshSession = new PersistentSDKSession(
               sessionId,
               (msg) => this.processStatusFromMessage(msg),
-              (msg, current) => this.extractFromMessage(msg, current)
+              (msg, current) => this.extractFromMessage(msg, current, sessionId)
             );
 
             this.setupSessionListeners(freshSession, sessionId, memory);
@@ -796,7 +800,7 @@ class AgentManagerClass extends EventEmitter {
         const freshSession = new PersistentSDKSession(
           sessionId,
           (msg) => this.processStatusFromMessage(msg),
-          (msg, current) => this.extractFromMessage(msg, current)
+          (msg, current) => this.extractFromMessage(msg, current, sessionId)
         );
 
         this.setupSessionListeners(freshSession, sessionId, memory);
@@ -884,7 +888,7 @@ class AgentManagerClass extends EventEmitter {
           tokensUsed: 0,
           wasCompacted: turnResult.wasCompacted,
           planPending: true,
-          media: this.pendingMedia.length > 0 ? this.pendingMedia : undefined,
+          media: (this.pendingMediaBySession.get(sessionId) || []).length > 0 ? this.pendingMediaBySession.get(sessionId) : undefined,
         };
       }
 
@@ -1009,7 +1013,7 @@ class AgentManagerClass extends EventEmitter {
         }
       }
 
-      const statsAfter = memory.getStats();
+      const statsAfter = memory.getStats(sessionId);
       const contextUsage = this.contextUsageBySession.get(sessionId);
 
       return {
@@ -1019,7 +1023,7 @@ class AgentManagerClass extends EventEmitter {
         suggestedPrompt: this.lastSuggestedPromptBySession.get(sessionId),
         contextTokens: contextUsage?.contextTokens,
         contextWindow: contextUsage?.contextWindow,
-        media: this.pendingMedia.length > 0 ? this.pendingMedia : undefined,
+        media: (this.pendingMediaBySession.get(sessionId) || []).length > 0 ? this.pendingMediaBySession.get(sessionId) : undefined,
       };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -1546,13 +1550,13 @@ class AgentManagerClass extends EventEmitter {
   }
 
 
-  private extractFromMessage(message: unknown, current: string): string {
+  private extractFromMessage(message: unknown, current: string, sessionId: string): string {
     const msg = message as { type?: string; subtype?: string; message?: { content?: unknown }; output?: string; result?: string; errors?: string[] };
     if (msg.type === 'assistant') {
       const content = msg.message?.content;
       if (Array.isArray(content)) {
         // Extract image blocks and save to disk
-        this.extractImageBlocks(content);
+        this.extractImageBlocks(content, sessionId);
 
         const textBlocks = content
           .filter((block: unknown) => (block as { type?: string })?.type === 'text')
@@ -1603,9 +1607,13 @@ class AgentManagerClass extends EventEmitter {
 
   /**
    * Extract image blocks from SDK assistant message content and save to disk.
-   * Images are accumulated in pendingMedia and included in the final ProcessResult.
+   * Images are accumulated in pendingMediaBySession and included in the final ProcessResult.
    */
-  private extractImageBlocks(content: unknown[]): void {
+  private extractImageBlocks(content: unknown[], sessionId: string): void {
+    const pendingMedia = this.pendingMediaBySession.get(sessionId) || [];
+    if (!this.pendingMediaBySession.has(sessionId)) {
+      this.pendingMediaBySession.set(sessionId, pendingMedia);
+    }
     for (const block of content) {
       const b = block as {
         type?: string;
@@ -1627,15 +1635,15 @@ class AgentManagerClass extends EventEmitter {
 
         if (b.source.type === 'base64' && b.source.data) {
           // Base64 image — save directly to disk
-          const filename = `img-${Date.now()}-${this.pendingMedia.length}${ext}`;
+          const filename = `img-${Date.now()}-${pendingMedia.length}${ext}`;
           const filePath = path.join(mediaDir, filename);
           fs.writeFileSync(filePath, Buffer.from(b.source.data, 'base64'));
 
-          this.pendingMedia.push({ type: 'image', filePath, mimeType });
+          pendingMedia.push({ type: 'image', filePath, mimeType });
           console.log(`[AgentManager] Saved image: ${filePath}`);
         } else if (b.source.type === 'url' && b.source.url) {
           // URL image — download and save to disk
-          const filename = `img-${Date.now()}-${this.pendingMedia.length}${ext}`;
+          const filename = `img-${Date.now()}-${pendingMedia.length}${ext}`;
           const filePath = path.join(mediaDir, filename);
 
           // Fire-and-forget download; image will be available for Telegram sync
@@ -1647,7 +1655,7 @@ class AgentManagerClass extends EventEmitter {
             })
             .catch(err => console.error('[AgentManager] Failed to download image:', err));
 
-          this.pendingMedia.push({ type: 'image', filePath, mimeType });
+          pendingMedia.push({ type: 'image', filePath, mimeType });
         }
       } catch (err) {
         console.error('[AgentManager] Failed to save image block:', err);
@@ -1659,14 +1667,19 @@ class AgentManagerClass extends EventEmitter {
    * Extract screenshot file paths from tool result blocks.
    * The browser tool saves full-res screenshots and includes the path in its result JSON.
    */
-  private extractScreenshotPaths(block: unknown): void {
+  private extractScreenshotPaths(block: unknown, sessionId: string): void {
     try {
       const b = block as { content?: unknown };
       if (!b.content) return;
 
+      const pendingMedia = this.pendingMediaBySession.get(sessionId) || [];
+      if (!this.pendingMediaBySession.has(sessionId)) {
+        this.pendingMediaBySession.set(sessionId, pendingMedia);
+      }
+
       if (Array.isArray(b.content)) {
         // Extract image blocks from tool result content (e.g. computer_use screenshots)
-        this.extractImageBlocks(b.content);
+        this.extractImageBlocks(b.content, sessionId);
 
         // Also check text blocks for file paths
         for (const part of b.content) {
@@ -1674,8 +1687,8 @@ class AgentManagerClass extends EventEmitter {
           if (p.type === 'text' && p.text) {
             const match = p.text.match(/saved to (\/[^\s"]+\/screenshot-\d+\.png)/);
             if (match && fs.existsSync(match[1])) {
-              if (!this.pendingMedia.some(m => m.filePath === match[1])) {
-                this.pendingMedia.push({ type: 'image', filePath: match[1], mimeType: 'image/png' });
+              if (!pendingMedia.some(m => m.filePath === match[1])) {
+                pendingMedia.push({ type: 'image', filePath: match[1], mimeType: 'image/png' });
                 console.log(`[AgentManager] Found screenshot in tool result: ${match[1]}`);
               }
             }
@@ -1684,8 +1697,8 @@ class AgentManagerClass extends EventEmitter {
       } else if (typeof b.content === 'string') {
         const match = b.content.match(/saved to (\/[^\s"]+\/screenshot-\d+\.png)/);
         if (match && fs.existsSync(match[1])) {
-          if (!this.pendingMedia.some(m => m.filePath === match[1])) {
-            this.pendingMedia.push({ type: 'image', filePath: match[1], mimeType: 'image/png' });
+          if (!pendingMedia.some(m => m.filePath === match[1])) {
+            pendingMedia.push({ type: 'image', filePath: match[1], mimeType: 'image/png' });
             console.log(`[AgentManager] Found screenshot in tool result: ${match[1]}`);
           }
         }
@@ -1717,8 +1730,8 @@ class AgentManagerClass extends EventEmitter {
         console.log('[AgentManager] Extracted suggested prompt:', suggestion);
         return { text: cleanedText, suggestion };
       } else {
-        console.log('[AgentManager] Rejected invalid suggestion (assistant-style):', suggestion);
-        return { text: cleanedText }; // Strip but don't use as suggestion
+        // Not a valid prompt suggestion — return original text unmodified
+        return { text: text.trim() };
       }
     }
 
@@ -1752,6 +1765,7 @@ class AgentManagerClass extends EventEmitter {
 
   // Track active subagents per session
   private activeSubagentsBySession: Map<string, Map<string, { type: string; description: string }>> = new Map();
+  private lastPartialTextBySession: Map<string, string> = new Map();
   // Track background tasks per session
   private backgroundTasksBySession: Map<string, Map<string, { type: string; description: string; toolUseId: string }>> = new Map();
 
@@ -1788,12 +1802,15 @@ class AgentManagerClass extends EventEmitter {
           .filter((block: unknown) => (block as { type?: string })?.type === 'text')
           .map((block: unknown) => (block as { text: string }).text);
         if (textBlocks.length > 0) {
-          const partialText = textBlocks.join('\n').trim();
-          if (partialText) {
+          const fullText = textBlocks.join('\n').trim();
+          const prevText = this.lastPartialTextBySession.get(sessionId) || '';
+          if (fullText && fullText !== prevText) {
+            this.lastPartialTextBySession.set(sessionId, fullText);
             this.emitStatus({
               type: 'partial_text',
               sessionId,
-              partialText,
+              partialText: fullText,
+              partialReplace: true,
               message: 'composing...',
             });
           }
@@ -1964,7 +1981,7 @@ class AgentManagerClass extends EventEmitter {
             }
 
             // Extract screenshot paths and images from tool results
-            this.extractScreenshotPaths(block);
+            this.extractScreenshotPaths(block, sessionId);
 
             // Check if any subagents completed
             if (activeSubagents.size > 0) {

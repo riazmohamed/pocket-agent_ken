@@ -1,5 +1,3 @@
-import { Context, Bot } from 'grammy';
-
 /**
  * Attachment types supported by Telegram channel
  */
@@ -105,50 +103,6 @@ export interface ReactionData {
   userId: number;
   emoji: ReactionEmoji;
   isAdded: boolean;
-}
-
-/**
- * Reply keyboard button
- */
-export interface ReplyKeyboardButton {
-  text: string;
-  requestContact?: boolean;
-  requestLocation?: boolean;
-}
-
-/**
- * Reply keyboard row
- */
-export type ReplyKeyboardRow = ReplyKeyboardButton[];
-
-/**
- * Handler context with bot reference
- */
-export interface HandlerContext {
-  bot: Bot;
-  ctx: Context;
-  chatId: number;
-  sessionId: string;
-}
-
-/**
- * Result from handler processing
- */
-export interface HandlerResult {
-  handled: boolean;
-  response?: string;
-  error?: string;
-}
-
-/**
- * File download result
- */
-export interface DownloadResult {
-  success: boolean;
-  buffer?: Buffer;
-  mimeType?: string;
-  fileName?: string;
-  error?: string;
 }
 
 /**

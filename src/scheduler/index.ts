@@ -11,6 +11,37 @@ import type { TelegramBot } from '../channels/telegram';
  */
 export const HEARTBEAT_OK = 'HEARTBEAT_OK';
 
+/**
+ * Match a cron field spec against a value.
+ * Supports: *, integers, step (asterisk/N or range/step), ranges (N-M), and comma-separated lists.
+ */
+function matchesCronField(spec: string, value: number, min: number, max: number): boolean {
+  if (spec === '*') return true;
+
+  return spec.split(',').some(part => {
+    const [range, stepStr] = part.split('/');
+    const step = stepStr ? parseInt(stepStr, 10) : 1;
+
+    let start: number, end: number;
+    if (range === '*') {
+      start = min;
+      end = max;
+    } else if (range.includes('-')) {
+      const [s, e] = range.split('-');
+      start = parseInt(s, 10);
+      end = parseInt(e, 10);
+    } else {
+      // Single value (no step)
+      if (!stepStr) return value === parseInt(range, 10);
+      start = parseInt(range, 10);
+      end = max;
+    }
+
+    if (value < start || value > end) return false;
+    return (value - start) % step === 0;
+  });
+}
+
 interface CalendarEvent {
   id: number;
   title: string;
@@ -416,68 +447,36 @@ export class CronScheduler {
     }
 
     if (type === 'cron' && schedule) {
-      // Parse cron expression for next run calculation
       const parts = schedule.split(/\s+/);
       if (parts.length !== 5) {
         console.warn(`[Scheduler] Invalid cron expression (expected 5 parts): "${schedule}"`);
         return new Date(now.getTime() + 86400000).toISOString();
       }
 
-      const [min, hour] = parts;
+      const [minSpec, hourSpec, domSpec, monSpec, dowSpec] = parts;
 
-      // If both minute and hour are wildcards (e.g. "* * * * *"), next run is the next minute
-      if (min === '*' && hour === '*') {
-        const next = new Date(now);
-        next.setSeconds(0, 0);
-        next.setMinutes(next.getMinutes() + 1);
-        return next.toISOString();
-      }
+      // Iterate minute-by-minute to find next matching time (max 48h lookahead)
+      const candidate = new Date(now);
+      candidate.setSeconds(0, 0);
+      candidate.setMinutes(candidate.getMinutes() + 1);
+      const maxTime = now.getTime() + 48 * 60 * 60 * 1000;
 
-      // If only minute is wildcard (e.g. "* 14 * * *"), next run is next minute within that hour
-      if (min === '*' && hour !== '*') {
-        const targetHour = parseInt(hour, 10);
-        const next = new Date(now);
-        next.setSeconds(0, 0);
-        if (next.getHours() === targetHour && next > now) {
-          // Already in the target hour, next minute
-          return next.toISOString();
-        } else if (next.getHours() === targetHour) {
-          next.setMinutes(next.getMinutes() + 1);
-          if (next.getHours() !== targetHour) {
-            // Rolled over to next hour, schedule for start of target hour tomorrow
-            next.setDate(next.getDate() + 1);
-            next.setHours(targetHour, 0, 0, 0);
-          }
-          return next.toISOString();
-        } else {
-          // Not in target hour — schedule for start of target hour
-          next.setHours(targetHour, 0, 0, 0);
-          if (next <= now) next.setDate(next.getDate() + 1);
-          return next.toISOString();
+      while (candidate.getTime() <= maxTime) {
+        if (
+          matchesCronField(minSpec, candidate.getMinutes(), 0, 59) &&
+          matchesCronField(hourSpec, candidate.getHours(), 0, 23) &&
+          matchesCronField(domSpec, candidate.getDate(), 1, 31) &&
+          matchesCronField(monSpec, candidate.getMonth() + 1, 1, 12) &&
+          matchesCronField(dowSpec, candidate.getDay(), 0, 6)
+        ) {
+          return candidate.toISOString();
         }
+        candidate.setMinutes(candidate.getMinutes() + 1);
       }
 
-      // If only hour is wildcard (e.g. "30 * * * *"), next run is :30 of the next matching hour
-      if (min !== '*' && hour === '*') {
-        const targetMin = parseInt(min, 10);
-        const next = new Date(now);
-        next.setSeconds(0, 0);
-        next.setMinutes(targetMin);
-        if (next <= now) {
-          next.setHours(next.getHours() + 1);
-        }
-        return next.toISOString();
-      }
-
-      // Both specified (e.g. "30 14 * * *")
-      const next = new Date(now);
-      next.setSeconds(0, 0);
-      next.setMinutes(parseInt(min, 10));
-      next.setHours(parseInt(hour, 10));
-      if (next <= now) {
-        next.setDate(next.getDate() + 1);
-      }
-      return next.toISOString();
+      // No match in 48h — fallback to 24h
+      console.warn(`[Scheduler] No cron match in 48h for "${schedule}", defaulting to 24h`);
+      return new Date(now.getTime() + 86400000).toISOString();
     }
 
     // Fallback for unknown schedule types - don't disable the job

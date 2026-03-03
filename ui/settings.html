@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://pocket-agent-chat-production.up.railway.app;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://pocket-agent-chat-production.up.railway.app;">
   <title>Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0b;
@@ -27,6 +29,32 @@
       --radius: 16px;
       --radius-sm: 10px;
     }
+
+    .notyf__toast {
+      background: rgba(28, 28, 30, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 0;
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      min-width: 200px; max-width: 360px;
+      overflow: visible;
+    }
+    .notyf__toast--success { box-shadow: 0 8px 32px rgba(34, 197, 94, 0.15), 0 0 0 1px rgba(34, 197, 94, 0.2) inset; }
+    .notyf__toast--error { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.2) inset; }
+    .notyf__ripple { display: none; }
+    .notyf__wrapper { padding: 14px 18px; display: flex; align-items: center; }
+    .notyf__icon { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+    .notyf__toast--success .notyf__icon { background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(74,222,128,0.1)); }
+    .notyf__toast--error .notyf__icon { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(248,113,113,0.1)); }
+    .notyf__message { color: var(--text-primary); line-height: 1.4; }
+    .notyf__dismiss { margin-right: 0; }
+    .notyf__dismiss-btn { color: var(--text-muted); opacity: 0.6; }
+    .notyf__dismiss-btn:hover { opacity: 1; }
 
     * {
       box-sizing: border-box;
@@ -281,7 +309,7 @@
     .form-group select:focus,
     .form-group textarea:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
     }
 
     .form-group input::placeholder,
@@ -422,7 +450,7 @@
     }
 
     .status.info {
-      background: rgba(99, 102, 241, 0.1);
+      background: rgba(168, 85, 247, 0.1);
       color: var(--accent);
     }
 
@@ -624,8 +652,8 @@
 
     /* Info box */
     .info-box {
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.2);
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.2);
       border-radius: var(--radius-sm);
       padding: 10px 12px;
       font-size: 11px;
@@ -645,133 +673,6 @@
     }
 
     /* Toast - Premium glassmorphism design */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      min-width: 200px;
-      max-width: 360px;
-      background: rgba(28, 28, 30, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 14px 18px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      z-index: 1000;
-      overflow: hidden;
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    }
-
-    .toast::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 100%;
-      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary) 100%);
-      animation: toastProgress 3s linear forwards;
-      transform-origin: left;
-    }
-
-    .toast.success {
-      box-shadow:
-        0 8px 32px rgba(34, 197, 94, 0.15),
-        0 0 0 1px rgba(34, 197, 94, 0.2) inset,
-        0 0 20px rgba(34, 197, 94, 0.1);
-    }
-
-    .toast.success::before {
-      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
-    }
-
-    .toast.success .toast-icon {
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
-      color: #4ade80;
-    }
-
-    .toast.error {
-      box-shadow:
-        0 8px 32px rgba(239, 68, 68, 0.15),
-        0 0 0 1px rgba(239, 68, 68, 0.2) inset,
-        0 0 20px rgba(239, 68, 68, 0.1);
-    }
-
-    .toast.error::before {
-      background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
-    }
-
-    .toast.error .toast-icon {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%);
-      color: #f87171;
-    }
-
-    .toast-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%);
-    }
-
-    .toast-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .toast-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .toast-message {
-      color: var(--text-primary);
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-
-    .toast.exiting {
-      animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-    }
-
-    @keyframes toastSlideIn {
-      0% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
-      100% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
-    }
-
-    @keyframes toastSlideOut {
-      0% {
-        transform: translateX(0) scale(1);
-        opacity: 1;
-      }
-      100% {
-        transform: translateX(100%) scale(0.8);
-        opacity: 0;
-      }
-    }
-
-    @keyframes toastProgress {
-      from { transform: scaleX(1); }
-      to { transform: scaleX(0); }
-    }
-
     .skills-setup-btn {
       margin-top: 8px;
       padding: 8px 14px;
@@ -1048,9 +949,39 @@
       color: var(--text-muted);
       margin-top: 2px;
     }
+
+    /* Utility classes */
+    .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .flex-row { display: flex; align-items: center; }
+    .setting-row--stacked { flex-direction: column; align-items: stretch; gap: 6px; }
+    .card-box { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center; }
+    .code-display { font-family: 'Courier New', monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 8px 0; cursor: pointer; transition: all 0.2s ease; user-select: all; }
+    .btn-accent { margin: 0; background: var(--accent) !important; color: white !important; border-color: var(--accent) !important; }
+    .btn-row { display: flex; gap: 6px; }
+    .btn-compact { margin: 0; }
+    .helper-text { color: var(--text-muted); font-size: 11px; margin: 0; }
+    .config-section { margin-top: 10px; }
+    .section-spacer { margin-top: 12px; }
+    .section-spacer-lg { margin-top: 16px; }
+    .progress-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
+    .progress-row { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 200px; }
+    .progress-text { font-size: 11px; color: var(--text-muted); }
+    .info-box--warning { background: rgba(249, 115, 22, 0.1) !important; border-color: rgba(249, 115, 22, 0.3) !important; }
+    .disabled-section { opacity: 0.5; }
+    .enabled-section { opacity: 1; }
+    .status-no-margin { margin: 0; }
+    .w-140 { width: 140px; }
+    .w-180 { width: 180px; }
+    .w-80 { width: 80px; }
   </style>
   <script>
     (function(){function _apply(p){var r=document.documentElement;if(!p){['bg-primary','bg-secondary','bg-tertiary','border','text-primary','text-secondary','text-muted','accent','accent-secondary','accent-hover','error','success','warning','orange','user-bubble','user-bubble-solid','assistant-bubble'].forEach(function(k){r.style.removeProperty('--'+k)});return}Object.keys(p).forEach(function(k){r.style.setProperty('--'+k,p[k])})}window.addEventListener('DOMContentLoaded',function(){if(!window.pocketAgent)return;Promise.all([window.pocketAgent.getThemes(),window.pocketAgent.getSkin()]).then(function(res){var themes=res[0],skinId=res[1],t=themes[skinId];if(t)_apply(t.palette);window.pocketAgent.onSkinChanged(function(id){var th=themes[id];if(th)_apply(th.palette)})}).catch(function(){})})})();
+  </script>
+  <script type="module">
+    import { animate } from 'https://cdn.jsdelivr.net/npm/motion@12/mini/+esm';
+    window._motionAnimate = animate;
   </script>
 </head>
 <body>
@@ -1117,7 +1048,7 @@
           <div class="auth-option">
             <div class="auth-option-header">
               <span class="auth-option-title">Login with Claude</span>
-              <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="flex-row" style="gap: 8px;">
                 <span class="risk-badge">
                   Use at own risk
                   <span class="risk-info">i</span>
@@ -1127,7 +1058,7 @@
                 <button id="oauth-btn" class="oauth-btn" onclick="playNormalClick(); handleAuthAction()">Sign in</button>
               </div>
             </div>
-            <div id="oauth-code-section" style="display: none; margin-top: 10px;">
+            <div id="oauth-code-section" class="hidden config-section">
               <div class="key-input">
                 <input type="text" id="oauth-code" placeholder="Paste authorization code...">
                 <button onclick="playNormalClick(); completeOAuth()">Submit</button>
@@ -1248,9 +1179,9 @@
           </div>
         </div>
 
-        <div class="settings-grid" id="telegram-config" style="margin-top: 10px;">
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="settings-grid config-section" id="telegram-config">
+          <div class="setting-row setting-row--stacked">
+            <div class="flex-between">
               <label>Bot Token</label>
               <a href="https://t.me/BotFather" target="_blank" class="key-link">@BotFather →</a>
             </div>
@@ -1260,8 +1191,8 @@
               <button onclick="playNormalClick(); validateKey('telegram')">Test</button>
             </div>
           </div>
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="setting-row setting-row--stacked">
+            <div class="flex-between">
               <label style="display: flex; align-items: center; margin: 0;">Allowed Users <span class="badge-required">Required</span></label>
               <a href="https://t.me/userinfobot" target="_blank" class="key-link">@userinfobot →</a>
             </div>
@@ -1270,7 +1201,7 @@
               <button onclick="playNormalClick(); saveTelegramSetting('telegram.allowedUserIds')">Save</button>
             </div>
           </div>
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+          <div class="setting-row setting-row--stacked">
             <label>Default Chat</label>
             <div class="key-input">
               <input type="text" id="telegram.defaultChatId" placeholder="e.g. -100123456789">
@@ -1297,27 +1228,27 @@
           <div id="ios-instance-section" style="margin-top: 8px;">
             <h3 class="subsection-title" style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text-secondary);">Instance ID</h3>
             <p style="color: var(--text-muted); font-size: 11px; margin-bottom: 10px;">Enter this in the iOS app to identify your desktop. Click to copy.</p>
-            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center;">
-              <div id="ios-instance-id" style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: var(--text); padding: 8px 0; cursor: pointer; transition: all 0.2s ease; user-select: all;" onclick="playNormalClick(); copyInstanceId()" title="Click to copy">--------</div>
+            <div class="card-box">
+              <div id="ios-instance-id" class="code-display" style="color: var(--text-primary);" onclick="playNormalClick(); copyInstanceId()" title="Click to copy">--------</div>
             </div>
           </div>
 
           <!-- Pairing Code -->
           <div id="ios-pairing" style="margin-top: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="flex-between">
               <h3 class="subsection-title" style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-secondary);">Pairing Code</h3>
               <button onclick="playNormalClick(); refreshPairingCode(true)" style="padding: 4px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.2s ease;">New Code</button>
             </div>
             <p style="color: var(--text-muted); font-size: 11px; margin: 6px 0 10px 0;">One-time code to pair a new device. Click to copy. Expires in 5 minutes.</p>
-            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center;">
-              <div id="ios-pairing-code" style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: var(--accent); padding: 8px 0; cursor: pointer; transition: all 0.2s ease; user-select: all;" onclick="playNormalClick(); copyPairingCode()" title="Click to copy">------</div>
+            <div class="card-box">
+              <div id="ios-pairing-code" class="code-display" style="color: var(--accent);" onclick="playNormalClick(); copyPairingCode()" title="Click to copy">------</div>
             </div>
           </div>
 
           <!-- Connected devices -->
           <div style="margin-top: 16px;">
             <h3 class="subsection-title" style="margin-bottom: 12px; font-size: 14px; font-weight: 600; color: var(--text-secondary);">Connected Devices</h3>
-            <div id="ios-devices" style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px;">
+            <div id="ios-devices" class="card-box" style="padding: 16px;">
               <p style="color: var(--text-muted); font-size: 13px; text-align: center;">No devices connected</p>
             </div>
           </div>
@@ -1383,26 +1314,26 @@
           </div>
         </div>
 
-        <div class="settings-grid" id="browser-config" style="margin-top: 12px;">
+        <div class="settings-grid section-spacer" id="browser-config">
           <div class="setting-row">
             <label>Browser</label>
-            <select id="browser-selector" style="width: 140px;">
+            <select id="browser-selector" class="w-140">
               <option value="">Select browser...</option>
             </select>
           </div>
           <div class="setting-row">
             <label>Launch</label>
-            <button id="browser-launch-btn" onclick="playNormalClick(); launchBrowserWithCdp()" class="skills-setup-btn" style="margin: 0; width: 140px;">
+            <button id="browser-launch-btn" onclick="playNormalClick(); launchBrowserWithCdp()" class="skills-setup-btn btn-compact w-140">
               Launch Browser
             </button>
           </div>
           <div class="setting-row">
             <label>Status</label>
-            <div id="browser-status" class="status info" style="margin: 0;">Not connected</div>
+            <div id="browser-status" class="status info status-no-margin">Not connected</div>
           </div>
           <div class="setting-row">
             <label>Connection</label>
-            <button id="browser-test-btn" onclick="playNormalClick(); testBrowserConnection()" class="skills-setup-btn" style="margin: 0; width: 140px;">
+            <button id="browser-test-btn" onclick="playNormalClick(); testBrowserConnection()" class="skills-setup-btn btn-compact w-140">
               Test Connection
             </button>
           </div>
@@ -1411,20 +1342,20 @@
         <!-- Advanced settings (collapsed by default) -->
         <details style="margin-top: 16px;">
           <summary style="cursor: pointer; font-size: 11px; color: var(--text-muted); user-select: none;">Advanced settings</summary>
-          <div class="settings-grid" style="margin-top: 10px;">
+          <div class="settings-grid config-section">
             <div class="setting-row">
               <label>CDP URL</label>
-              <input type="text" id="browser.cdpUrl" placeholder="http://localhost:9222" style="width: 180px;">
+              <input type="text" id="browser.cdpUrl" placeholder="http://localhost:9222" class="w-180">
             </div>
             <div class="setting-row">
               <label>Port</label>
-              <input type="number" id="browser-port" value="9222" min="1024" max="65535" style="width: 80px;">
+              <input type="number" id="browser-port" value="9222" min="1024" max="65535" class="w-80">
             </div>
           </div>
         </details>
 
         <!-- Warning box -->
-        <div class="info-box" style="margin-top: 16px; padding: 10px; background: rgba(249, 115, 22, 0.1); border-radius: var(--radius-sm); border: 1px solid rgba(249, 115, 22, 0.3);">
+        <div class="info-box info-box--warning section-spacer-lg">
           <div style="display: flex; align-items: flex-start; gap: 8px;">
             <span style="font-size: 12px;">⚠️</span>
             <div style="font-size: 10px; color: var(--text-secondary); line-height: 1.4;">
@@ -1446,26 +1377,26 @@
           </div>
         </div>
 
-        <div class="settings-grid" style="margin-top: 12px;">
+        <div class="settings-grid section-spacer">
           <div class="setting-row">
             <label>Current Version</label>
             <span id="pocket-cli-version" class="key-link" style="font-size: 12px;">—</span>
           </div>
           <div class="setting-row">
             <label>Status</label>
-            <div id="pocket-cli-status" class="status info" style="margin: 0;">Ready</div>
+            <div id="pocket-cli-status" class="status info status-no-margin">Ready</div>
           </div>
           <div class="setting-row">
             <label>Actions</label>
-            <div style="display: flex; gap: 6px;">
-              <button id="pocket-cli-check-btn" onclick="playNormalClick(); checkPocketCliUpdates()" class="skills-setup-btn" style="margin: 0;">Check Now</button>
-              <button id="pocket-cli-install-btn" onclick="playNormalClick(); installPocketCli()" class="skills-setup-btn" style="margin: 0; display: none;">Install</button>
-              <button id="pocket-cli-update-btn" onclick="playNormalClick(); updatePocketCli()" class="skills-setup-btn" style="margin: 0; display: none; background: var(--accent); color: white; border-color: var(--accent);">Update</button>
+            <div class="btn-row">
+              <button id="pocket-cli-check-btn" onclick="playNormalClick(); checkPocketCliUpdates()" class="skills-setup-btn btn-compact">Check Now</button>
+              <button id="pocket-cli-install-btn" onclick="playNormalClick(); installPocketCli()" class="skills-setup-btn btn-compact hidden">Install</button>
+              <button id="pocket-cli-update-btn" onclick="playNormalClick(); updatePocketCli()" class="skills-setup-btn btn-compact btn-accent hidden">Update</button>
             </div>
           </div>
         </div>
 
-        <div id="pocket-cli-info" class="info-box" style="margin-top: 12px; display: none;">
+        <div id="pocket-cli-info" class="info-box section-spacer hidden">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <span id="pocket-cli-info-text"></span>
         </div>
@@ -1477,7 +1408,7 @@
         <p class="section-desc">Configure your global chat identity.</p>
 
         <div class="settings-grid">
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+          <div class="setting-row setting-row--stacked">
             <label>Username</label>
             <p style="color: var(--text-muted); font-size: 11px; margin: 0;">Max 15 characters. Letters, numbers, and dashes only.</p>
             <div class="key-input">
@@ -1485,7 +1416,7 @@
               <button onclick="playNormalClick(); saveChatUsername()">Save</button>
             </div>
           </div>
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+          <div class="setting-row setting-row--stacked">
             <label>Admin Key</label>
             <div class="key-input">
               <input type="password" id="chat.adminKey" placeholder="Leave blank if not admin">
@@ -1516,35 +1447,35 @@
           </div>
         </div>
 
-        <div class="settings-grid" style="margin-top: 12px;">
+        <div class="settings-grid section-spacer">
           <div class="setting-row">
             <label>Current Version</label>
             <span id="current-version" class="key-link" style="font-size: 12px;">Loading...</span>
           </div>
           <div class="setting-row">
             <label>Status</label>
-            <div id="update-status" class="status info" style="margin: 0;">Ready</div>
+            <div id="update-status" class="status info status-no-margin">Ready</div>
           </div>
-          <div class="setting-row" id="update-progress-row" style="display: none;">
+          <div class="setting-row hidden" id="update-progress-row">
             <label>Progress</label>
-            <div style="display: flex; align-items: center; gap: 8px; flex: 1; max-width: 200px;">
-              <div style="flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-                <div id="update-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+            <div class="progress-row">
+              <div class="progress-track">
+                <div id="update-progress-bar" class="progress-fill"></div>
               </div>
-              <span id="update-progress-text" style="font-size: 11px; color: var(--text-muted);">0%</span>
+              <span id="update-progress-text" class="progress-text">0%</span>
             </div>
           </div>
           <div class="setting-row">
             <label>Actions</label>
-            <div style="display: flex; gap: 6px;">
-              <button id="check-updates-btn" onclick="playNormalClick(); checkForUpdates()" class="skills-setup-btn" style="margin: 0;">Check Now</button>
-              <button id="download-update-btn" onclick="playNormalClick(); downloadUpdate()" class="skills-setup-btn" style="margin: 0; display: none;">Download</button>
-              <button id="install-update-btn" onclick="playNormalClick(); installUpdate()" class="skills-setup-btn" style="margin: 0; display: none; background: var(--accent); color: white; border-color: var(--accent);">Install & Restart</button>
+            <div class="btn-row">
+              <button id="check-updates-btn" onclick="playNormalClick(); checkForUpdates()" class="skills-setup-btn btn-compact">Check Now</button>
+              <button id="download-update-btn" onclick="playNormalClick(); downloadUpdate()" class="skills-setup-btn btn-compact hidden">Download</button>
+              <button id="install-update-btn" onclick="playNormalClick(); installUpdate()" class="skills-setup-btn btn-compact btn-accent hidden">Install & Restart</button>
             </div>
           </div>
         </div>
 
-        <div id="update-info" class="info-box" style="margin-top: 12px; display: none;">
+        <div id="update-info" class="info-box section-spacer hidden">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <span id="update-info-text">New version available!</span>
         </div>
@@ -1721,19 +1652,19 @@
       const telegramToggle = document.getElementById('telegram.enabled-toggle');
       const telegramEnabled = settings['telegram.enabled'] === 'true';
       telegramToggle.classList.toggle('active', telegramEnabled);
-      document.getElementById('telegram-config').style.opacity = telegramEnabled ? '1' : '0.5';
+      document.getElementById('telegram-config').classList.toggle('disabled-section', !telegramEnabled);
 
       // iOS Mobile toggle
       const iosToggle = document.getElementById('ios.enabled-toggle');
       const iosEnabled = settings['ios.enabled'] === 'true';
       iosToggle.classList.toggle('active', iosEnabled);
-      document.getElementById('ios-config').style.opacity = iosEnabled ? '1' : '0.5';
+      document.getElementById('ios-config').classList.toggle('disabled-section', !iosEnabled);
 
       // Browser toggle
       const browserToggle = document.getElementById('browser.enabled-toggle');
       const browserEnabled = settings['browser.enabled'] === 'true';
       browserToggle.classList.toggle('active', browserEnabled);
-      document.getElementById('browser-config').style.opacity = browserEnabled ? '1' : '0.5';
+      document.getElementById('browser-config').classList.toggle('disabled-section', !browserEnabled);
 
       // Use My Browser toggle
       const useMyBrowserToggle = document.getElementById('browser.useMyBrowser-toggle');
@@ -2034,10 +1965,17 @@
 
       try {
         await navigator.clipboard.writeText(code);
-        codeEl.style.transform = 'scale(1.05)';
-        codeEl.style.color = 'var(--success)';
+        if (window._motionAnimate) {
+          window._motionAnimate(codeEl,
+            { scale: [1, 1.08, 1], color: ['var(--accent)', 'var(--success)', 'var(--accent)'] },
+            { duration: 0.5, easing: [0.34, 1.56, 0.64, 1] }
+          );
+        } else {
+          codeEl.style.transform = 'scale(1.05)';
+          codeEl.style.color = 'var(--success)';
+          setTimeout(() => { codeEl.style.transform = 'scale(1)'; codeEl.style.color = 'var(--accent)'; }, 500);
+        }
         showToast('Pairing code copied');
-        setTimeout(() => { codeEl.style.transform = 'scale(1)'; codeEl.style.color = 'var(--accent)'; }, 500);
       } catch (err) {
         showToast('Failed to copy', 'error');
       }
@@ -2049,9 +1987,16 @@
       try {
         await navigator.clipboard.writeText(id);
         const el = document.getElementById('ios-instance-id');
-        el.style.transform = 'scale(1.05)';
-        el.style.color = 'var(--success)';
-        setTimeout(() => { el.style.transform = 'scale(1)'; el.style.color = 'var(--text)'; }, 500);
+        if (window._motionAnimate) {
+          window._motionAnimate(el,
+            { scale: [1, 1.08, 1], color: ['var(--text-primary)', 'var(--success)', 'var(--text-primary)'] },
+            { duration: 0.5, easing: [0.34, 1.56, 0.64, 1] }
+          );
+        } else {
+          el.style.transform = 'scale(1.05)';
+          el.style.color = 'var(--success)';
+          setTimeout(() => { el.style.transform = 'scale(1)'; el.style.color = 'var(--text-primary)'; }, 500);
+        }
         showToast('Instance ID copied');
       } catch (err) {
         showToast('Failed to copy', 'error');
@@ -2309,35 +2254,16 @@
       }
     }
 
+    const notyf = new Notyf({
+      duration: 3000, position: { x: 'right', y: 'bottom' },
+      dismissible: true,
+      types: [
+        { type: 'success', background: '#4ade80' },
+        { type: 'error', background: '#f87171' }
+      ]
+    });
     function showToast(message, type = 'success') {
-      // Remove existing toast with exit animation
-      const existing = document.querySelector('.toast');
-      if (existing) {
-        existing.classList.add('exiting');
-        setTimeout(() => existing.remove(), 300);
-      }
-
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `
-        <div class="toast-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            ${type === 'success'
-              ? '<path d="M20 6L9 17l-5-5"/>'
-              : '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'}
-          </svg>
-        </div>
-        <div class="toast-content">
-          <div class="toast-message">${message}</div>
-        </div>
-      `;
-      document.body.appendChild(toast);
-
-      // Remove with exit animation after 3s
-      setTimeout(() => {
-        toast.classList.add('exiting');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
+      notyf[type === 'error' ? 'error' : 'success'](message);
     }
 
     // Auth functions
@@ -2356,7 +2282,7 @@
 
       // Hide OAuth code section on status update
       if (oauthCodeSection) {
-        oauthCodeSection.style.display = 'none';
+        oauthCodeSection.classList.add('hidden');
       }
 
       // Connected if any LLM provider is configured
@@ -2370,11 +2296,11 @@
         authBtn.className = 'logout-btn';
         // Hide Anthropic API key row when OAuth is active
         if (anthropicKeyRow) {
-          anthropicKeyRow.style.display = 'none';
+          anthropicKeyRow.classList.add('hidden');
         }
         // Dim and disable API key section
         if (authApiKeySection) {
-          authApiKeySection.style.opacity = '0.4';
+          authApiKeySection.classList.add('disabled-section');
           authApiKeySection.style.pointerEvents = 'none';
         }
 
@@ -2398,11 +2324,11 @@
         authBtn.className = 'oauth-btn';
         // Show Anthropic API key row
         if (anthropicKeyRow) {
-          anthropicKeyRow.style.display = 'grid';
+          anthropicKeyRow.classList.remove('hidden');
         }
         // Enable API key section
         if (authApiKeySection) {
-          authApiKeySection.style.opacity = '1';
+          authApiKeySection.classList.remove('disabled-section');
           authApiKeySection.style.pointerEvents = 'auto';
         }
       }
@@ -2410,10 +2336,10 @@
       // Brain power section: enabled when connected, dimmed when not
       if (brainPowerSection) {
         if (isConnected) {
-          brainPowerSection.style.opacity = '1';
+          brainPowerSection.classList.remove('disabled-section');
           brainPowerSection.style.pointerEvents = 'auto';
         } else {
-          brainPowerSection.style.opacity = '0.4';
+          brainPowerSection.classList.add('disabled-section');
           brainPowerSection.style.pointerEvents = 'none';
         }
       }
@@ -2438,7 +2364,7 @@
       try {
         const result = await window.pocketAgent.startOAuth();
         if (result.success) {
-          document.getElementById('oauth-code-section').style.display = 'block';
+          document.getElementById('oauth-code-section').classList.remove('hidden');
           document.getElementById('oauth-code').focus();
         } else {
           showToast(result.error || 'Failed to start OAuth', 'error');
@@ -2467,7 +2393,7 @@
         const result = await window.pocketAgent.completeOAuth(code);
         if (result.success) {
           showToast('Connected!', 'success');
-          document.getElementById('oauth-code-section').style.display = 'none';
+          document.getElementById('oauth-code-section').classList.add('hidden');
           document.getElementById('oauth-code').value = '';
           await loadSettings();
           updateAuthStatus();
@@ -2610,22 +2536,22 @@
           }
           statusEl.className = 'status success';
           statusEl.textContent = 'Installed';
-          installBtn.style.display = 'none';
-          checkBtn.style.display = 'inline-block';
+          installBtn.classList.add('hidden');
+          checkBtn.classList.remove('hidden');
         } else {
           statusEl.className = 'status warning';
           statusEl.textContent = 'Not installed';
-          installBtn.style.display = 'inline-block';
+          installBtn.classList.remove('hidden');
           installBtn.textContent = 'Install';
-          checkBtn.style.display = 'none';
+          checkBtn.classList.add('hidden');
           versionEl.textContent = '—';
         }
       } catch (err) {
         statusEl.className = 'status warning';
         statusEl.textContent = 'Not installed';
-        installBtn.style.display = 'inline-block';
+        installBtn.classList.remove('hidden');
         installBtn.textContent = 'Install';
-        checkBtn.style.display = 'none';
+        checkBtn.classList.add('hidden');
         versionEl.textContent = '—';
       }
 
@@ -2659,21 +2585,21 @@
             // Not installed
             statusEl.className = 'status warning';
             statusEl.textContent = 'Not installed';
-            installBtn.style.display = 'inline-block';
+            installBtn.classList.remove('hidden');
             installBtn.textContent = 'Install';
-            checkBtn.style.display = 'none';
+            checkBtn.classList.add('hidden');
           } else if (latestVersion && latestVersion !== pocketCliInstalledVersion) {
             statusEl.className = 'status info';
             statusEl.textContent = 'Update available';
-            updateBtn.style.display = 'inline-block';
+            updateBtn.classList.remove('hidden');
             updateBtn.textContent = `Update to v${latestVersion}`;
-            infoBox.style.display = 'flex';
+            infoBox.classList.remove('hidden');
             infoText.textContent = `v${latestVersion} is available. You are on v${pocketCliInstalledVersion}.`;
           } else {
             statusEl.className = 'status success';
             statusEl.textContent = 'Up to date';
-            updateBtn.style.display = 'none';
-            infoBox.style.display = 'none';
+            updateBtn.classList.add('hidden');
+            infoBox.classList.add('hidden');
           }
         }
       } catch (e) {
@@ -2724,7 +2650,7 @@
         updateBtn.textContent = 'Updating...';
         statusEl.className = 'status info';
         statusEl.textContent = 'Updating...';
-        infoBox.style.display = 'flex';
+        infoBox.classList.remove('hidden');
         infoText.textContent = 'Downloading and installing latest version...';
 
         await window.pocketAgent.runCommand(cliCommands.install);
@@ -2894,10 +2820,10 @@
       const infoText = document.getElementById('update-info-text');
 
       // Reset visibility
-      progressRow.style.display = 'none';
-      downloadBtn.style.display = 'none';
-      installBtn.style.display = 'none';
-      infoBox.style.display = 'none';
+      progressRow.classList.add('hidden');
+      downloadBtn.classList.add('hidden');
+      installBtn.classList.add('hidden');
+      infoBox.classList.add('hidden');
       checkBtn.disabled = false;
       checkBtn.textContent = 'Check Now';
 
@@ -2912,7 +2838,7 @@
           statusEl.textContent = 'Dev mode';
           checkBtn.disabled = true;
           checkBtn.textContent = 'Dev mode';
-          infoBox.style.display = 'flex';
+          infoBox.classList.remove('hidden');
           infoText.textContent = 'Auto-updates only work in the packaged app.';
           break;
 
@@ -2926,8 +2852,8 @@
         case 'available':
           statusEl.className = 'status success';
           statusEl.textContent = 'Update available!';
-          downloadBtn.style.display = 'inline-block';
-          infoBox.style.display = 'flex';
+          downloadBtn.classList.remove('hidden');
+          infoBox.classList.remove('hidden');
           infoText.textContent = `Version ${status.info?.version || 'unknown'} is available for download.`;
           break;
 
@@ -2936,7 +2862,7 @@
           statusEl.textContent = 'Up to date';
           if (status.error) {
             // Transient note (e.g. release still building)
-            infoBox.style.display = 'flex';
+            infoBox.classList.remove('hidden');
             infoText.textContent = status.error;
           }
           break;
@@ -2944,7 +2870,7 @@
         case 'downloading':
           statusEl.className = 'status info';
           statusEl.textContent = 'Downloading...';
-          progressRow.style.display = 'flex';
+          progressRow.classList.remove('hidden');
           const percent = status.progress?.percent || 0;
           progressBar.style.width = `${percent}%`;
           progressText.textContent = `${Math.round(percent)}%`;
@@ -2954,15 +2880,15 @@
         case 'downloaded':
           statusEl.className = 'status success';
           statusEl.textContent = 'Ready to install';
-          installBtn.style.display = 'inline-block';
-          infoBox.style.display = 'flex';
+          installBtn.classList.remove('hidden');
+          infoBox.classList.remove('hidden');
           infoText.textContent = `Version ${status.info?.version || 'unknown'} is ready to install. Click "Install & Restart" to update.`;
           break;
 
         case 'error':
           statusEl.className = 'status error';
           statusEl.textContent = 'Error';
-          infoBox.style.display = 'flex';
+          infoBox.classList.remove('hidden');
           infoText.textContent = status.error || 'An error occurred while checking for updates.';
           break;
       }

@@ -217,10 +217,6 @@ export class iOSChannel extends BaseChannel {
 // Singleton
 let iosChannelInstance: iOSChannel | null = null;
 
-export function getiOSChannel(): iOSChannel | null {
-  return iosChannelInstance;
-}
-
 export function createiOSChannel(port?: number): iOSChannel | null {
   if (!iosChannelInstance) {
     try {
