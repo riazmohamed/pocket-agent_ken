@@ -19,7 +19,7 @@ import { MemoryManager } from '../memory';
 import { ToolsConfig, setCurrentSessionId, runWithSessionId } from '../tools';
 import { SettingsManager } from '../settings';
 import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
-import { getModeConfig } from './agent-modes';
+import { getModeConfig, buildRoutingInstructions } from './agent-modes';
 import type { AgentModeId } from './agent-modes';
 import { getStreamConfig } from './chat-providers';
 import { getChatAgentTools, getServerTools } from './chat-tools';
@@ -550,6 +550,15 @@ export class ChatEngine {
       );
     }
 
+    // 2b. Dynamic routing instructions — mode-specific handoff targets
+    const routingInstructions = buildRoutingInstructions(sessionMode);
+    if (routingInstructions) {
+      staticParts.push(routingInstructions);
+      console.log(
+        `[ChatEngine] Routing instructions injected (${sessionMode}): ${routingInstructions.length} chars`
+      );
+    }
+
     // 3. Identity — agent name, description, personality
     const identity = SettingsManager.getFormattedIdentity();
     if (identity) {
@@ -629,9 +638,11 @@ export class ChatEngine {
   /**
    * Load conversation history from SQLite.
    * Uses smart context (rolling summary + recent) for longer sessions.
+   * Applies history filtering based on the target mode (strips technical noise for non-technical modes).
    */
   async loadConversationFromMemory(sessionId: string): Promise<void> {
     const messageCount = this.memory.getSessionMessageCount(sessionId);
+    const sessionMode = this.memory.getSessionMode(sessionId) as AgentModeId;
 
     if (messageCount <= MAX_CONTEXT_MESSAGES) {
       const messages = this.memory.getRecentMessages(MAX_CONTEXT_MESSAGES, sessionId);
@@ -641,7 +652,7 @@ export class ChatEngine {
           conversation.push({ role: msg.role, content: msg.content });
         }
       }
-      const cleaned = this.cleanConversation(conversation);
+      const cleaned = this.filterHistoryForMode(this.cleanConversation(conversation), sessionMode);
       this.conversationsBySession.set(sessionId, cleaned);
       console.log(`[ChatEngine] Loaded ${cleaned.length} messages for session ${sessionId}`);
       return;
@@ -665,7 +676,7 @@ export class ChatEngine {
         }
       }
 
-      const cleaned = this.cleanConversation(conversation);
+      const cleaned = this.filterHistoryForMode(this.cleanConversation(conversation), sessionMode);
       this.conversationsBySession.set(sessionId, cleaned);
       console.log(
         `[ChatEngine] Loaded ${cleaned.length} messages with smart context for session ${sessionId} (summary: ${smartContext.rollingSummary ? 'yes' : 'no'})`
@@ -682,12 +693,70 @@ export class ChatEngine {
           conversation.push({ role: msg.role, content: msg.content });
         }
       }
-      const cleaned = this.cleanConversation(conversation);
+      const cleaned = this.filterHistoryForMode(this.cleanConversation(conversation), sessionMode);
       this.conversationsBySession.set(sessionId, cleaned);
       console.log(
         `[ChatEngine] Fallback loaded ${cleaned.length} messages for session ${sessionId}`
       );
     }
+  }
+
+  /**
+   * Filter conversation history based on the target mode.
+   * Non-technical modes (writer, therapist) get tool calls and technical artifacts stripped
+   * to reduce noise and save context tokens.
+   */
+  private filterHistoryForMode(
+    conversation: MessageParam[],
+    targetMode: AgentModeId
+  ): MessageParam[] {
+    const modeConfig = getModeConfig(targetMode);
+    if (modeConfig.technicalMode) return conversation;
+
+    // Patterns that indicate technical tool output
+    const technicalPatterns = [
+      /^```(?:diff|json|typescript|javascript|python|bash|shell|xml|yaml|html|css)/m,
+      /^\s*\d+[→│|]\s/m, // Line-numbered file content (e.g., "  42→  const x = 1")
+      /^(?:Reading|Writing|Editing|Searching|Running) (?:file|command)/im,
+      /\[tool_(?:use|result)\]/i,
+      /^(?:---|@@|\+\+\+|---) /m, // Diff hunks
+    ];
+
+    let strippedCount = 0;
+    const filtered = conversation.map((msg): MessageParam => {
+      if (typeof msg.content !== 'string') return msg;
+
+      const isTechnical = technicalPatterns.some((p) => p.test(msg.content as string));
+      if (!isTechnical) return msg;
+
+      strippedCount++;
+      // For user messages with technical content, keep the conversational part
+      if (msg.role === 'user') {
+        const lines = (msg.content as string).split('\n');
+        const conversational = lines.filter(
+          (line) => !technicalPatterns.some((p) => p.test(line))
+        );
+        const kept = conversational.join('\n').trim();
+        return {
+          role: 'user',
+          content: kept || '[Previous technical request]',
+        };
+      }
+
+      // For assistant messages with technical output, replace with summary
+      return {
+        role: 'assistant',
+        content: '[Previous technical response — details omitted for this mode]',
+      };
+    });
+
+    if (strippedCount > 0) {
+      console.log(
+        `[ChatEngine] History filter: stripped technical content from ${strippedCount} messages for ${targetMode} mode`
+      );
+    }
+
+    return filtered;
   }
 
   private cleanConversation(conversation: MessageParam[]): MessageParam[] {

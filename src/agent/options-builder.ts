@@ -12,7 +12,7 @@ import { SettingsManager } from '../settings';
 import { buildCanUseToolCallback, buildPreToolUseHook } from './safety';
 import { getProviderForModel } from './providers';
 import { buildTemporalContext } from './context-extraction';
-import { getModeConfig } from './agent-modes';
+import { getModeConfig, buildRoutingInstructions } from './agent-modes';
 import type { AgentModeId } from './agent-modes';
 
 // ── SDK type aliases (mirrors the ones in index.ts) ──
@@ -160,6 +160,15 @@ export async function buildPersistentOptions(
   if (modeConfig.systemPrompt) {
     staticParts.push(modeConfig.systemPrompt);
     console.log(`[AgentManager] Mode prompt injected: ${modeConfig.systemPrompt.length} chars`);
+  }
+
+  // 2b. Dynamic routing instructions — mode-specific handoff targets
+  const routingInstructions = buildRoutingInstructions(sessionMode);
+  if (routingInstructions) {
+    staticParts.push(routingInstructions);
+    console.log(
+      `[AgentManager] Routing instructions injected (${sessionMode}): ${routingInstructions.length} chars`
+    );
   }
 
   // 3. Identity — agent name, description, personality (skipped for coder)

@@ -6,7 +6,12 @@ import {
   validateToolsConfig,
   getCurrentSessionId,
 } from '../tools';
-import { setSwitchModeCallback, setGetSessionIdCallback } from '../tools/agent-mode-tools';
+import {
+  setSwitchModeCallback,
+  setGetSessionIdCallback,
+  setGetCurrentModeCallback,
+  addOnHandoffCallback,
+} from '../tools/agent-mode-tools';
 import { closeBrowserManager } from '../browser';
 import { SettingsManager } from '../settings';
 import { EventEmitter } from 'events';
@@ -554,6 +559,14 @@ class AgentManagerClass extends EventEmitter {
       return this.switchSessionMode(sessionId, newMode, reason);
     });
     setGetSessionIdCallback(() => getCurrentSessionId());
+    setGetCurrentModeCallback((sessionId) => {
+      return (this.memory?.getSessionMode(sessionId) as AgentModeId) ?? 'general';
+    });
+
+    // Register default on_handoff callback — log handoffs to daily log
+    addOnHandoffCallback(({ fromMode, toMode, reason }) => {
+      console.log(`[AgentManager] Handoff: ${fromMode} -> ${toMode} (${reason})`);
+    });
 
     // Backfill message embeddings asynchronously (for semantic retrieval)
     this.backfillMessageEmbeddings().catch((e) => {
@@ -642,6 +655,10 @@ class AgentManagerClass extends EventEmitter {
     this.pendingModeSwitch.add(sessionId);
     this.sdkSessionIdBySession.delete(sessionId);
     this.memory.clearSdkSessionId(sessionId);
+
+    // Clear ChatEngine conversation cache so the next message reloads from SQLite
+    // with history filtering applied for the new mode.
+    this.chatEngine?.clearSession(sessionId);
 
     // Emit mode change event for UI
     this.emit('sessionModeChanged', sessionId, newMode, modeConfig.icon, modeConfig.name);

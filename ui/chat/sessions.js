@@ -198,10 +198,6 @@ async function switchSession(sessionId) {
         userMsgEl.classList.add('queued');
         queuedMessageElements.set(msgId, userMsgEl);
       }
-      // Restore workflow badge
-      if (msgData.workflowName) {
-        userMsgEl.classList.add('from-workflow');
-      }
     });
   }
 

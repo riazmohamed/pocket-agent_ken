@@ -114,9 +114,6 @@ async function sendMessage() {
   disableAutoAnimate();
   const userMsgEl = addMessage('user', displayMessage, true, attachments);
   userMsgEl.dataset.messageId = messageId;
-  if (workflow) {
-    userMsgEl.classList.add('from-workflow');
-  }
   // Keep AutoAnimate disabled during the entire query to prevent
   // the user message from shifting when status/streaming elements appear.
   // It will be re-enabled after the response is finalized.

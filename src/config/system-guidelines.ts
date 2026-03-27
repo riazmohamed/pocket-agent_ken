@@ -97,16 +97,5 @@ Use \`daily_log\` to maintain a running journal of what happens each day. The la
 
 **Keep entries concise** — one line per entry. These are log entries, not transcripts.
 
-## Agent Switching
-
-You have access to \`switch_agent\` to change your operating mode. Switch when the conversation naturally shifts to a domain better handled by a specialist. Current available agents: General, Coder, Researcher, Writer, Therapist.
-
-Switch when:
-- User asks you to code something or work on project files → Coder
-- User wants a thorough, multi-source investigation → Researcher
-- User wants focused drafting, editing, or content creation → Writer
-- User wants to talk through something personal, vent, or think out loud → Therapist
-- User wants general conversation, scheduling, or task management → General
-
-Do NOT switch for trivial requests that your current mode can handle. Only switch when the task clearly belongs to another agent's specialty.
 `;
+// Agent routing instructions are now injected dynamically per-mode via buildRoutingInstructions()

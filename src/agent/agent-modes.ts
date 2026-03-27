@@ -18,7 +18,24 @@ export interface AgentMode {
   allowedTools: string[];
   mcpServers?: string[];
   description: string;
+  /** LLM-facing description of when to hand off to this mode */
+  handoffDescription: string;
+  /** Which modes this agent can hand off to */
+  canHandoffTo: AgentModeId[];
+  /** Whether this mode produces technical artifacts (tool calls, file contents, etc.) */
+  technicalMode: boolean;
 }
+
+/** Context passed to on_handoff callbacks */
+export interface HandoffContext {
+  sessionId: string;
+  fromMode: AgentModeId;
+  toMode: AgentModeId;
+  reason: string;
+  timestamp: Date;
+}
+
+export type OnHandoffCallback = (context: HandoffContext) => void | Promise<void>;
 
 // ── Shared tool lists ──
 
@@ -89,7 +106,8 @@ You are the user's personal assistant. You handle their day-to-day: scheduling, 
 - You're a companion, not a search engine — be conversational, remember context, reference past conversations
 - Handle requests end-to-end: don't just tell the user how to do something, do it for them
 - Save new information about the user immediately — preferences, plans, people, decisions
-- Be proactive — suggest reminders, follow up on past topics, anticipate needs`;
+- Be proactive — suggest reminders, follow up on past topics, anticipate needs
+- If the user needs deep coding, research, writing, or emotional support, switch to the appropriate agent`;
 
 const CODER_PROMPT = ''; // Coder uses SDK claude_code preset + workspace CLAUDE.md — no additional prompt
 
@@ -102,7 +120,8 @@ You are in deep research mode. Unlike quick lookups, your job is thorough invest
 - Use every tool aggressively: web search for discovery, browser for deep reading, shell and Pocket CLI for data extraction
 - Structure output: lead with the answer, then evidence, then what you couldn't verify
 - Distinguish between established facts, expert opinion, and speculation
-- When sources conflict, present both sides — don't pick one silently`;
+- When sources conflict, present both sides — don't pick one silently
+- If the request falls outside research, switch back to the appropriate agent`;
 
 const WRITER_PROMPT = `## Writer Mode
 
@@ -113,7 +132,8 @@ You are in focused writing mode. You draft, edit, and refine content that matche
 - Check soul memory for the user's communication style and match it — not generic AI voice
 - Produce complete drafts, not outlines or bullet points (unless asked)
 - Every sentence earns its place — cut filler, be direct, be specific
-- When editing existing text, explain what you changed and why`;
+- When editing existing text, explain what you changed and why
+- If the request falls outside writing, switch back to the appropriate agent`;
 
 const THERAPIST_PROMPT = `## Therapist Mode
 
@@ -125,7 +145,8 @@ You are in supportive listening mode. The user wants to talk through something �
 - Don't jump to solutions unless they explicitly ask for advice
 - Reference what you know about their life, goals, and past conversations when relevant — show you remember
 - Validate emotions without being patronizing — no "that must be really hard" on repeat
-- Be honest, not just agreeable. If they're avoiding something obvious, gently point it out`;
+- Be honest, not just agreeable. If they're avoiding something obvious, gently point it out
+- If the conversation shifts to tasks, coding, or research, switch back to the appropriate agent`;
 
 // ── Mode registry ──
 
@@ -148,6 +169,9 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     ],
     mcpServers: ['pocket-agent'],
     description: 'Personal assistant — remembers, schedules, browses, manages life',
+    handoffDescription: 'General conversation, scheduling, reminders, task management',
+    canHandoffTo: ['coder', 'researcher', 'writer', 'therapist'],
+    technicalMode: false,
   },
   coder: {
     id: 'coder',
@@ -165,6 +189,9 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     ],
     mcpServers: ['pocket-agent', 'grep'],
     description: 'Full coding agent with file access and GitHub search',
+    handoffDescription: 'Code, file edits, debugging, programming tasks',
+    canHandoffTo: ['general', 'researcher'],
+    technicalMode: true,
   },
   researcher: {
     id: 'researcher',
@@ -182,6 +209,9 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     ],
     mcpServers: ['pocket-agent'],
     description: 'Deep research — web search, browsing, note-taking',
+    handoffDescription: 'Deep multi-source research, fact-checking, investigation',
+    canHandoffTo: ['general', 'coder', 'writer'],
+    technicalMode: true,
   },
   writer: {
     id: 'writer',
@@ -192,6 +222,9 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     allowedTools: [...MEMORY_TOOLS, ...SOUL_TOOLS, ...NOTIFY_TOOLS, ...SWITCH_TOOL],
     mcpServers: ['pocket-agent'],
     description: 'Focused writing — no web search, no browser distractions',
+    handoffDescription: 'Drafting, editing, content creation — no web distractions',
+    canHandoffTo: ['general', 'researcher'],
+    technicalMode: false,
   },
   therapist: {
     id: 'therapist',
@@ -202,6 +235,9 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     allowedTools: [...MEMORY_TOOLS, ...SOUL_TOOLS, ...NOTIFY_TOOLS, ...SWITCH_TOOL],
     mcpServers: ['pocket-agent'],
     description: 'Supportive listening — talk through stress, decisions, feelings',
+    handoffDescription: 'Talk through feelings, stress, decisions, personal matters',
+    canHandoffTo: ['general'],
+    technicalMode: false,
   },
 };
 
@@ -221,4 +257,18 @@ export function getModeConfig(mode: string): AgentMode {
 /** Get all modes as an array (for UI rendering) */
 export function getAllModes(): AgentMode[] {
   return ALL_MODE_IDS.map((id) => AGENT_MODES[id]);
+}
+
+/** Build dynamic routing instructions for injection into system prompt */
+export function buildRoutingInstructions(currentMode: AgentModeId): string {
+  const config = AGENT_MODES[currentMode];
+  const targets = config.canHandoffTo;
+
+  if (targets.length === 0) return '';
+
+  const targetList = targets
+    .map((id) => `\`${id}\` — ${AGENT_MODES[id].handoffDescription}`)
+    .join('; ');
+
+  return `You can use \`switch_agent\` to hand off when the conversation shifts: ${targetList}. Transfers are seamless — do not announce or draw attention to them.`;
 }

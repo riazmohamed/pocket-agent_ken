@@ -190,20 +190,6 @@
   border-color: var(--text-muted);
 }
 
-.message.error::after {
-  content: 'error';
-  position: absolute;
-  top: -8px;
-  left: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--error);
-  background: var(--bg-secondary);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
 
 .message.error .error-body {
   color: var(--text-secondary);
@@ -225,21 +211,6 @@
   transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-.message.queued::after {
-  content: 'queued';
-  position: absolute;
-  top: -8px;
-  right: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
 
 .message.user.queued {
   position: relative;
@@ -251,99 +222,6 @@
   box-shadow: none;
 }
 
-/* Scheduled task badge */
-.message.scheduled {
-  position: relative;
-}
-
-.message.scheduled::after {
-  content: attr(data-badge);
-  position: absolute;
-  top: -8px;
-  left: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--accent-hover);
-  background: var(--badge-bg);
-  border: 1px solid var(--badge-border);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-/* Telegram message badge */
-.message.from-telegram {
-  position: relative;
-}
-
-.message.from-telegram .telegram-badge {
-  position: absolute;
-  top: -8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--telegram);
-  background: #0d1a22;
-  border: 1px solid #1a3344;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.message.from-telegram .telegram-badge svg {
-  width: 10px;
-  height: 10px;
-  fill: var(--telegram);
-}
-
-/* iOS message badge */
-.message.from-ios {
-  position: relative;
-}
-
-.message.from-ios .ios-badge {
-  position: absolute;
-  top: -8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 9px;
-  color: var(--accent-hover);
-  background: var(--badge-bg);
-  border: 1px solid var(--badge-border);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.message.from-ios .ios-badge svg {
-  width: 10px;
-  height: 10px;
-  fill: currentColor;
-}
-
-/* Workflow badge */
-.message.from-workflow {
-  position: relative;
-}
-
-.message.from-workflow::after {
-  content: 'workflow';
-  position: absolute;
-  top: -8px;
-  left: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--accent-hover);
-  background: var(--badge-bg);
-  border: 1px solid var(--badge-border);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
 
 /* Queue indicator in status */
 .queue-indicator {

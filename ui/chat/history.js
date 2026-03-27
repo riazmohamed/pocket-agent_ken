@@ -38,32 +38,6 @@ async function loadHistory() {
         // Render error messages with error style instead of assistant style
         const renderRole = (msg.role === 'assistant' && msg.metadata?.isError) ? 'error' : msg.role;
         const msgEl = addMessage(renderRole, displayContent, false, [], msg.timestamp);
-        // Add workflow badge
-        if (isWorkflowMsg) {
-          msgEl.classList.add('from-workflow');
-        }
-        // Add scheduled badge if message came from scheduler
-        if (msg.metadata?.source === 'scheduler' && msg.metadata?.jobName) {
-          msgEl.classList.add('scheduled');
-          msgEl.dataset.badge = msg.metadata.jobName;
-        }
-        // Add Telegram badge if message came from Telegram
-        if (msg.metadata?.source === 'telegram') {
-          msgEl.classList.add('from-telegram');
-          const badge = document.createElement('div');
-          badge.className = 'telegram-badge';
-          const attachmentLabel = getAttachmentLabel(msg.metadata.hasAttachment, msg.metadata.attachmentType);
-          badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>${attachmentLabel}`;
-          msgEl.insertBefore(badge, msgEl.firstChild);
-        }
-        // Add iOS badge if message came from mobile
-        if (msg.metadata?.source === 'ios') {
-          msgEl.classList.add('from-ios');
-          const badge = document.createElement('div');
-          badge.className = 'ios-badge';
-          badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="2" d="M12 19h.01"/><path stroke-width="1.5" d="M13.5 2h-3c-2.357 0-3.536 0-4.268.732S5.5 4.643 5.5 7v10c0 2.357 0 3.535.732 4.268S8.143 22 10.5 22h3c2.357 0 3.535 0 4.268-.732c.732-.733.732-1.911.732-4.268V7c0-2.357 0-3.536-.732-4.268C17.035 2 15.857 2 13.5 2"/></g></svg> Mobile`;
-          msgEl.insertBefore(badge, msgEl.firstChild);
-        }
       }
     }
 

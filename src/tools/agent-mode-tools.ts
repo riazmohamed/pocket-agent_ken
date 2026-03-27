@@ -6,7 +6,7 @@
  */
 
 import { ALL_MODE_IDS, AGENT_MODES, isValidModeId } from '../agent/agent-modes';
-import type { AgentModeId } from '../agent/agent-modes';
+import type { AgentModeId, OnHandoffCallback } from '../agent/agent-modes';
 
 // Callback set by AgentManager to handle the actual mode switch
 let switchModeCallback:
@@ -16,6 +16,12 @@ let switchModeCallback:
 // Callback to get the current session ID from the tool execution context
 let getSessionIdCallback: (() => string | null) | null = null;
 
+// Callback to get the current mode for a session (for directed graph validation)
+let getCurrentModeCallback: ((sessionId: string) => AgentModeId | null) | null = null;
+
+// Registered on_handoff callbacks
+const onHandoffCallbacks: OnHandoffCallback[] = [];
+
 export function setSwitchModeCallback(
   cb: (sessionId: string, newMode: AgentModeId, reason: string) => Promise<string>
 ): void {
@@ -24,6 +30,18 @@ export function setSwitchModeCallback(
 
 export function setGetSessionIdCallback(cb: () => string | null): void {
   getSessionIdCallback = cb;
+}
+
+export function setGetCurrentModeCallback(cb: (sessionId: string) => AgentModeId | null): void {
+  getCurrentModeCallback = cb;
+}
+
+export function addOnHandoffCallback(cb: OnHandoffCallback): void {
+  onHandoffCallbacks.push(cb);
+}
+
+export function getOnHandoffCallbacks(): OnHandoffCallback[] {
+  return onHandoffCallbacks;
 }
 
 export interface AgentModeTool {
@@ -40,7 +58,7 @@ export interface AgentModeTool {
 export function getSwitchAgentTool(): AgentModeTool {
   return {
     name: 'switch_agent',
-    description: `Switch to a different agent mode. The conversation continues with the same context — only the system prompt and available tools change. Available modes: ${ALL_MODE_IDS.map((id) => `${id} (${AGENT_MODES[id].name})`).join(', ')}`,
+    description: 'Hand off to a different agent mode. Conversation context is preserved.',
     input_schema: {
       type: 'object',
       properties: {
@@ -69,12 +87,40 @@ export function getSwitchAgentTool(): AgentModeTool {
         return 'Error: No active session context for mode switch';
       }
 
+      // Validate directed handoff graph
+      const currentMode = getCurrentModeCallback?.(sessionId);
+      if (currentMode) {
+        const currentConfig = AGENT_MODES[currentMode];
+        if (!currentConfig.canHandoffTo.includes(mode as AgentModeId)) {
+          return `Cannot switch directly from ${currentMode} to ${mode}. Available targets from ${currentMode}: ${currentConfig.canHandoffTo.join(', ')}`;
+        }
+      }
+
       if (!switchModeCallback) {
         return 'Error: Mode switching not initialized';
       }
 
       try {
-        return await switchModeCallback(sessionId, mode as AgentModeId, reason);
+        const result = await switchModeCallback(sessionId, mode as AgentModeId, reason);
+
+        // Fire on_handoff callbacks
+        const fromMode = currentMode || 'general';
+        const context = {
+          sessionId,
+          fromMode: fromMode as AgentModeId,
+          toMode: mode as AgentModeId,
+          reason,
+          timestamp: new Date(),
+        };
+        for (const cb of onHandoffCallbacks) {
+          try {
+            await cb(context);
+          } catch (err) {
+            console.error('[AgentModeTool] on_handoff callback error:', err);
+          }
+        }
+
+        return result;
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         return `Error switching mode: ${msg}`;
