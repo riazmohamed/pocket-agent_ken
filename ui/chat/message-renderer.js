@@ -504,7 +504,18 @@ function updateStatusIndicator(status, sessionId) {
     detailEl.classList.add('hidden');
   } else if (status.type === 'partial_text') {
     // Show live-updating assistant bubble with composed text
-    if (status.partialText && status.sessionId) {
+    if (status.sessionId) {
+      // partialReplace: full text from coder mode (replace entirely)
+      // otherwise: delta from general mode (accumulate)
+      const prev = streamingTextBySession.get(status.sessionId) || '';
+      const accumulated = status.partialReplace
+        ? (status.partialText || '')
+        : prev + (status.partialText || '');
+      streamingTextBySession.set(status.sessionId, accumulated);
+
+      // Skip rendering if there's no content yet
+      if (!accumulated) return;
+
       let bubble = streamingBubbleBySession.get(status.sessionId);
       if (!bubble) {
         bubble = document.createElement('div');
@@ -517,17 +528,6 @@ function updateStatusIndicator(status, sessionId) {
         }
         streamingBubbleBySession.set(status.sessionId, bubble);
       }
-      // Hide the status indicator while streaming text is visible to prevent jumpiness
-      if (statusEl) {
-        statusEl.style.display = 'none';
-      }
-      // partialReplace: full text from coder mode (replace entirely)
-      // otherwise: delta from general mode (accumulate with separator)
-      const prev = streamingTextBySession.get(status.sessionId) || '';
-      const accumulated = status.partialReplace
-        ? status.partialText
-        : prev + status.partialText;
-      streamingTextBySession.set(status.sessionId, accumulated);
       // Throttle DOM updates with RAF — skip if a render is already queued
       if (!streamingRafBySession.has(status.sessionId)) {
         const rafId = requestAnimationFrame(() => {
@@ -541,6 +541,10 @@ function updateStatusIndicator(status, sessionId) {
           currentBubble.innerHTML = '';
           while (contentDiv.firstChild) {
             currentBubble.appendChild(contentDiv.firstChild);
+          }
+          // Hide status indicator only after bubble has actual rendered content
+          if (statusEl && text) {
+            statusEl.style.display = 'none';
           }
           // Only scroll if user is near the bottom (within 120px)
           const distFromBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight;
