@@ -22,6 +22,7 @@ export interface UpdateStatus {
 
 let currentStatus: UpdateStatus = { status: 'idle' };
 let settingsWindow: BrowserWindow | null = null;
+let chatWindow: BrowserWindow | null = null;
 let isInitialized = false;
 
 /**
@@ -37,6 +38,9 @@ export function getUpdateStatus(): UpdateStatus {
 function sendStatusToRenderer(): void {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.webContents.send('updater:status', currentStatus);
+  }
+  if (chatWindow && !chatWindow.isDestroyed()) {
+    chatWindow.webContents.send('updater:status', currentStatus);
   }
 }
 
@@ -197,6 +201,13 @@ export function installUpdate(): void {
  */
 export function setSettingsWindow(window: BrowserWindow | null): void {
   settingsWindow = window;
+}
+
+/**
+ * Set the chat window reference for status updates
+ */
+export function setChatWindow(window: BrowserWindow | null): void {
+  chatWindow = window;
 }
 
 /**

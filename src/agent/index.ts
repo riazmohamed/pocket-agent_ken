@@ -328,7 +328,7 @@ type TaskCompletedHookCallback = (input: {
 }>;
 
 type UserPromptSubmitHookCallback = (
-  input: any,
+  input: unknown,
   toolUseID: string | undefined,
   options: { signal: AbortSignal }
 ) => Promise<{

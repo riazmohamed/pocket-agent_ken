@@ -13,7 +13,7 @@ import { createiOSChannel, iOSChannel } from '../channels/ios';
 import { SettingsManager } from '../settings';
 import { DEFAULT_COMMANDS } from '../config/commands';
 import { getBrowserManager } from '../browser';
-import { initializeUpdater, setupUpdaterIPC, setSettingsWindow } from './updater';
+import { initializeUpdater, setupUpdaterIPC, setSettingsWindow, setChatWindow } from './updater';
 import { createWindow, getWindow } from './windows';
 import { fixPathForPackagedApp } from './node-paths';
 import { setupBirthdayCronJobs } from './birthday';
@@ -332,7 +332,10 @@ function ensureAgentWorkspace(): string {
 
     // Mark onboarding as completed for existing users who already have keys
     // (prevents re-triggering onboarding after updating to the embedded version)
-    if (SettingsManager.hasRequiredKeys() && SettingsManager.get('onboarding.completed') !== 'true') {
+    if (
+      SettingsManager.hasRequiredKeys() &&
+      SettingsManager.get('onboarding.completed') !== 'true'
+    ) {
       SettingsManager.set('onboarding.completed', 'true');
       console.log('[Main] Marked onboarding as completed for existing user');
     }
@@ -433,14 +436,16 @@ function closeSplashScreen(): void {
 // ============ Windows ============
 
 function openChatWindow(): void {
-  createWindow({
+  const win = createWindow({
     id: WIN.CHAT,
     title: `Pocket Agent v${app.getVersion()}`,
     htmlFile: 'chat.html',
     width: 1020,
     height: 720,
     boundsKey: 'window.chatBounds',
+    onClosed: () => setChatWindow(null),
   });
+  setChatWindow(win);
 }
 
 function openCronWindow(): void {

@@ -359,6 +359,8 @@ async function stgSaveKey(inputId) {
     _stgShowToast('Got it!', 'success');
     const deleteBtn = document.getElementById(`${inputId}-delete`);
     if (deleteBtn) deleteBtn.classList.add('visible');
+    const rebootKeys = ['anthropic.apiKey', 'telegram.botToken'];
+    if (rebootKeys.includes(inputId)) _stgActivateReboot();
   } catch (err) {
     console.error('[Settings] Failed to save key:', err);
     _stgShowToast('Save hiccup, try again?', 'error');
@@ -444,6 +446,7 @@ async function stgValidateKey(provider) {
       const deleteBtn = document.getElementById(`${inputId}-delete`);
       if (deleteBtn) deleteBtn.classList.add('visible');
       await _stgRefreshModelDropdown();
+      if (['anthropic', 'telegram'].includes(provider)) _stgActivateReboot();
     } else {
       _stgShowToast(result.error || 'That key didn\'t work', 'error');
     }
@@ -614,6 +617,7 @@ async function stgSaveChatUsername() {
     const checkParams = new URLSearchParams({ name: raw });
     if (adminKey) checkParams.set('adminKey', adminKey);
     const checkRes = await fetch(`${_STG_CHAT_API_URL}/api/check-username?${checkParams}`);
+    if (!checkRes.ok) { _stgShowToast('Chat server error, try again later', 'error'); return; }
     const checkData = await checkRes.json();
     if (!checkData.available) { _stgShowToast('Username taken, try another', 'error'); return; }
 
@@ -622,6 +626,7 @@ async function stgSaveChatUsername() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: raw, oldUsername, adminKey }),
     });
+    if (!regRes.ok) { _stgShowToast('Chat server error, try again later', 'error'); return; }
     const regData = await regRes.json();
     if (regData.error) { _stgShowToast(regData.error === 'taken' ? 'Username taken, try another' : regData.error, 'error'); return; }
 
@@ -674,12 +679,13 @@ async function _stgUpdateAuthStatus() {
     if (anthropicKeyRow) anthropicKeyRow.classList.add('hidden');
     if (authApiKeySection) { authApiKeySection.classList.add('disabled-section'); authApiKeySection.style.pointerEvents = 'none'; }
 
-    window.pocketAgent.auth.validateOAuth().then(result => {
+    try {
+      const result = await window.pocketAgent.auth.validateOAuth();
       if (result.valid) { statusBadge.className = 'auth-badge oauth'; statusBadge.textContent = 'Connected'; }
       else { statusBadge.className = 'auth-badge none'; statusBadge.textContent = 'Session expired'; authBtn.textContent = 'Sign In'; authBtn.className = 'oauth-btn'; }
-    }).catch(() => {
-      statusBadge.className = 'auth-badge none'; statusBadge.textContent = 'Session expired'; authBtn.textContent = 'Sign In'; authBtn.className = 'oauth-btn';
-    });
+    } catch {
+      statusBadge.className = 'auth-badge none'; statusBadge.textContent = 'Could not verify'; authBtn.textContent = 'Sign In'; authBtn.className = 'oauth-btn';
+    }
   } else {
     statusBadge.className = 'auth-badge none hidden';
     statusBadge.textContent = '';
