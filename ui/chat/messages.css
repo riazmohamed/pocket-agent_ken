@@ -416,10 +416,30 @@ mark.search-highlight.current {
 }
 
 .empty-state .empty-subtitle {
-  font-size: 14px;
-  color: var(--text-muted);
+  font-family: 'Cal Sans', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent-secondary) 40%,
+    rgba(255, 255, 255, 0.9) 50%,
+    var(--accent-secondary) 60%,
+    var(--accent) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-align: center;
-  max-width: 280px;
+  max-width: 800px;
+  animation: greeting-shimmer 4s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes greeting-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .empty-state svg {

@@ -1,10 +1,61 @@
+function getGreeting() {
+  const hour = new Date().getHours();
+  const greetings = {
+    morning: [
+      "morning, what are we building",
+      "fresh start, what's the plan",
+      "new day, new ideas",
+      "morning, where do we begin",
+      "alright, what's first today"
+    ],
+    lunch: [
+      "okay, what's on the agenda",
+      "fresh slate, talk to me",
+      "alright, what are we doing",
+      "new thread, what's the move",
+      "ready when you are"
+    ],
+    afternoon: [
+      "clean slate, what's next",
+      "alright, what do you need",
+      "new chat, let's get into it",
+      "okay what are we tackling",
+      "fresh page, go ahead"
+    ],
+    night: [
+      "evening, what's on your mind",
+      "blank canvas, what's the idea",
+      "alright, what are we cooking",
+      "new thread, lay it on me",
+      "okay, where do we start"
+    ],
+    midnight: [
+      "late night idea, let's hear it",
+      "can't sleep, let's build something",
+      "fresh start at a wild hour",
+      "okay, what's keeping you up",
+      "midnight session, go ahead"
+    ]
+  };
+
+  let period;
+  if (hour >= 5 && hour < 12) period = 'morning';
+  else if (hour >= 12 && hour < 14) period = 'lunch';
+  else if (hour >= 14 && hour < 18) period = 'afternoon';
+  else if (hour >= 18 && hour < 24) period = 'night';
+  else period = 'midnight';
+
+  const pool = greetings[period];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function showEmptyState() {
-  const displayName = agentName || 'Franky';
+  const greeting = getGreeting();
+  const nameTag = userName ? `, ${escapeHtml(userName)}` : '';
   messagesDiv.innerHTML = `
     <div class="empty-state">
       <div class="pixel-heart"></div>
-      <div class="empty-title">${escapeHtml(displayName)} here!</div>
-      <div class="empty-subtitle">ready to go whenever you are, i've got your back ✨</div>
+      <div class="empty-subtitle">${greeting}${nameTag}</div>
     </div>
   `;
 }
