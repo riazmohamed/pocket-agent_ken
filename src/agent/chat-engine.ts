@@ -44,8 +44,8 @@ const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'claude-sonnet-4-6': 1_000_000,
   'claude-haiku-4-5-20251001': 200_000,
   'kimi-k2.5': 128_000,
+  'glm-5.1': 200_000,
   'glm-5-turbo': 200_000,
-  'glm-5': 200_000,
   'glm-4.7': 128_000,
 };
 

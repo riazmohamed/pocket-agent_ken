@@ -23,9 +23,10 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     sdkBaseUrl: 'https://api.moonshot.ai/anthropic',
   },
   glm: {
-    // General mode: gg-ai uses OpenAI-compat endpoint
+    // General mode: no baseUrl — gg-ai's built-in GLM provider handles endpoint
+    // selection with fallback (coding endpoint first, then regular).
+    // Setting baseUrl would bypass this and break Coding Plan models like glm-5.1.
     // Coder mode: SDK subprocess needs the Anthropic-compat endpoint
-    baseUrl: 'https://api.z.ai/api/paas/v4',
     sdkBaseUrl: 'https://api.z.ai/api/anthropic',
   },
 };
@@ -40,8 +41,8 @@ export const MODEL_PROVIDERS: Record<string, ProviderType> = {
   // Moonshot/Kimi models
   'kimi-k2.5': 'moonshot',
   // Z.AI GLM models
+  'glm-5.1': 'glm',
   'glm-5-turbo': 'glm',
-  'glm-5': 'glm',
   'glm-4.7': 'glm',
 };
 

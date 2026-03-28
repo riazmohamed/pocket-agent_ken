@@ -30,8 +30,8 @@ export function getAvailableModels(): Array<{ id: string; name: string; provider
   const hasGlmKey = SettingsManager.get('glm.apiKey');
   if (hasGlmKey) {
     models.push(
+      { id: 'glm-5.1', name: 'GLM 5.1', provider: 'glm' },
       { id: 'glm-5-turbo', name: 'GLM 5 Turbo', provider: 'glm' },
-      { id: 'glm-5', name: 'GLM 5', provider: 'glm' },
       { id: 'glm-4.7', name: 'GLM 4.7', provider: 'glm' }
     );
   }

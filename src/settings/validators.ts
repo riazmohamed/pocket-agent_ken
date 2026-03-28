@@ -148,7 +148,7 @@ export async function validateGlmKey(apiKey: string): Promise<ValidationResult> 
       'anthropic-version': '2023-06-01',
     },
     body: {
-      model: 'glm-5',
+      model: 'glm-5.1',
       max_tokens: 10,
       messages: [{ role: 'user', content: 'Hi' }],
     },
