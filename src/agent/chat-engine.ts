@@ -24,6 +24,13 @@ import type { AgentModeId } from './agent-modes';
 import { getStreamConfig } from './chat-providers';
 import { getChatAgentTools } from './chat-tools';
 import { buildTemporalContext } from './context-extraction';
+import {
+  formatToolName,
+  formatToolInput as formatToolInputDisplay,
+  isPocketCliCommand,
+  formatPocketCommand,
+  getSubagentMessage,
+} from './display-formatting';
 import type {
   AgentStatus,
   ImageContent,
@@ -301,6 +308,8 @@ export class ChatEngine {
       let totalOutputTokens = 0;
       let totalCacheRead = 0;
       let totalCacheWrite = 0;
+      // Track active subagents for status display
+      const activeSubagents = new Map<string, { type: string; description: string }>();
 
       for await (const event of loop) {
         switch (event.type) {
@@ -315,33 +324,102 @@ export class ChatEngine {
             break;
 
           case 'tool_call_start': {
-            const isShell = event.name === 'shell_command';
+            const toolName = formatToolName(event.name);
+            const toolInput = formatToolInputDisplay(event.args);
+
+            // Subagent tool — show purple subagent indicator
+            if (event.name === 'subagent') {
+              const args = event.args as { task?: string; agent?: string };
+              const agentType = args.agent || 'general';
+              const description = args.task?.slice(0, 80) || 'working on it';
+              const agentId = `agent-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+              activeSubagents.set(agentId, { type: agentType, description });
+
+              this.emitStatus({
+                type: 'subagent_start',
+                sessionId,
+                agentId,
+                agentType,
+                toolInput: description,
+                agentCount: activeSubagents.size,
+                message: getSubagentMessage(agentType),
+              });
+              break;
+            }
+
+            // Shell command — check for pocket CLI
+            if (event.name === 'shell_command') {
+              const isPocket = isPocketCliCommand(event.args);
+              if (isPocket) {
+                const pocketName = formatPocketCommand(event.args);
+                this.emitStatus({
+                  type: 'tool_start',
+                  sessionId,
+                  toolName: pocketName,
+                  toolInput,
+                  message: `${pocketName}...`,
+                  isPocketCli: true,
+                });
+              } else {
+                this.emitStatus({
+                  type: 'tool_start',
+                  sessionId,
+                  toolName,
+                  toolInput,
+                  message: toolInput ? `running ${toolInput}...` : `${toolName}...`,
+                  isPocketCli: false,
+                });
+              }
+              break;
+            }
+
+            // All other tools — use friendly formatted name
             this.emitStatus({
               type: 'tool_start',
               sessionId,
-              toolName: event.name,
-              toolInput: this.formatToolInput(event.args),
-              message: isShell
-                ? `running ${this.formatToolInput(event.args)}...`
-                : `batting at ${event.name}...`,
-              isPocketCli: isShell,
+              toolName,
+              toolInput,
+              message: `${toolName}...`,
             });
             break;
           }
 
-          case 'tool_call_end':
-            this.emitStatus({
-              type: 'tool_end',
-              sessionId,
-              message: 'caught it! processing...',
-            });
+          case 'tool_call_end': {
+            // Check if a subagent just finished
+            if (activeSubagents.size > 0) {
+              const firstKey = activeSubagents.keys().next().value;
+              if (firstKey) activeSubagents.delete(firstKey);
+
+              if (activeSubagents.size > 0) {
+                this.emitStatus({
+                  type: 'subagent_update',
+                  sessionId,
+                  agentCount: activeSubagents.size,
+                  message: `${activeSubagents.size} kitty${activeSubagents.size > 1 ? 'ies' : ''} still hunting`,
+                });
+              } else {
+                this.emitStatus({
+                  type: 'subagent_end',
+                  sessionId,
+                  agentCount: 0,
+                  message: 'squad done! cleaning up...',
+                });
+              }
+            } else {
+              this.emitStatus({
+                type: 'tool_end',
+                sessionId,
+                message: 'caught it! processing...',
+              });
+            }
             break;
+          }
 
           case 'server_tool_call':
             this.emitStatus({
               type: 'tool_start',
               sessionId,
-              toolName: event.name,
+              toolName: formatToolName(event.name),
               message: 'prowling the web...',
             });
             break;
@@ -382,9 +460,16 @@ export class ChatEngine {
 
           case 'error':
             console.error('[ChatEngine] Agent error event:', event.error);
+            this.emitStatus({
+              type: 'thinking',
+              sessionId,
+              message: 'hit a snag, recovering...',
+            });
             break;
 
-          // thinking_delta, tool_call_update — ignored
+          // thinking_delta — internal chain-of-thought, not user-facing
+          // tool_call_update — onUpdate from tools, no tools use it yet
+          // steering_message — internal framework steering
         }
       }
 
@@ -859,12 +944,5 @@ export class ChatEngine {
   clearSession(sessionId: string): void {
     this.conversationsBySession.delete(sessionId);
     this.pendingMediaBySession.delete(sessionId);
-  }
-
-  private formatToolInput(input: unknown): string {
-    if (!input) return '';
-    if (typeof input === 'string') return input.slice(0, 100);
-    const inp = input as Record<string, string | undefined>;
-    return (inp.query || inp.url || inp.category || inp.content || inp.action || '').slice(0, 80);
   }
 }

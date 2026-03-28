@@ -54,6 +54,23 @@ export function formatToolName(name: string): string {
     // macOS tools
     notify: 'sending a meow',
 
+    // Soul tools
+    soul_set: 'shaping my personality',
+    soul_get: 'checking my vibe',
+    soul_list: 'listing my traits',
+    soul_delete: 'shedding a trait',
+
+    // Project tools
+    set_project: 'setting up the workspace',
+    get_project: 'checking the workspace',
+    clear_project: 'clearing the workspace',
+
+    // Agent tools
+    switch_agent: 'shapeshifting to another form',
+    web_fetch: 'fetching that page',
+    shell_command: 'hacking at the terminal',
+    subagent: 'summoning a helper kitty',
+
     // Agent Teams tools
     TeammateTool: 'rallying the squad',
     TeamCreate: 'rallying the squad',

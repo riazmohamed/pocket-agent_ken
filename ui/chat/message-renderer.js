@@ -375,6 +375,7 @@ function updateStatusIndicator(status, sessionId) {
     statusEl.classList.remove('subagent-active');
     statusEl.classList.remove('team-active');
     statusEl.classList.remove('plan-mode-active');
+    statusEl.classList.remove('tool-blocked');
     if (status.isPocketCli) {
       statusEl.classList.add('pocket-cli-active');
     } else {
