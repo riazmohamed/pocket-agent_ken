@@ -460,27 +460,15 @@ function openCronWindow(): void {
 }
 
 function openSettingsWindow(tab?: string): void {
-  // If already open, focus and optionally navigate to tab
-  const existing = getWindow(WIN.SETTINGS);
-  if (existing) {
-    existing.focus();
-    if (tab) existing.webContents.send('navigate-tab', tab);
-    return;
+  // Open settings panel inside the chat window instead of a separate modal
+  const chatWin = getWindow(WIN.CHAT);
+  if (chatWin) {
+    chatWin.show();
+    chatWin.focus();
+    chatWin.webContents.send('open-settings', tab);
+    // Connect updater to chat window for status updates
+    setSettingsWindow(chatWin);
   }
-
-  const win = createWindow({
-    id: WIN.SETTINGS,
-    title: 'Tweaks - Pocket Agent',
-    htmlFile: 'settings.html',
-    width: 700,
-    height: 600,
-    boundsKey: 'window.settingsBounds',
-    hash: tab ? tab : undefined,
-    onClosed: () => setSettingsWindow(null),
-  });
-
-  // Connect updater to settings window for status updates
-  setSettingsWindow(win);
 }
 
 function openCustomizeWindow(): void {

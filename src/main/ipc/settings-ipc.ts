@@ -201,6 +201,37 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
     return SettingsManager.validateGlmKey(key);
   });
 
+  // Validate an already-stored key (reads real key from backend, never sent to renderer)
+  ipcMain.handle('settings:validateStoredKey', async (_, provider: string) => {
+    const keyMap: Record<string, string> = {
+      anthropic: 'anthropic.apiKey',
+      openai: 'openai.apiKey',
+      moonshot: 'moonshot.apiKey',
+      glm: 'glm.apiKey',
+      telegram: 'telegram.botToken',
+    };
+    const settingKey = keyMap[provider];
+    if (!settingKey) return { valid: false, error: 'Unknown provider' };
+
+    const storedKey = SettingsManager.get(settingKey);
+    if (!storedKey) return { valid: false, error: 'No key saved — enter one first' };
+
+    switch (provider) {
+      case 'anthropic':
+        return SettingsManager.validateAnthropicKey(storedKey);
+      case 'openai':
+        return SettingsManager.validateOpenAIKey(storedKey);
+      case 'moonshot':
+        return SettingsManager.validateMoonshotKey(storedKey);
+      case 'glm':
+        return SettingsManager.validateGlmKey(storedKey);
+      case 'telegram':
+        return SettingsManager.validateTelegramToken(storedKey);
+      default:
+        return { valid: false, error: 'Unknown provider' };
+    }
+  });
+
   ipcMain.handle('settings:getAvailableModels', async () => {
     return getAvailableModels();
   });

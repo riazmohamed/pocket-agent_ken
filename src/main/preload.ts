@@ -114,6 +114,11 @@ contextBridge.exposeInMainWorld('pocketAgent', {
       ipcRenderer.on('navigate-tab', listener);
       return () => ipcRenderer.removeListener('navigate-tab', listener);
     },
+    onOpenSettings: (callback: (tab?: string) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, tab?: string) => callback(tab);
+      ipcRenderer.on('open-settings', listener);
+      return () => ipcRenderer.removeListener('open-settings', listener);
+    },
   },
 
   // ─── Customize ───────────────────────────────────────────────────────
@@ -159,6 +164,7 @@ contextBridge.exposeInMainWorld('pocketAgent', {
     moonshotKey: (key: string) => ipcRenderer.invoke('settings:validateMoonshot', key),
     glmKey: (key: string) => ipcRenderer.invoke('settings:validateGlm', key),
     telegramToken: (token: string) => ipcRenderer.invoke('settings:validateTelegram', token),
+    storedKey: (provider: string) => ipcRenderer.invoke('settings:validateStoredKey', provider),
   },
 
   // ─── Auth (OAuth) ───────────────────────────────────────────────────
@@ -458,6 +464,7 @@ declare global {
         getVersion: () => Promise<string>;
         getPlatform: () => string;
         onNavigateTab: (callback: (tab: string) => void) => () => void;
+        onOpenSettings: (callback: (tab?: string) => void) => () => void;
       };
 
       customize: {
@@ -554,6 +561,7 @@ declare global {
         telegramToken: (
           token: string
         ) => Promise<{ valid: boolean; error?: string; botInfo?: unknown }>;
+        storedKey: (provider: string) => Promise<{ valid: boolean; error?: string }>;
       };
 
       auth: {

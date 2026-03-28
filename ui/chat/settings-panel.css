@@ -339,7 +339,7 @@
 #settings-view .input-with-btn button {
   padding: 8px 12px;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 12px;
@@ -350,8 +350,9 @@
 }
 
 #settings-view .input-with-btn button:hover {
-  background: var(--border);
-  color: var(--text-primary);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 #settings-view .input-with-btn button.validating {
@@ -416,7 +417,7 @@
   padding: 6px 10px;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 500;
@@ -425,7 +426,7 @@
   white-space: nowrap;
 }
 
-#settings-view .oauth-btn:hover:not(:disabled) { background: var(--border); color: var(--text-primary); }
+#settings-view .oauth-btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
 #settings-view .oauth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 #settings-view .risk-badge {
@@ -487,7 +488,7 @@
   padding: 5px 10px;
   background: var(--bg-tertiary);
   color: var(--text-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
   font-size: 11px;
   cursor: pointer;
@@ -550,7 +551,7 @@
   margin-top: 8px;
   padding: 8px 14px;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 12px;
@@ -559,7 +560,7 @@
   transition: all 0.15s;
 }
 
-#settings-view .skills-setup-btn:hover { background: var(--border); color: var(--text-primary); }
+#settings-view .skills-setup-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* Compact API Keys Table */
 #settings-view .keys-table {
@@ -579,7 +580,7 @@
 }
 
 #settings-view .key-row:last-child { border-bottom: none; }
-#settings-view .key-row:hover { background: var(--bg-tertiary); }
+#settings-view .key-row:hover { }
 
 #settings-view .key-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 #settings-view .key-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; }
@@ -615,16 +616,17 @@
 #settings-view .key-input button {
   padding: 6px 10px;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.15s;
 }
 
-#settings-view .key-input button:hover { background: var(--border); color: var(--text-primary); }
+#settings-view .key-input button:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 #settings-view .key-input button.delete-btn { display: none; padding: 6px 8px; }
 #settings-view .key-input button.delete-btn svg { width: 14px; height: 14px; }
@@ -662,7 +664,7 @@
 }
 
 #settings-view .setting-row:last-child { border-bottom: none; }
-#settings-view .setting-row:hover { background: var(--bg-tertiary); }
+#settings-view .setting-row:hover { }
 
 #settings-view .setting-row label {
   font-size: 12px;

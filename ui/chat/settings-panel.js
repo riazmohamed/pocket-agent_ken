@@ -424,6 +424,25 @@ async function stgValidateKey(provider) {
   const button = input.parentElement.querySelector('button:not(.delete-btn)');
   const key = input.value.trim();
 
+  // If input is empty but a key is already saved, validate via backend
+  if (!key && _stgSettings[inputId] === '••••••••') {
+    button.classList.add('validating');
+    button.textContent = 'Testing...';
+    try {
+      const result = await window.pocketAgent.validate.storedKey(provider);
+      if (result.valid) {
+        _stgShowToast('All good!', 'success');
+      } else {
+        _stgShowToast(result.error || 'That key didn\'t work', 'error');
+      }
+    } catch (err) {
+      _stgShowToast('Validation failed: ' + err.message, 'error');
+    }
+    button.classList.remove('validating');
+    button.textContent = 'Test';
+    return;
+  }
+
   if (!key) { _stgShowToast('Key please!', 'error'); return; }
   const formatValidation = _stgValidateKeyFormat(inputId, key);
   if (!formatValidation.valid) { _stgShowToast(formatValidation.error, 'error'); return; }
@@ -1090,21 +1109,23 @@ async function stgInstallUpdate() {
 // ---- Skin Picker ----
 
 const _STG_SKIN_DESCRIPTIONS = {
-  default: 'Dark purple & pink', light: 'Light with purple accents', emerald: 'Dark with green accents',
-  sandstone: 'Warm beige & terracotta', ocean: 'Deep sea blue', rose: 'Soft pink & rose',
-  nord: 'Cool Scandinavian frost', cyberpunk: 'Neon cyan & magenta', tavern: 'WoW gold & dark oak',
+  dracula: 'Classic Dracula', light: 'Clean & minimal', dawn: 'Rosé Pine Dawn',
+  midnight: 'GitHub dark', nord: 'Scandinavian frost',
+  mocha: 'Catppuccin Mocha', rosepine: 'Rosé Pine', gruvbox: 'Retro warm',
+  solarized: 'Solarized Dark', onedark: 'Atom One Dark',
 };
 
 const _STG_SKIN_PREVIEWS = {
-  default:   ['#0a0a0b', '#141415', '#a855f7', '#ec4899', '#fafafa'],
-  light:     ['#f5f5f7', '#ffffff', '#8b5cf6', '#d946ef', '#1d1d1f'],
-  emerald:   ['#0d1117', '#161b22', '#10b981', '#34d399', '#e6edf3'],
-  sandstone: ['#1a1612', '#231f1a', '#c2703e', '#d4956a', '#f5ede4'],
-  ocean:     ['#0b1622', '#0f1d2e', '#0ea5e9', '#38bdf8', '#e8f1f8'],
-  rose:      ['#18101a', '#201622', '#f472b6', '#f9a8d4', '#f5e8f0'],
+  dracula:   ['#282a36', '#21222c', '#bd93f9', '#ff79c6', '#f8f8f2'],
+  light:     ['#ffffff', '#f9f9f9', '#007aff', '#5856d6', '#1c1c1e'],
+  dawn:      ['#faf4ed', '#fffaf3', '#907aa9', '#56949f', '#575279'],
+  midnight:  ['#0d1117', '#161b22', '#58a6ff', '#79c0ff', '#e6edf3'],
   nord:      ['#2e3440', '#3b4252', '#88c0d0', '#5e81ac', '#eceff4'],
-  cyberpunk: ['#0a0a12', '#10101c', '#00f0ff', '#e040fb', '#eaf0ff'],
-  tavern:    ['#140e08', '#1e150c', '#d4a030', '#b8860b', '#f0dfc0'],
+  mocha:     ['#1e1e2e', '#181825', '#89b4fa', '#cba6f7', '#cdd6f4'],
+  rosepine:  ['#191724', '#1f1d2e', '#c4a7e7', '#9ccfd8', '#e0def4'],
+  gruvbox:   ['#282828', '#1d2021', '#fabd2f', '#fe8019', '#ebdbb2'],
+  solarized: ['#002b36', '#073642', '#268bd2', '#2aa198', '#fdf6e3'],
+  onedark:   ['#282c34', '#21252b', '#61afef', '#c678dd', '#abb2bf'],
 };
 
 async function _stgInitSkinPicker() {
@@ -1164,4 +1185,11 @@ function _stgApplyTheme(skinId) {
   for (const [key, value] of Object.entries(theme.palette)) {
     root.style.setProperty('--' + key, value);
   }
+}
+
+// Listen for open-settings from main process (tray menu, etc.)
+if (window.pocketAgent?.app?.onOpenSettings) {
+  window.pocketAgent.app.onOpenSettings((tab) => {
+    showSettingsPanel(tab);
+  });
 }
