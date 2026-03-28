@@ -22,7 +22,7 @@ import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
 import { getModeConfig, buildRoutingInstructions } from './agent-modes';
 import type { AgentModeId } from './agent-modes';
 import { getStreamConfig } from './chat-providers';
-import { getChatAgentTools, getServerTools } from './chat-tools';
+import { getChatAgentTools } from './chat-tools';
 import { buildTemporalContext } from './context-extraction';
 import type {
   AgentStatus,
@@ -256,7 +256,6 @@ export class ChatEngine {
       const model = SettingsManager.get('agent.model') || 'claude-opus-4-6';
       const streamConfig = await getStreamConfig(model);
       const agentTools = getChatAgentTools(this.toolsConfig);
-      const serverTools = getServerTools(model);
 
       // Map thinking level
       const thinkingLevel = SettingsManager.get('agent.thinkingLevel') || 'normal';
@@ -276,7 +275,7 @@ export class ChatEngine {
         provider: streamConfig.provider,
         model,
         tools: agentTools,
-        serverTools: serverTools.length > 0 ? serverTools : undefined,
+        webSearch: true,
         maxTurns: MAX_TOOL_ITERATIONS,
         maxTokens: 16384,
         thinking,
@@ -733,9 +732,7 @@ export class ChatEngine {
       // For user messages with technical content, keep the conversational part
       if (msg.role === 'user') {
         const lines = (msg.content as string).split('\n');
-        const conversational = lines.filter(
-          (line) => !technicalPatterns.some((p) => p.test(line))
-        );
+        const conversational = lines.filter((line) => !technicalPatterns.some((p) => p.test(line)));
         const kept = conversational.join('\n').trim();
         return {
           role: 'user',

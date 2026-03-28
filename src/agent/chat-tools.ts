@@ -2,18 +2,18 @@
  * Chat mode tool adapter
  *
  * Converts existing tool definitions to @kenkaiiii/gg-agent AgentTool format
- * and adds web_fetch / shell_command capabilities.
- * Server-side tools (web_search) are exported separately.
+ * and adds web_fetch / shell_command / subagent capabilities.
+ * Web search is enabled via webSearch flag on AgentOptions (not a tool).
  */
 
 import { z } from 'zod';
 import type { AgentTool, ToolContext } from '@kenkaiiii/gg-agent';
-import type { ServerToolDefinition } from '@kenkaiiii/gg-ai';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { getCustomTools, ToolsConfig } from '../tools';
 import { wrapToolHandler } from '../tools/diagnostics';
-import { getProviderForModel } from './chat-providers';
+import { createSubAgentTool } from '../tools/subagent';
+import { getStreamConfig } from './chat-providers';
 
 const execAsync = promisify(exec);
 const IS_WINDOWS = process.platform === 'win32';
@@ -104,23 +104,10 @@ export function getChatAgentTools(config: ToolsConfig): AgentTool[] {
   // Add shell_command tool
   tools.push(buildShellCommandTool());
 
+  // Add sub-agent tool (receives parent tools so it can select a subset)
+  tools.push(createSubAgentTool(tools, getStreamConfig));
+
   return tools;
-}
-
-/**
- * Get server-side tool definitions (e.g. Anthropic's web_search).
- * Only available for Anthropic models.
- */
-export function getServerTools(model: string): ServerToolDefinition[] {
-  const provider = getProviderForModel(model);
-  if (provider !== 'anthropic') return [];
-
-  return [
-    {
-      type: 'web_search_20250305',
-      name: 'web_search',
-    },
-  ];
 }
 
 /**

@@ -95,6 +95,7 @@ const SCHEDULER_TOOLS = [
 ];
 const GREP_TOOLS = ['mcp__grep__searchGitHub'];
 const SWITCH_TOOL = ['mcp__pocket-agent__switch_agent'];
+const SUBAGENT_TOOL = ['subagent'];
 
 // ── System prompts ──
 
@@ -166,6 +167,7 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
       ...SOUL_TOOLS,
       ...SCHEDULER_TOOLS,
       ...SWITCH_TOOL,
+      ...SUBAGENT_TOOL,
     ],
     mcpServers: ['pocket-agent'],
     description: 'Personal assistant — remembers, schedules, browses, manages life',
@@ -197,21 +199,21 @@ export const AGENT_MODES: Record<AgentModeId, AgentMode> = {
     id: 'researcher',
     name: 'Researcher',
     icon: '🔍',
-    engine: 'sdk',
+    engine: 'chat',
     systemPrompt: RESEARCHER_PROMPT,
     allowedTools: [
-      ...SDK_CORE_TOOLS,
       ...BROWSER_TOOLS,
       ...NOTIFY_TOOLS,
       ...PROJECT_TOOLS,
       ...MEMORY_TOOLS,
       ...SWITCH_TOOL,
+      ...SUBAGENT_TOOL,
     ],
     mcpServers: ['pocket-agent'],
     description: 'Deep research — web search, browsing, note-taking',
     handoffDescription: 'Deep multi-source research, fact-checking, investigation',
     canHandoffTo: ['general', 'coder', 'writer'],
-    technicalMode: true,
+    technicalMode: false,
   },
   writer: {
     id: 'writer',
