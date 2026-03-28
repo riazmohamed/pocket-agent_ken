@@ -14,3 +14,4 @@ release/
 *.cer
 .claude/
 app.json
+filterAndSort.js
