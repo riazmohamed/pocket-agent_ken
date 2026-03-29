@@ -34,6 +34,7 @@ import {
 import type { QueueMaps } from './queue-management';
 import { buildPersistentOptions as _buildPersistentOptions } from './options-builder';
 import type { BuildOptionsConfig } from './options-builder';
+import { isHeartbeatOk, stripHeartbeatSuffix } from '../utils/heartbeat';
 
 /**
  * Build provider-specific environment variables for the selected model.
@@ -1185,21 +1186,14 @@ class AgentManagerClass extends EventEmitter {
 
       // Skip saving HEARTBEAT_OK responses from scheduled jobs to memory/chat
       const isScheduledJob = channel.startsWith('cron:');
-      const isHeartbeat = response.toUpperCase().includes('HEARTBEAT_OK');
 
-      if (isScheduledJob && isHeartbeat) {
+      if (isScheduledJob && isHeartbeatOk(response)) {
         console.log(
           '[AgentManager] Skipping HEARTBEAT_OK from scheduled job - not saving to memory'
         );
       } else {
         // Clean up scheduled job messages before saving - remove internal LLM instructions
-        let messageToSave = userMessage;
-
-        // Strip the heartbeat instruction suffix (for routines)
-        const heartbeatSuffix = '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
-        if (messageToSave.endsWith(heartbeatSuffix)) {
-          messageToSave = messageToSave.slice(0, -heartbeatSuffix.length);
-        }
+        let messageToSave = stripHeartbeatSuffix(userMessage);
 
         // Convert reminder prompts to clean display format (for reminders)
         const reminderMatch = messageToSave.match(

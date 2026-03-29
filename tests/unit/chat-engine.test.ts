@@ -29,6 +29,7 @@ function makeAgentDone(totalTurns: number, totalUsage: { inputTokens: number; ou
 // ── Mock Agent class ──────────────────────────────────────────────────
 
 let capturedAgentOptions: Record<string, unknown> | null = null;
+let capturedAgentMessages: Array<Record<string, unknown>> | null = null;
 let mockAgentEvents: Array<Record<string, unknown>> = [];
 
 vi.mock('@kenkaiiii/gg-agent', () => ({
@@ -51,6 +52,23 @@ vi.mock('@kenkaiiii/gg-agent', () => ({
         },
       };
     }
+  },
+  agentLoop(messages: Array<Record<string, unknown>>, options: Record<string, unknown>) {
+    capturedAgentMessages = messages;
+    capturedAgentOptions = options;
+    return {
+      [Symbol.asyncIterator]() {
+        let i = 0;
+        return {
+          async next() {
+            if (i < mockAgentEvents.length) {
+              return { value: mockAgentEvents[i++], done: false };
+            }
+            return { value: undefined, done: true };
+          },
+        };
+      },
+    };
   },
 }));
 
@@ -118,6 +136,7 @@ function createEngine() {
     saveMessage: vi.fn(() => 1),
     embedMessage: vi.fn(async () => {}),
     getSmartContext: vi.fn(async () => ({ recentMessages: [], rollingSummary: null })),
+    getSessionMode: vi.fn(() => 'general'),
   };
 
   const statusEmitter = vi.fn();
@@ -145,6 +164,7 @@ describe('ChatEngine', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedAgentOptions = null;
+    capturedAgentMessages = null;
     mockAgentEvents = [];
 
     // Reset default mock implementations
@@ -213,9 +233,12 @@ describe('ChatEngine', () => {
 
       await engine.processMessage('hi', 'desktop', 'test-session');
 
-      expect(capturedAgentOptions).not.toBeNull();
-      expect(typeof capturedAgentOptions!.system).toBe('string');
-      expect((capturedAgentOptions!.system as string)).toContain('Test system guidelines');
+      // System prompt is passed as the first message to agentLoop
+      expect(capturedAgentMessages).not.toBeNull();
+      const systemMsg = capturedAgentMessages!.find((m) => m.role === 'system');
+      expect(systemMsg).toBeDefined();
+      expect(typeof systemMsg!.content).toBe('string');
+      expect(systemMsg!.content as string).toContain('Test system guidelines');
     });
 
     it('passes model from settings to Agent', async () => {
@@ -439,7 +462,8 @@ describe('ChatEngine', () => {
         (args: unknown[]) => (args[0] as { type: string }).type === 'tool_start'
       );
       expect(toolStartEvent).toBeDefined();
-      expect((toolStartEvent![0] as { toolName: string }).toolName).toBe('web_fetch');
+      // formatToolName maps 'web_fetch' → 'fetching that page'
+      expect((toolStartEvent![0] as { toolName: string }).toolName).toBe('fetching that page');
     });
 
     it('emits done status at end', async () => {

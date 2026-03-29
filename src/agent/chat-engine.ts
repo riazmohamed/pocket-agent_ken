@@ -38,6 +38,7 @@ import type {
   ProcessResult,
   MediaAttachment,
 } from './index';
+import { isHeartbeatOk, stripHeartbeatSuffix } from '../utils/heartbeat';
 
 // Conversation history uses gg-ai Message type (user/assistant only)
 type MessageParam = Message;
@@ -310,18 +311,34 @@ export class ChatEngine {
       let totalCacheWrite = 0;
       // Track active subagents for status display
       const activeSubagents = new Map<string, { type: string; description: string }>();
+      // Track whether a tool call happened since last text, so we can insert a separator
+      let hadToolSinceLastText = false;
 
       for await (const event of loop) {
         switch (event.type) {
-          case 'text_delta':
-            response += event.text;
+          case 'text_delta': {
+            // If text resumes after a tool call, insert a newline separator
+            let delta = event.text;
+            if (hadToolSinceLastText && response.length > 0) {
+              const separator = '\n\n';
+              response += separator;
+              this.emitStatus({
+                type: 'partial_text',
+                sessionId,
+                partialText: separator,
+                message: 'composing...',
+              });
+            }
+            hadToolSinceLastText = false;
+            response += delta;
             this.emitStatus({
               type: 'partial_text',
               sessionId,
-              partialText: event.text,
+              partialText: delta,
               message: 'composing...',
             });
             break;
+          }
 
           case 'tool_call_start': {
             const toolName = formatToolName(event.name);
@@ -385,6 +402,7 @@ export class ChatEngine {
           }
 
           case 'tool_call_end': {
+            hadToolSinceLastText = true;
             // Check if a subagent just finished
             if (activeSubagents.size > 0) {
               const firstKey = activeSubagents.keys().next().value;
@@ -539,17 +557,10 @@ export class ChatEngine {
     attachmentInfo?: AttachmentInfo
   ): void {
     const isScheduledJob = channel.startsWith('cron:');
-    const isHeartbeat = response.toUpperCase().includes('HEARTBEAT_OK');
 
-    if (isScheduledJob && isHeartbeat) return;
+    if (isScheduledJob && isHeartbeatOk(response)) return;
 
-    let messageToSave = userMessage;
-
-    // Strip heartbeat suffix
-    const heartbeatSuffix = '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
-    if (messageToSave.endsWith(heartbeatSuffix)) {
-      messageToSave = messageToSave.slice(0, -heartbeatSuffix.length);
-    }
+    let messageToSave = stripHeartbeatSuffix(userMessage);
 
     // Convert reminder prompts
     const reminderMatch = messageToSave.match(

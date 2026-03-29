@@ -4,6 +4,7 @@ import { AgentManager } from '../agent';
 import { MemoryManager, CronJob } from '../memory';
 import type { TelegramBot } from '../channels/telegram';
 import { matchesCronField } from '../utils/cron';
+import { HEARTBEAT_SUFFIX, isHeartbeatOk } from '../utils/heartbeat';
 import { formatForSqlite, checkCalendarEvents, checkTaskReminders } from './calendar';
 import {
   stripMarkdown,
@@ -14,12 +15,8 @@ import {
   type IOSSyncHandler,
 } from './notifications';
 
-/**
- * Silent acknowledgment token for scheduled tasks.
- * When the agent responds with only this token, the scheduler
- * skips notification - useful for "nothing to report" scenarios.
- */
-export const HEARTBEAT_OK = 'HEARTBEAT_OK';
+// Re-export for backward compatibility
+export { HEARTBEAT_OK } from '../utils/heartbeat';
 
 export interface ScheduledJob {
   id: number;
@@ -261,11 +258,8 @@ export class CronScheduler {
 
           // Only add HEARTBEAT_OK escape for recurring jobs (cron/interval).
           // One-time "at" jobs are intentionally scheduled — always produce output.
-          const heartbeatSuffix =
-            job.schedule_type === 'at'
-              ? ''
-              : '\n\nIf nothing needs attention, reply with only HEARTBEAT_OK.';
-          const fullPrompt = job.prompt + contextText + heartbeatSuffix;
+          const heartbeatEscape = job.schedule_type === 'at' ? '' : HEARTBEAT_SUFFIX;
+          const fullPrompt = job.prompt + contextText + heartbeatEscape;
 
           if (!AgentManager.isInitialized()) {
             throw new Error('AgentManager not initialized');
@@ -427,8 +421,8 @@ export class CronScheduler {
     sessionId: string = 'default'
   ): Promise<void> {
     // Check for silent acknowledgment - agent has nothing to report
-    // Match HEARTBEAT_OK anywhere in response (case-insensitive)
-    if (response.toUpperCase().includes(HEARTBEAT_OK)) {
+    // Handles bold markdown, HTML wrappers, trailing punctuation
+    if (isHeartbeatOk(response)) {
       console.log(`[Scheduler] Job ${jobName} returned HEARTBEAT_OK, skipping notification`);
       return;
     }
