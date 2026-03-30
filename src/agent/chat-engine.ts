@@ -257,7 +257,7 @@ export class ChatEngine {
       const wasCompacted = await this.compactConversation(sessionId, userMessage);
 
       // Build system prompt
-      const { staticPrompt, dynamicPrompt } = this.buildSystemPrompt(sessionId);
+      const { staticPrompt, dynamicPrompt } = this.buildSystemPrompt(sessionId, channel);
       const systemPrompt = `${staticPrompt}\n\n${dynamicPrompt}`;
 
       // Get model + provider config
@@ -625,7 +625,10 @@ export class ChatEngine {
   /**
    * Build system prompt split into static (cacheable) and dynamic (per-turn) parts.
    */
-  buildSystemPrompt(sessionId?: string): { staticPrompt: string; dynamicPrompt: string } {
+  buildSystemPrompt(
+    sessionId?: string,
+    channel?: string
+  ): { staticPrompt: string; dynamicPrompt: string } {
     // === Static context (cacheable — hardcoded, never changes mid-session) ===
     const staticParts: string[] = [];
 
@@ -685,11 +688,14 @@ export class ChatEngine {
       console.log(`[ChatEngine] Facts injected: ${facts.length} chars`);
     }
 
-    // 4. Daily logs — recent conversation history
-    const dailyLogs = this.memory.getDailyLogsContext(3);
-    if (dailyLogs) {
-      dynamicParts.push(dailyLogs);
-      console.log(`[ChatEngine] Daily logs injected: ${dailyLogs.length} chars`);
+    // 4. Daily logs — recent conversation history (skip for scheduled/routine runs)
+    const isScheduledRun = channel?.startsWith('cron:');
+    if (!isScheduledRun) {
+      const dailyLogs = this.memory.getDailyLogsContext(3);
+      if (dailyLogs) {
+        dynamicParts.push(dailyLogs);
+        console.log(`[ChatEngine] Daily logs injected: ${dailyLogs.length} chars`);
+      }
     }
 
     // 5. Temporal — current time (least info-dense, last position)

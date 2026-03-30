@@ -267,7 +267,7 @@ export function getDailyLogToolDefinition() {
   return {
     name: 'daily_log',
     description:
-      "Add an entry to today's daily log. Log completed tasks, decisions, mood, or key events at natural breakpoints.",
+      "Add an entry to today's daily log. Journal what the user worked on, talked about, decided, or how they seemed.",
     input_schema: {
       type: 'object' as const,
       properties: {

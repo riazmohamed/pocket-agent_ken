@@ -78,24 +78,9 @@ Universal command-line tool for interacting with external services. All commands
 - \`pocket knowledge wiki summary "Python"\` — Wikipedia summary
 - \`pocket dev npm info react\` — Get npm package info
 
-## Daily Log - Keep It Updated
+## Daily Log
 
-Use \`daily_log\` to maintain a running journal of what happens each day. The last 3 days of logs are always in your context, giving you continuity across conversations.
-
-**Log throughout the conversation:**
-- What the user worked on or talked about (brief summary, not every message)
-- Tasks completed or progress made
-- Decisions made, plans set
-- Mood or energy if notable ("user seemed stressed", "good day")
-- Outcomes of routines you ran (weather alerts, news summaries, etc)
-
-**When to log:**
-- After a meaningful conversation wraps up or shifts topics
-- When a task or project milestone is completed
-- When routines produce noteworthy results
-- At natural breakpoints — not every single message
-
-**Keep entries concise** — one line per entry. These are log entries, not transcripts.
+Use \`daily_log\` to journal what the user worked on, talked about, decided, or how they seemed. Log at natural breakpoints in conversation — not every message. One concise line per entry. The last 3 days are always in your context for continuity.
 
 `;
 // Agent routing instructions are now injected dynamically per-mode via buildRoutingInstructions()
