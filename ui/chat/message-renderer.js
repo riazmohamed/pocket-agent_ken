@@ -597,9 +597,29 @@ function updateStatusIndicator(status, sessionId) {
       queuedMsgs[0].classList.remove('queued');
     }
   } else if (status.type === 'done') {
-    // Don't touch streaming bubble here — response handler finalizes it
     // Response complete - play notification sound
     playNotificationSound();
+
+    // Finalize streaming bubble: remove the blinking cursor class so it becomes
+    // a normal message. For cron jobs the response handler (handleSchedulerMessage)
+    // may replace this bubble entirely, but if it doesn't arrive (e.g. errors) or
+    // arrives later, this prevents the cursor from blinking indefinitely.
+    const doneBubble = streamingBubbleBySession.get(targetSession);
+    if (doneBubble) {
+      doneBubble.classList.remove('streaming-bubble');
+    }
+
+    // Safety net: clean up thinking indicator if still present (e.g. cron job errors
+    // where the normal response handler never fires)
+    const doneStatusEl = statusElBySession.get(targetSession);
+    if (doneStatusEl) {
+      doneStatusEl.remove();
+      statusElBySession.delete(targetSession);
+      toolCountBySession.delete(targetSession);
+      isLoadingBySession.set(targetSession, false);
+      renderTabs();
+      setButtonState(false);
+    }
   }
 
   scrollToBottom();

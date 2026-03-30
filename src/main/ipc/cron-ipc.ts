@@ -103,6 +103,12 @@ export function registerCronIPC(deps: IPCDependencies): void {
 
     try {
       const result = await scheduler.runJobNow(name);
+
+      // If the job failed, notify the UI so the thinking indicator is cleaned up
+      if (result && !result.success && chatWindow && !chatWindow.webContents.isDestroyed()) {
+        chatWindow.webContents.send('agent:status', { type: 'done', sessionId });
+      }
+
       return result;
     } finally {
       AgentManager.off('status', statusHandler);

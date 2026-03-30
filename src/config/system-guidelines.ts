@@ -80,7 +80,7 @@ Universal command-line tool for interacting with external services. All commands
 
 ## Daily Log
 
-Use \`daily_log\` to journal what the user worked on, talked about, decided, or how they seemed. Log at natural breakpoints in conversation — not every message. One concise line per entry. The last 3 days are always in your context for continuity.
+Use \`daily_log\` to journal what the user worked on, talked about, decided, or how they seemed. Log at natural breakpoints in conversation — not every message. One concise line per entry. The last 3 days are always in your context for continuity. Never log routine/scheduled task outputs to the daily log — those are automated, not user activity.
 
 `;
 // Agent routing instructions are now injected dynamically per-mode via buildRoutingInstructions()

@@ -40,6 +40,26 @@ export function createSession(
 }
 
 /**
+ * Ensure a session exists (create it if not).
+ * Used by saveMessage to avoid FK constraint violations for auto-created sessions.
+ */
+export function ensureSession(
+  db: Database.Database,
+  id: string,
+  mode: AgentModeId = 'coder'
+): void {
+  const existing = getSession(db, id);
+  if (existing) return;
+
+  db.prepare(
+    `
+      INSERT INTO sessions (id, name, mode, working_directory, created_at, updated_at)
+      VALUES (?, ?, ?, NULL, (strftime('%Y-%m-%dT%H:%M:%fZ')), (strftime('%Y-%m-%dT%H:%M:%fZ')))
+    `
+  ).run(id, id, mode);
+}
+
+/**
  * Get a session by name (exact match)
  */
 export function getSessionByName(db: Database.Database, name: string): Session | null {

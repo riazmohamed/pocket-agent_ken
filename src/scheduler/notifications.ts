@@ -67,14 +67,12 @@ export async function sendToAllChannels(
   sessionId: string,
   recipient?: string
 ): Promise<void> {
-  // Always send to desktop (chat window + notification)
+  // Always send to desktop chat window
   if (channels.onChatMessage) {
     channels.onChatMessage(jobName, prompt, response, sessionId);
   }
-  const plainResponse = stripMarkdown(response);
-  if (channels.onNotification) {
-    channels.onNotification('Pocket Agent', plainResponse.slice(0, 200));
-  }
+  // Note: no system notification here — the agent sends notifications via the notify
+  // tool when appropriate, so a duplicate system notification is unnecessary.
 
   // Send to iOS devices
   if (channels.onIOSSync) {

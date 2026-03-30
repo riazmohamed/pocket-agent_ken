@@ -652,12 +652,12 @@ export class CronScheduler {
       return false;
     }
 
-    // Resolve session ID — if the given session doesn't exist, use first available
+    // Resolve session ID — always prefer a real session over 'default'
     let resolvedSessionId = sessionId;
-    const session = this.memory.getSession(resolvedSessionId);
-    if (!session) {
+    if (sessionId === 'default' || !this.memory.getSession(sessionId)) {
       const sessions = this.memory.getSessions();
-      resolvedSessionId = sessions.length > 0 ? sessions[0].id : sessionId;
+      const realSession = sessions.find((s) => s.id !== 'default');
+      resolvedSessionId = realSession?.id || (sessions.length > 0 ? sessions[0].id : sessionId);
     }
 
     // Save to database
@@ -672,7 +672,7 @@ export class CronScheduler {
       channel,
       recipient: this.extractRecipient(prompt),
       enabled: true,
-      sessionId,
+      sessionId: resolvedSessionId,
     };
 
     return this.scheduleJob(job);

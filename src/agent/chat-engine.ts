@@ -15,7 +15,7 @@ import type {
   TextContent,
   ImageContent as GGImageContent,
 } from '@kenkaiiii/gg-ai';
-import { MemoryManager } from '../memory';
+import { MemoryManager, type Message as MemoryMessage } from '../memory';
 import { ToolsConfig, setCurrentSessionId, runWithSessionId } from '../tools';
 import { SettingsManager } from '../settings';
 import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
@@ -42,6 +42,18 @@ import { isHeartbeatOk, stripHeartbeatSuffix } from '../utils/heartbeat';
 
 // Conversation history uses gg-ai Message type (user/assistant only)
 type MessageParam = Message;
+
+/**
+ * Annotate a routine's assistant message with tool execution info so the agent
+ * can verify its own prior runs without hallucinating.
+ */
+function annotateRoutineMessage(msg: MemoryMessage): string {
+  if (msg.role !== 'assistant' || !msg.metadata?.source || !msg.metadata?.toolsUsed)
+    return msg.content;
+
+  const tools = (msg.metadata.toolsUsed as string[]).join(', ');
+  return `[Executed tools: ${tools}]\n\n${msg.content}`;
+}
 
 const MAX_TOOL_ITERATIONS = 20;
 const MAX_CONTEXT_MESSAGES = 80;
@@ -311,6 +323,8 @@ export class ChatEngine {
       let totalCacheWrite = 0;
       // Track active subagents for status display
       const activeSubagents = new Map<string, { type: string; description: string }>();
+      // Track tool names used during this execution (for metadata)
+      const toolsUsed: string[] = [];
       // Track whether a tool call happened since last text, so we can insert a separator
       let hadToolSinceLastText = false;
 
@@ -343,6 +357,7 @@ export class ChatEngine {
           case 'tool_call_start': {
             const toolName = formatToolName(event.name);
             const toolInput = formatToolInputDisplay(event.args);
+            toolsUsed.push(event.name);
 
             // Subagent tool — show purple subagent indicator
             if (event.name === 'subagent') {
@@ -434,6 +449,7 @@ export class ChatEngine {
           }
 
           case 'server_tool_call':
+            toolsUsed.push(event.name);
             this.emitStatus({
               type: 'tool_start',
               sessionId,
@@ -494,7 +510,15 @@ export class ChatEngine {
       // Update in-memory conversation with the final assistant response
       // (Agent manages its own internal messages, but we track for session persistence)
       if (response) {
-        conversation.push({ role: 'assistant', content: response });
+        // For scheduled jobs, annotate the response with tool execution evidence
+        // so the agent can verify its own routine runs in subsequent turns
+        const isScheduledJob = channel.startsWith('cron:');
+        const uniqueTools = [...new Set(toolsUsed)];
+        const conversationContent =
+          isScheduledJob && uniqueTools.length > 0
+            ? `[Executed tools: ${uniqueTools.join(', ')}]\n\n${response}`
+            : response;
+        conversation.push({ role: 'assistant', content: conversationContent });
       }
 
       this.emitStatus({ type: 'done', sessionId });
@@ -505,7 +529,15 @@ export class ChatEngine {
 
       // Save to memory
       const totalTokens = totalInputTokens + totalOutputTokens;
-      this.saveToMemory(userMessage, response, channel, sessionId, images, attachmentInfo);
+      this.saveToMemory(
+        userMessage,
+        response,
+        channel,
+        sessionId,
+        images,
+        attachmentInfo,
+        toolsUsed
+      );
 
       return {
         response,
@@ -554,7 +586,8 @@ export class ChatEngine {
     channel: string,
     sessionId: string,
     images?: ImageContent[],
-    attachmentInfo?: AttachmentInfo
+    attachmentInfo?: AttachmentInfo,
+    toolsUsed?: string[]
   ): void {
     const isScheduledJob = channel.startsWith('cron:');
 
@@ -584,7 +617,14 @@ export class ChatEngine {
     }
 
     const userMsgId = this.memory.saveMessage('user', messageToSave, sessionId, metadata);
-    const assistantMetadata = metadata ? { source: metadata.source } : undefined;
+    const assistantMetadata: Record<string, unknown> | undefined = metadata
+      ? { source: metadata.source }
+      : undefined;
+    // For scheduled jobs, record which tools were executed so the agent can verify
+    // its own routine runs in subsequent conversation turns
+    if (assistantMetadata && toolsUsed && toolsUsed.length > 0) {
+      assistantMetadata.toolsUsed = [...new Set(toolsUsed)];
+    }
     const assistantMsgId = this.memory.saveMessage(
       'assistant',
       response,
@@ -750,7 +790,8 @@ export class ChatEngine {
       const conversation: MessageParam[] = [];
       for (const msg of messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
-          conversation.push({ role: msg.role, content: msg.content });
+          const content = annotateRoutineMessage(msg);
+          conversation.push({ role: msg.role, content });
         }
       }
       const cleaned = this.filterHistoryForMode(this.cleanConversation(conversation), sessionMode);
@@ -791,7 +832,8 @@ export class ChatEngine {
       const conversation: MessageParam[] = [];
       for (const msg of messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
-          conversation.push({ role: msg.role, content: msg.content });
+          const content = annotateRoutineMessage(msg);
+          conversation.push({ role: msg.role, content });
         }
       }
       const cleaned = this.filterHistoryForMode(this.cleanConversation(conversation), sessionMode);
