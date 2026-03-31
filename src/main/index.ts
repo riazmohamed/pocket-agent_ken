@@ -10,6 +10,7 @@ import { MemoryManager } from '../memory';
 import { createScheduler, CronScheduler } from '../scheduler';
 import { createTelegramBot, TelegramBot } from '../channels/telegram';
 import { createiOSChannel, iOSChannel } from '../channels/ios';
+import { createAgentHomeChannel, AgentHomeChannel } from '../channels/agent-home';
 import { SettingsManager } from '../settings';
 import { DEFAULT_COMMANDS } from '../config/commands';
 import { getBrowserManager } from '../browser';
@@ -27,6 +28,8 @@ import {
   registerIosIPC,
   registerMiscIPC,
   wireIosChannelHandlers,
+  registerAgentHomeIPC,
+  wireAgentHomeChannelHandlers,
 } from './ipc';
 import type { IPCDependencies } from './ipc';
 
@@ -52,6 +55,7 @@ let memory: MemoryManager | null = null;
 let scheduler: CronScheduler | null = null;
 let telegramBot: TelegramBot | null = null;
 let iosChannel: iOSChannel | null = null;
+let agentHomeChannel: AgentHomeChannel | null = null;
 let splashWindow: BrowserWindow | null = null;
 // tray menu updates are event-driven via IPC handlers
 let modelChangedHandler: ((model: string) => void) | null = null;
@@ -539,6 +543,10 @@ function buildIPCDeps(): IPCDependencies {
     setTelegramBot: (bot) => {
       telegramBot = bot;
     },
+    getAgentHomeChannel: () => agentHomeChannel,
+    setAgentHomeChannel: (ch) => {
+      agentHomeChannel = ch;
+    },
     updateTrayMenu,
     initializeAgent,
     restartAgent,
@@ -563,6 +571,7 @@ function setupIPC(): void {
   registerFactsIPC(deps);
   registerCronIPC(deps);
   registerIosIPC(deps);
+  registerAgentHomeIPC(deps);
   registerMiscIPC(deps);
 }
 
@@ -704,6 +713,22 @@ async function initializeAgent(): Promise<void> {
       }
     } catch (error) {
       console.error('[Main] iOS channel failed:', error);
+    }
+  }
+
+  // Initialize Agent Home channel
+  const agentHomeEnabled = SettingsManager.getBoolean('agentHome.enabled');
+  console.log('[Main] Agent Home channel enabled:', agentHomeEnabled);
+  if (agentHomeEnabled) {
+    try {
+      agentHomeChannel = createAgentHomeChannel();
+      if (agentHomeChannel) {
+        wireAgentHomeChannelHandlers(buildIPCDeps());
+        await agentHomeChannel.start();
+        console.log('[Main] Agent Home channel started');
+      }
+    } catch (error) {
+      console.error('[Main] Agent Home channel failed:', error);
     }
   }
 

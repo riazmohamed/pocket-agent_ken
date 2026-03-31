@@ -971,6 +971,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.5 14.5a6 6 0 1 0-5.47-3.53L2.5 18.5v3h3v-2h2v-2h2l3.53-3.53c.754.34 1.59.53 2.47.53m2-8l-1 1"/></svg>
         Keys
       </div>
+      <div class="nav-item" data-section="agent_home">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 10.182V22h18V10.182L12 2z"/><path d="M9 14h6v8H9z"/></g></svg>
+        Agent Home
+      </div>
       <div class="nav-item" data-section="telegram">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.048 3.053C18.87.707 2.486 6.453 2.5 8.55c.015 2.379 6.398 3.11 8.167 3.607c1.064.299 1.349.604 1.594 1.72c1.111 5.052 1.67 7.566 2.94 7.622c2.027.09 7.972-16.158 5.847-18.447Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 12.5L15 9"/></g></svg>
         Telegram
@@ -1106,6 +1110,40 @@
               <button onclick="playNormalClick(); validateKey('openai')">Test</button>
             </div>
           </div>
+
+        </div>
+      </section>
+
+      <!-- Agent Home Section -->
+      <section id="agent_home" class="section">
+        <h2 class="section-title">Agent Home</h2>
+        <p class="section-desc">Connect to Agent Home for remote access via the iOS app.</p>
+
+        <div class="settings-grid">
+          <div class="setting-row">
+            <label>Enable Agent Home</label>
+            <div class="toggle" id="agentHome.enabled-toggle" onclick="playNormalClick(); toggleSetting('agentHome.enabled')"></div>
+          </div>
+        </div>
+
+        <div id="agent-home-config" style="margin-top: 10px;">
+          <div class="settings-grid">
+            <div class="setting-row setting-row--stacked">
+              <label>Token</label>
+              <div class="key-input">
+                <input type="password" id="agentHome.token" placeholder="Your Agent Home token">
+                <button onclick="playNormalClick(); saveAgentHomeSetting('agentHome.token')">Save</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-grid" style="margin-top: 4px;">
+            <div class="setting-row">
+              <label>Status</label>
+              <span id="agent-home-status" class="auth-badge loading">checking...</span>
+            </div>
+          </div>
+
 
         </div>
       </section>
@@ -1602,6 +1640,15 @@
     }
 
     function updateToggles() {
+      // Agent Home toggle
+      const agentHomeToggle = document.getElementById('agentHome.enabled-toggle');
+      const agentHomeEnabled = settings['agentHome.enabled'] === 'true';
+      if (agentHomeToggle) {
+        agentHomeToggle.classList.toggle('active', agentHomeEnabled);
+        const agentHomeConfig = document.getElementById('agent-home-config');
+        if (agentHomeConfig) agentHomeConfig.classList.toggle('disabled-section', !agentHomeEnabled);
+      }
+
       // Telegram toggle
       const telegramToggle = document.getElementById('telegram.enabled-toggle');
       const telegramEnabled = settings['telegram.enabled'] === 'true';
@@ -1695,6 +1742,11 @@
         targetSection.classList.add('active');
       }
 
+      // Refresh Agent Home data when switching to the tab
+      if (sectionId === 'agent_home') {
+        refreshAgentHomeStatus();
+      }
+
       // Refresh iOS data when switching to the Mobile tab
       if (sectionId === 'ios') {
         refreshIOSInfo();
@@ -1709,7 +1761,8 @@
         'anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey',
         'auth-api-key', 'oauth-code',
         'telegram.botToken', 'telegram.allowedUserIds', 'telegram.defaultChatId',
-        'chat.adminKey'
+        'chat.adminKey',
+        'agentHome.token'
       ];
 
       const inputs = document.querySelectorAll('input, select');
@@ -1973,6 +2026,67 @@
       } catch (err) {
         console.error('Failed to get pairing code:', err);
         document.getElementById('ios-pairing-code').textContent = '------';
+      }
+    }
+
+    // ─── Agent Home ───────────────────────────────────────────────────
+
+    async function saveAgentHomeSetting(key) {
+      const input = document.getElementById(key);
+      if (!input) return;
+      try {
+        await window.pocketAgent.settings.set(key, input.value);
+        settings[key] = input.value;
+        showToast('Saved!', 'success');
+
+        if (key === 'agentHome.token') {
+          if (input.value) {
+            // Auto-connect when token is saved and non-empty
+            if (settings['agentHome.enabled'] !== 'true') {
+              await window.pocketAgent.settings.set('agentHome.enabled', 'true');
+              settings['agentHome.enabled'] = 'true';
+              updateToggles();
+            }
+            await window.pocketAgent.agentHome.toggle(false);
+            const result = await window.pocketAgent.agentHome.toggle(true);
+            if (result.success) {
+              showToast('Agent Home connected!', 'success');
+              setTimeout(() => refreshAgentHomeStatus(), 1000);
+            } else {
+              showToast('Failed to connect: ' + (result.error || 'Unknown error'), 'error');
+            }
+          } else {
+            // Token cleared — disconnect and disable
+            await window.pocketAgent.agentHome.toggle(false);
+            await window.pocketAgent.settings.set('agentHome.enabled', 'false');
+            settings['agentHome.enabled'] = 'false';
+            updateToggles();
+            showToast('Agent Home disconnected', 'success');
+            refreshAgentHomeStatus();
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save Agent Home setting:', err);
+        showToast('Failed to save', 'error');
+      }
+    }
+
+    async function refreshAgentHomeStatus() {
+      const statusEl = document.getElementById('agent-home-status');
+      if (!statusEl) return;
+      try {
+        const status = await window.pocketAgent.agentHome.getStatus();
+        statusEl.className = 'auth-badge';
+        if (status.connected) {
+          statusEl.classList.add('oauth');
+          statusEl.textContent = 'Connected';
+        } else {
+          statusEl.classList.add('none');
+          statusEl.textContent = 'Disconnected';
+        }
+      } catch {
+        statusEl.className = 'auth-badge none';
+        statusEl.textContent = 'Error';
       }
     }
 

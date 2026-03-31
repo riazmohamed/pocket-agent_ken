@@ -63,6 +63,7 @@ import type { FactsCache, Fact, SearchResult } from './facts';
 import {
   type Session,
   createSession as _createSession,
+  ensureSession as _ensureSession,
   getSession as _getSession,
   getSessionByName as _getSessionByName,
   getSessions as _getSessions,
@@ -566,6 +567,10 @@ export class MemoryManager {
     workingDirectory?: string | null
   ): Session {
     return _createSession(this.db, name, mode, workingDirectory);
+  }
+
+  ensureSession(id: string, mode: AgentModeId = 'coder'): void {
+    _ensureSession(this.db, id, mode);
   }
 
   getSessionByName(name: string): Session | null {

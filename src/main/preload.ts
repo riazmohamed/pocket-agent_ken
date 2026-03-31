@@ -245,6 +245,12 @@ contextBridge.exposeInMainWorld('pocketAgent', {
     toggle: (enabled: boolean) => ipcRenderer.invoke('ios:toggle', enabled),
   },
 
+  // ─── Agent Home ────────────────────────────────────────────────────
+  agentHome: {
+    toggle: (enabled: boolean) => ipcRenderer.invoke('agentHome:toggle', enabled),
+    getStatus: () => ipcRenderer.invoke('agentHome:status'),
+  },
+
   // ─── Shell ───────────────────────────────────────────────────────────
   shell: {
     runCommand: (command: string) => ipcRenderer.invoke('shell:runCommand', command),
@@ -658,6 +664,11 @@ declare global {
         getDevices: () => Promise<Array<{ id: string; name: string; lastSeen: string }>>;
         getInfo: () => Promise<{ enabled: boolean; port: number }>;
         toggle: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+      };
+
+      agentHome: {
+        toggle: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+        getStatus: () => Promise<{ connected: boolean; agentName: string }>;
       };
 
       shell: {

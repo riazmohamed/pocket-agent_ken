@@ -229,6 +229,7 @@ function _stgPopulateFields() {
 
 function _stgUpdateToggles() {
   const toggleMap = {
+    'agentHome.enabled': { toggle: 'agentHome.enabled-toggle', config: 'agent-home-config' },
     'telegram.enabled': { toggle: 'telegram.enabled-toggle', config: 'telegram-config' },
     'ios.enabled': { toggle: 'ios.enabled-toggle', config: 'ios-config' },
     'browser.enabled': { toggle: 'browser.enabled-toggle', config: 'browser-config' },
@@ -290,6 +291,10 @@ function _stgNavigateToSection(sectionId) {
     targetSection.classList.add('active');
   }
 
+  if (sectionId === 'agent_home') {
+    _stgInitAgentHome();
+  }
+
   if (sectionId === 'ios') {
     _stgRefreshIOSInfo();
     _stgRefreshPairingCode();
@@ -304,7 +309,8 @@ function _stgSetupAutoSave() {
     'anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey',
     'auth-api-key', 'oauth-code',
     'telegram.botToken', 'telegram.allowedUserIds', 'telegram.defaultChatId',
-    'chat.adminKey'
+    'chat.adminKey',
+    'agentHome.token'
   ];
 
   const inputs = root.querySelectorAll('input, select');
@@ -1189,6 +1195,91 @@ function _stgApplyTheme(skinId) {
   }
   for (const [key, value] of Object.entries(theme.palette)) {
     root.style.setProperty('--' + key, value);
+  }
+}
+
+// ─── Agent Home ─────────────────────────────────────────────────────
+
+async function stgToggleAgentHome() {
+  const currentValue = _stgSettings['agentHome.enabled'] === 'true';
+  const newValue = !currentValue;
+  try {
+    await window.pocketAgent.settings.set('agentHome.enabled', newValue.toString());
+    _stgSettings['agentHome.enabled'] = newValue.toString();
+    _stgUpdateToggles();
+    const result = await window.pocketAgent.agentHome.toggle(newValue);
+    if (result.success) {
+      _stgShowToast(newValue ? 'Agent Home connected!' : 'Agent Home disconnected', 'success');
+      if (newValue) setTimeout(() => _stgInitAgentHome(), 500);
+    } else {
+      _stgShowToast('Failed: ' + (result.error || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    console.error('[Settings] Failed to toggle Agent Home:', err);
+    _stgShowToast('Failed to toggle Agent Home', 'error');
+  }
+}
+
+async function _stgInitAgentHome() {
+  await stgTestAgentHome();
+}
+
+async function stgSaveAgentHomeSetting(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  try {
+    await window.pocketAgent.settings.set(inputId, input.value);
+    _stgSettings[inputId] = input.value;
+    _stgShowToast('Saved!', 'success');
+
+    if (inputId === 'agentHome.token') {
+      if (input.value) {
+        // Auto-connect when token is saved and non-empty
+        if (_stgSettings['agentHome.enabled'] !== 'true') {
+          await window.pocketAgent.settings.set('agentHome.enabled', 'true');
+          _stgSettings['agentHome.enabled'] = 'true';
+          _stgUpdateToggles();
+        }
+        await window.pocketAgent.agentHome.toggle(false);
+        const result = await window.pocketAgent.agentHome.toggle(true);
+        if (result.success) {
+          _stgShowToast('Agent Home connected!', 'success');
+          setTimeout(() => stgTestAgentHome(), 1000);
+        } else {
+          _stgShowToast('Failed to connect: ' + (result.error || 'Unknown error'), 'error');
+        }
+      } else {
+        // Token cleared — disconnect and disable
+        await window.pocketAgent.agentHome.toggle(false);
+        await window.pocketAgent.settings.set('agentHome.enabled', 'false');
+        _stgSettings['agentHome.enabled'] = 'false';
+        _stgUpdateToggles();
+        _stgShowToast('Agent Home disconnected', 'success');
+        stgTestAgentHome();
+      }
+    }
+  } catch (err) {
+    console.error('[Settings] Failed to save Agent Home setting:', err);
+    _stgShowToast('Failed to save', 'error');
+  }
+}
+
+async function stgTestAgentHome() {
+  const statusEl = document.getElementById('agent-home-status');
+  if (!statusEl) return;
+  try {
+    const status = await window.pocketAgent.agentHome.getStatus();
+    statusEl.className = 'auth-badge';
+    if (status.connected) {
+      statusEl.classList.add('oauth');
+      statusEl.textContent = 'Connected';
+    } else {
+      statusEl.classList.add('none');
+      statusEl.textContent = 'Disconnected';
+    }
+  } catch {
+    statusEl.className = 'auth-badge none';
+    statusEl.textContent = 'Error';
   }
 }
 

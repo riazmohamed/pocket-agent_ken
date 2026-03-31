@@ -12,6 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
   <link rel="stylesheet" href="shared/variables.css">
   <link rel="stylesheet" href="shared/notyf-theme.css">
   <link rel="stylesheet" href="shared/base.css">
@@ -570,6 +571,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.5 14.5a6 6 0 1 0-5.47-3.53L2.5 18.5v3h3v-2h2v-2h2l3.53-3.53c.754.34 1.59.53 2.47.53m2-8l-1 1"/></svg>
           Keys
         </div>
+        <div class="settings-nav-item" data-section="agent_home">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 10.182V22h18V10.182L12 2z"/><path d="M9 14h6v8H9z"/></g></svg>
+          Agent Home
+        </div>
         <div class="settings-nav-item" data-section="telegram">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.048 3.053C18.87.707 2.486 6.453 2.5 8.55c.015 2.379 6.398 3.11 8.167 3.607c1.064.299 1.349.604 1.594 1.72c1.111 5.052 1.67 7.566 2.94 7.622c2.027.09 7.972-16.158 5.847-18.447Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 12.5L15 9"/></g></svg>
           Telegram
@@ -686,6 +691,23 @@
                 <button class="delete-btn" id="openai.apiKey-delete" onclick="playNormalClick(); stgDeleteKey('openai.apiKey')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="m19.5 5.5l-.62 10.025c-.158 2.561-.237 3.842-.88 4.763a4 4 0 0 1-1.2 1.128c-.957.584-2.24.584-4.806.584c-2.57 0-3.855 0-4.814-.585a4 4 0 0 1-1.2-1.13c-.642-.922-.72-2.205-.874-4.77L4.5 5.5M3 5.5h18m-4.944 0l-.683-1.408c-.453-.936-.68-1.403-1.071-1.695a2 2 0 0 0-.275-.172C13.594 2 13.074 2 12.035 2c-1.066 0-1.599 0-2.04.234a2 2 0 0 0-.278.18c-.395.303-.616.788-1.058 1.757L8.053 5.5"/></svg></button>
                 <button onclick="playNormalClick(); stgValidateKey('openai')">Test</button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Agent Home Section -->
+        <section id="agent_home" class="settings-section">
+          <h2 class="section-title">Agent Home</h2>
+          <p class="section-desc">Connect to Agent Home for remote access via the iOS app.</p>
+          <div class="settings-grid">
+            <div class="setting-row"><label>Enable Agent Home</label><div class="toggle" id="agentHome.enabled-toggle" onclick="playNormalClick(); stgToggleAgentHome()"></div></div>
+          </div>
+          <div id="agent-home-config" style="margin-top: 10px;">
+            <div class="settings-grid">
+              <div class="setting-row setting-row--stacked"><label>Token</label><div class="key-input"><input type="password" id="agentHome.token" placeholder="Your Agent Home token"><button onclick="playNormalClick(); stgSaveAgentHomeSetting('agentHome.token')">Save</button></div></div>
+            </div>
+            <div class="settings-grid" style="margin-top: 4px;">
+              <div class="setting-row"><label>Status</label><span id="agent-home-status" class="auth-badge loading">checking...</span></div>
             </div>
           </div>
         </section>
