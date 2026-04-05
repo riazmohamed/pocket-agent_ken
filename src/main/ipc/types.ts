@@ -38,7 +38,6 @@ export interface IPCDependencies {
     readonly CHAT: string;
     readonly CRON: string;
     readonly SETTINGS: string;
-    readonly SETUP: string;
     readonly CUSTOMIZE: string;
     readonly FACTS: string;
     readonly DAILY_LOGS: string;

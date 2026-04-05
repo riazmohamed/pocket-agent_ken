@@ -32,7 +32,29 @@ export function getAvailableModels(): Array<{ id: string; name: string; provider
     models.push(
       { id: 'glm-5.1', name: 'GLM 5.1', provider: 'glm' },
       { id: 'glm-5-turbo', name: 'GLM 5 Turbo', provider: 'glm' },
-      { id: 'glm-4.7', name: 'GLM 4.7', provider: 'glm' }
+      { id: 'glm-4.7', name: 'GLM 4.7', provider: 'glm' },
+      { id: 'glm-4.7-flash', name: 'GLM 4.7 Flash', provider: 'glm' }
+    );
+  }
+  const hasXiaomiKey = SettingsManager.get('xiaomi.apiKey');
+  if (hasXiaomiKey) {
+    models.push({ id: 'mimo-v2-pro', name: 'MiMo-V2-Pro', provider: 'xiaomi' });
+  }
+  const hasOpenAIKey = SettingsManager.get('openai.apiKey');
+  const hasOpenAIOAuth = SettingsManager.get('openai.auth.method') === 'oauth';
+  if (hasOpenAIKey || hasOpenAIOAuth) {
+    models.push(
+      { id: 'gpt-5.4', name: 'GPT-5.4', provider: 'openai' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini', provider: 'openai' },
+      { id: 'gpt-5.3-codex', name: 'GPT-5.3 Codex', provider: 'openai' },
+      { id: 'codex-mini-latest', name: 'Codex Mini', provider: 'openai' }
+    );
+  }
+  const hasMiniMaxKey = SettingsManager.get('minimax.apiKey');
+  if (hasMiniMaxKey) {
+    models.push(
+      { id: 'MiniMax-M2.7', name: 'MiniMax M2.7', provider: 'minimax' },
+      { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax M2.7 Highspeed', provider: 'minimax' }
     );
   }
 
@@ -201,6 +223,14 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
     return SettingsManager.validateGlmKey(key);
   });
 
+  ipcMain.handle('settings:validateXiaomi', async (_, key: string) => {
+    return SettingsManager.validateXiaomiKey(key);
+  });
+
+  ipcMain.handle('settings:validateMiniMax', async (_, key: string) => {
+    return SettingsManager.validateMiniMaxKey(key);
+  });
+
   // Validate an already-stored key (reads real key from backend, never sent to renderer)
   ipcMain.handle('settings:validateStoredKey', async (_, provider: string) => {
     const keyMap: Record<string, string> = {
@@ -208,6 +238,8 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
       openai: 'openai.apiKey',
       moonshot: 'moonshot.apiKey',
       glm: 'glm.apiKey',
+      xiaomi: 'xiaomi.apiKey',
+      minimax: 'minimax.apiKey',
       telegram: 'telegram.botToken',
     };
     const settingKey = keyMap[provider];
@@ -225,6 +257,10 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
         return SettingsManager.validateMoonshotKey(storedKey);
       case 'glm':
         return SettingsManager.validateGlmKey(storedKey);
+      case 'xiaomi':
+        return SettingsManager.validateXiaomiKey(storedKey);
+      case 'minimax':
+        return SettingsManager.validateMiniMaxKey(storedKey);
       case 'telegram':
         return SettingsManager.validateTelegramToken(storedKey);
       default:

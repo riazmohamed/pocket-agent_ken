@@ -4,7 +4,7 @@
  * and general/chat mode (chat-providers.ts).
  */
 
-export type ProviderType = 'anthropic' | 'moonshot' | 'glm';
+export type ProviderType = 'anthropic' | 'moonshot' | 'glm' | 'xiaomi' | 'openai' | 'minimax';
 
 export interface ProviderConfig {
   /** OpenAI-compatible base URL (used by gg-ai chat engine in General mode) */
@@ -29,6 +29,19 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     // Coder mode: SDK subprocess needs the Anthropic-compat endpoint
     sdkBaseUrl: 'https://api.z.ai/api/anthropic',
   },
+  xiaomi: {
+    // General mode: gg-ai uses OpenAI-compat endpoint for Xiaomi models
+    baseUrl: 'https://token-plan-sgp.xiaomimimo.com/v1',
+  },
+  openai: {
+    // General mode: gg-ai uses OpenAI-compat endpoint (no baseUrl = gg-ai default)
+    // Coder mode: SDK subprocess needs the Anthropic-compat endpoint
+    sdkBaseUrl: 'https://api.openai.com/v1',
+  },
+  minimax: {
+    // General mode: gg-ai uses Anthropic-compat endpoint for MiniMax models
+    baseUrl: 'https://api.minimax.io/anthropic',
+  },
 };
 
 // Model to provider mapping
@@ -44,6 +57,17 @@ export const MODEL_PROVIDERS: Record<string, ProviderType> = {
   'glm-5.1': 'glm',
   'glm-5-turbo': 'glm',
   'glm-4.7': 'glm',
+  'glm-4.7-flash': 'glm',
+  // Xiaomi/MiMo models
+  'mimo-v2-pro': 'xiaomi',
+  // OpenAI models
+  'gpt-5.4': 'openai',
+  'gpt-5.4-mini': 'openai',
+  'gpt-5.3-codex': 'openai',
+  'codex-mini-latest': 'openai',
+  // MiniMax models
+  'MiniMax-M2.7': 'minimax',
+  'MiniMax-M2.7-highspeed': 'minimax',
 };
 
 export function getProviderForModel(model: string): ProviderType {

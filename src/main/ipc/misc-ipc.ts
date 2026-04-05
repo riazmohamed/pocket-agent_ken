@@ -164,6 +164,40 @@ export function registerMiscIPC(deps: IPCDependencies): void {
     }
   });
 
+  // OpenAI OAuth flow
+  ipcMain.handle('openai:startOAuth', async () => {
+    const { OpenAIOAuth } = await import('../../auth/openai-oauth');
+    return OpenAIOAuth.startFlow();
+  });
+
+  ipcMain.handle('openai:completeOAuth', async () => {
+    // Code-based flow is not used — browser-based PKCE flow auto-handles callback
+    return { success: false, error: 'Not supported — use Sign in button' };
+  });
+
+  ipcMain.handle('openai:validateOAuth', async () => {
+    try {
+      const { OpenAIOAuth } = await import('../../auth/openai-oauth');
+      const result = await Promise.race([
+        OpenAIOAuth.getAccessToken().then((token) => ({ valid: token !== null })),
+        new Promise<{ valid: boolean }>((resolve) =>
+          setTimeout(() => resolve({ valid: false }), 5000)
+        ),
+      ]);
+      console.log('[OpenAI OAuth] Validation result:', result.valid ? 'valid' : 'expired/failed');
+      return result;
+    } catch (error) {
+      console.error('[OpenAI OAuth] Validation error:', error);
+      return { valid: false };
+    }
+  });
+
+  ipcMain.handle('openai:logoutOAuth', async () => {
+    const { OpenAIOAuth } = await import('../../auth/openai-oauth');
+    OpenAIOAuth.logout();
+    return { success: true };
+  });
+
   // Browser control
   ipcMain.handle('browser:detectInstalled', async () => {
     const { detectInstalledBrowsers } = await import('../../browser/launcher');

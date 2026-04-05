@@ -15,6 +15,7 @@ export interface StreamConfig {
   provider: Provider;
   apiKey?: string;
   baseUrl?: string;
+  accountId?: string;
 }
 
 /**
@@ -39,6 +40,42 @@ export async function getStreamConfig(model: string): Promise<StreamConfig> {
       throw new Error('Z.AI GLM API key not configured. Please add your key in Settings > LLM.');
     }
     return { provider: 'glm', apiKey, baseUrl: config.baseUrl };
+  }
+
+  if (providerType === 'xiaomi') {
+    const apiKey = SettingsManager.get('xiaomi.apiKey');
+    if (!apiKey) {
+      throw new Error('Xiaomi API key not configured. Please add your key in Settings > LLM.');
+    }
+    return { provider: 'xiaomi', apiKey, baseUrl: config.baseUrl };
+  }
+
+  if (providerType === 'openai') {
+    // Check for OAuth first (uses Codex Responses API with accountId)
+    const openaiAuthMethod = SettingsManager.get('openai.auth.method');
+    if (openaiAuthMethod === 'oauth') {
+      const { OpenAIOAuth } = await import('../auth/openai-oauth');
+      const token = await OpenAIOAuth.getAccessToken();
+      const accountId = SettingsManager.get('openai.accountId');
+      if (!token) {
+        throw new Error('OpenAI session expired. Please re-authenticate in Settings.');
+      }
+      return { provider: 'openai', apiKey: token, accountId: accountId || undefined };
+    }
+    // API key path
+    const apiKey = SettingsManager.get('openai.apiKey');
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured. Please add your key in Settings > LLM.');
+    }
+    return { provider: 'openai', apiKey, baseUrl: config.baseUrl };
+  }
+
+  if (providerType === 'minimax') {
+    const apiKey = SettingsManager.get('minimax.apiKey');
+    if (!apiKey) {
+      throw new Error('MiniMax API key not configured. Please add your key in Settings > LLM.');
+    }
+    return { provider: 'minimax', apiKey, baseUrl: config.baseUrl };
   }
 
   // Anthropic provider

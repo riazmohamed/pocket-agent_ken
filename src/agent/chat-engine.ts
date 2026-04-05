@@ -61,13 +61,27 @@ const MAX_CONTEXT_MESSAGES = 80;
 
 // Model context window sizes (tokens)
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
+  // Anthropic models
   'claude-opus-4-6': 1_000_000,
   'claude-sonnet-4-6': 1_000_000,
   'claude-haiku-4-5-20251001': 200_000,
-  'kimi-k2.5': 128_000,
-  'glm-5.1': 200_000,
-  'glm-5-turbo': 200_000,
-  'glm-4.7': 128_000,
+  // Moonshot/Kimi models
+  'kimi-k2.5': 200_000,
+  // Z.AI GLM models
+  'glm-5.1': 204_800,
+  'glm-5-turbo': 204_800,
+  'glm-4.7': 200_000,
+  'glm-4.7-flash': 200_000,
+  // Xiaomi/MiMo models
+  'mimo-v2-pro': 1_000_000,
+  // OpenAI models
+  'gpt-5.4': 1_050_000,
+  'gpt-5.4-mini': 400_000,
+  'gpt-5.3-codex': 400_000,
+  'codex-mini-latest': 200_000,
+  // MiniMax models
+  'MiniMax-M2.7': 204_800,
+  'MiniMax-M2.7-highspeed': 204_800,
 };
 
 function getContextWindow(model: string): number {
@@ -136,6 +150,7 @@ export class ChatEngine {
             messages: [{ role: 'user', content: query }],
             apiKey: streamCfg.apiKey,
             baseUrl: streamCfg.baseUrl,
+            accountId: streamCfg.accountId,
           });
           const response = await result.response;
           const textParts = (
@@ -329,6 +344,7 @@ export class ChatEngine {
         thinking,
         apiKey: streamConfig.apiKey,
         baseUrl: streamConfig.baseUrl,
+        accountId: streamConfig.accountId,
         signal: abortController.signal,
         cacheRetention: streamConfig.provider === 'anthropic' ? 'short' : 'none',
       };

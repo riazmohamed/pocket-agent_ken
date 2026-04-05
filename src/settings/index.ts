@@ -16,6 +16,8 @@ import {
   validateTelegramToken,
   validateMoonshotKey,
   validateGlmKey,
+  validateXiaomiKey,
+  validateMiniMaxKey,
 } from './validators';
 
 // Re-export types and schema so external consumers aren't broken
@@ -474,6 +476,14 @@ class SettingsManagerClass {
 
   async validateGlmKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
     return validateGlmKey(apiKey);
+  }
+
+  async validateXiaomiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    return validateXiaomiKey(apiKey);
+  }
+
+  async validateMiniMaxKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    return validateMiniMaxKey(apiKey);
   }
 
   /**

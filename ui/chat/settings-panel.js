@@ -152,6 +152,7 @@ async function _stgLoadSettings() {
     _stgPopulateFields();
     _stgUpdateToggles();
     _stgUpdateAuthStatus();
+    _stgUpdateOpenAIAuthStatus();
     _stgUpdateDeleteButtons();
   } catch (err) {
     console.error('[Settings] Failed to load settings:', err);
@@ -345,6 +346,8 @@ const _stgKeyValidators = {
   'openai.apiKey': { pattern: /^sk-[A-Za-z0-9_-]{40,}$/, hint: 'OpenAI keys start with "sk-"' },
   'moonshot.apiKey': { pattern: /^sk-[A-Za-z0-9_-]{40,}$/, hint: 'Moonshot keys start with "sk-"' },
   'glm.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your Z.AI API key' },
+  'xiaomi.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your Xiaomi API key' },
+  'minimax.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your MiniMax API key' },
   'telegram.botToken': { pattern: /^\d{6,}:[A-Za-z0-9_-]{30,}$/, hint: 'Telegram tokens are in format "123456789:ABC..."' }
 };
 
@@ -379,7 +382,7 @@ async function stgSaveKey(inputId) {
 }
 
 function _stgUpdateDeleteButtons() {
-  const keyIds = ['anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey', 'telegram.botToken'];
+  const keyIds = ['anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey', 'xiaomi.apiKey', 'minimax.apiKey', 'telegram.botToken'];
   for (const keyId of keyIds) {
     const deleteBtn = document.getElementById(`${keyId}-delete`);
     if (deleteBtn) {
@@ -404,10 +407,7 @@ async function stgDeleteKey(keyId, inputId) {
     const deleteBtn = document.getElementById(`${actualInputId}-delete`);
     if (deleteBtn) deleteBtn.classList.remove('visible');
     _stgShowToast('Key removed!', 'success');
-    if (['anthropic.apiKey', 'moonshot.apiKey', 'glm.apiKey'].includes(keyId)) {
-      await _stgRefreshModelDropdown();
-      _stgActivateReboot();
-    }
+    _stgActivateReboot();
     if (keyId === 'anthropic.apiKey') _stgUpdateAuthStatus();
   } catch (err) {
     console.error('[Settings] Failed to delete key:', err);
@@ -467,6 +467,8 @@ async function stgValidateKey(provider) {
     else if (provider === 'openai') result = await window.pocketAgent.validate.openAIKey(key);
     else if (provider === 'moonshot') result = await window.pocketAgent.validate.moonshotKey(key);
     else if (provider === 'glm') result = await window.pocketAgent.validate.glmKey(key);
+    else if (provider === 'xiaomi') result = await window.pocketAgent.validate.xiaomiKey(key);
+    else if (provider === 'minimax') result = await window.pocketAgent.validate.minimaxKey(key);
     else if (provider === 'telegram') result = await window.pocketAgent.validate.telegramToken(key);
 
     if (result.valid) {
@@ -475,7 +477,6 @@ async function stgValidateKey(provider) {
       _stgShowToast(result.botInfo ? `Valid! Bot: @${result.botInfo.username}` : 'All good!', 'success');
       const deleteBtn = document.getElementById(`${inputId}-delete`);
       if (deleteBtn) deleteBtn.classList.add('visible');
-      await _stgRefreshModelDropdown();
       if (['anthropic', 'telegram'].includes(provider)) _stgActivateReboot();
     } else {
       _stgShowToast(result.error || 'That key didn\'t work', 'error');
@@ -806,6 +807,81 @@ async function stgLogout() {
     await _stgLoadSettings();
     _stgUpdateAuthStatus();
   } catch (err) { _stgShowToast('Failed to sign out: ' + err.message, 'error'); }
+}
+
+// ---- OpenAI OAuth ----
+
+async function _stgUpdateOpenAIAuthStatus() {
+  const statusBadge = document.getElementById('openai-auth-status');
+  const authBtn = document.getElementById('openai-oauth-btn');
+
+  if (!statusBadge || !authBtn) return;
+
+  const authMethod = _stgSettings['openai.auth.method'];
+  const isOAuth = authMethod === 'oauth';
+
+  if (isOAuth) {
+    statusBadge.className = 'auth-badge loading';
+    statusBadge.textContent = 'checking...';
+    authBtn.textContent = 'Sign Out';
+    authBtn.className = 'logout-btn';
+
+    try {
+      const result = await window.pocketAgent.openaiAuth.validateOAuth();
+      if (result.valid) {
+        statusBadge.className = 'auth-badge oauth';
+        statusBadge.textContent = 'Connected';
+      } else {
+        statusBadge.className = 'auth-badge none';
+        statusBadge.textContent = 'Session expired';
+        authBtn.textContent = 'Sign In';
+        authBtn.className = 'oauth-btn';
+      }
+    } catch {
+      statusBadge.className = 'auth-badge none';
+      statusBadge.textContent = 'Could not verify';
+      authBtn.textContent = 'Sign In';
+      authBtn.className = 'oauth-btn';
+    }
+  } else {
+    statusBadge.className = 'auth-badge none hidden';
+    statusBadge.textContent = '';
+    authBtn.textContent = 'Sign In';
+    authBtn.className = 'oauth-btn';
+  }
+}
+
+async function stgHandleOpenAIAuth() {
+  const authBtn = document.getElementById('openai-oauth-btn');
+  if (authBtn.classList.contains('logout-btn')) {
+    if (!confirm('Sign out of OpenAI? You will need to re-authenticate.')) return;
+    try {
+      await window.pocketAgent.openaiAuth.logoutOAuth();
+      await _stgLoadSettings();
+      _stgUpdateOpenAIAuthStatus();
+      await _stgRefreshModelDropdown();
+      _stgShowToast('Signed out.', 'success');
+    } catch (err) { _stgShowToast('Failed: ' + err.message, 'error'); }
+  } else {
+    await stgStartOpenAIOAuth();
+  }
+}
+
+async function stgStartOpenAIOAuth() {
+  const btn = document.getElementById('openai-oauth-btn');
+  btn.disabled = true;
+  btn.textContent = 'Opening...';
+  try {
+    const result = await window.pocketAgent.openaiAuth.startOAuth();
+    if (result.success) {
+      await _stgLoadSettings();
+      _stgUpdateOpenAIAuthStatus();
+      await _stgRefreshModelDropdown();
+      _stgShowToast('Connected!', 'success');
+    } else { _stgShowToast(result.error || 'Failed to start OAuth', 'error'); }
+  } catch (err) { _stgShowToast(err.message || 'OAuth failed', 'error'); }
+  btn.disabled = false;
+  btn.textContent = 'Sign In';
 }
 
 // ---- Pocket CLI ----

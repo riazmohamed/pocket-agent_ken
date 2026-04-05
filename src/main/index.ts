@@ -65,7 +65,6 @@ const WIN = {
   CHAT: 'chat',
   CRON: 'cron',
   SETTINGS: 'settings',
-  SETUP: 'setup',
   CUSTOMIZE: 'customize',
   FACTS: 'facts',
   DAILY_LOGS: 'dailyLogs',

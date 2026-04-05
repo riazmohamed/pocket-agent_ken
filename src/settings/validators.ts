@@ -154,3 +154,42 @@ export async function validateGlmKey(apiKey: string): Promise<ValidationResult> 
     },
   });
 }
+
+/**
+ * Validate a Xiaomi API key by making a test call
+ */
+export async function validateXiaomiKey(apiKey: string): Promise<ValidationResult> {
+  return validateApiKey({
+    url: 'https://token-plan-sgp.xiaomimimo.com/v1/chat/completions',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: {
+      model: 'mimo-v2-pro',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Hi' }],
+    },
+  });
+}
+
+/**
+ * Validate a MiniMax API key by making a test call
+ */
+export async function validateMiniMaxKey(apiKey: string): Promise<ValidationResult> {
+  return validateApiKey({
+    url: 'https://api.minimax.io/anthropic/v1/messages',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'anthropic-version': '2023-06-01',
+    },
+    body: {
+      model: 'MiniMax-M2.7',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Hi' }],
+    },
+  });
+}

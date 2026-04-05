@@ -163,6 +163,8 @@ contextBridge.exposeInMainWorld('pocketAgent', {
     openAIKey: (key: string) => ipcRenderer.invoke('settings:validateOpenAI', key),
     moonshotKey: (key: string) => ipcRenderer.invoke('settings:validateMoonshot', key),
     glmKey: (key: string) => ipcRenderer.invoke('settings:validateGlm', key),
+    xiaomiKey: (key: string) => ipcRenderer.invoke('settings:validateXiaomi', key),
+    minimaxKey: (key: string) => ipcRenderer.invoke('settings:validateMiniMax', key),
     telegramToken: (token: string) => ipcRenderer.invoke('settings:validateTelegram', token),
     storedKey: (provider: string) => ipcRenderer.invoke('settings:validateStoredKey', provider),
   },
@@ -179,6 +181,14 @@ contextBridge.exposeInMainWorld('pocketAgent', {
       ipcRenderer.on('auth:expired', listener);
       return () => ipcRenderer.removeListener('auth:expired', listener);
     },
+  },
+
+  // ─── OpenAI OAuth ──────────────────────────────────────────────────
+  openaiAuth: {
+    startOAuth: () => ipcRenderer.invoke('openai:startOAuth'),
+    completeOAuth: () => ipcRenderer.invoke('openai:completeOAuth'),
+    validateOAuth: () => ipcRenderer.invoke('openai:validateOAuth'),
+    logoutOAuth: () => ipcRenderer.invoke('openai:logoutOAuth'),
   },
 
   // ─── Themes ──────────────────────────────────────────────────────────
@@ -592,6 +602,13 @@ declare global {
         isOAuthPending: () => Promise<boolean>;
         validateOAuth: () => Promise<{ valid: boolean; error?: string }>;
         onExpired: (callback: () => void) => () => void;
+      };
+
+      openaiAuth: {
+        startOAuth: () => Promise<{ success: boolean; error?: string }>;
+        completeOAuth: () => Promise<{ success: boolean; error?: string }>;
+        validateOAuth: () => Promise<{ valid: boolean; error?: string }>;
+        logoutOAuth: () => Promise<{ success: boolean }>;
       };
 
       themes: {
