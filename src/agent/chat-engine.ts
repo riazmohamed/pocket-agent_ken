@@ -23,7 +23,7 @@ import { getModeConfig, buildRoutingInstructions } from './agent-modes';
 import type { AgentModeId } from './agent-modes';
 import { getStreamConfig } from './chat-providers';
 import { getChatAgentTools, getCoderAgentTools } from './chat-tools';
-import { buildSystemPrompt as buildCoderSystemPrompt } from '@kenkaiiii/ggcoder';
+import { buildSystemPrompt as buildCoderSystemPrompt, estimateConversationTokens } from '@kenkaiiii/ggcoder';
 import { buildTemporalContext } from './context-extraction';
 import {
   formatToolName,
@@ -57,7 +57,10 @@ function annotateRoutineMessage(msg: MemoryMessage): string {
 }
 
 const MAX_TOOL_ITERATIONS = 20;
-const MAX_CONTEXT_MESSAGES = 80;
+
+// Base message limit for 200K context models — scaled up for larger contexts
+const BASE_CONTEXT_MESSAGES = 80;
+const BASE_CONTEXT_WINDOW = 200_000;
 
 // Model context window sizes (tokens)
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
@@ -86,6 +89,16 @@ const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
 
 function getContextWindow(model: string): number {
   return MODEL_CONTEXT_WINDOWS[model] ?? 200_000;
+}
+
+/**
+ * Scale the max context messages based on model's context window.
+ * 200K models → 80 messages, 1M models → 400 messages, etc.
+ */
+function getMaxContextMessages(model: string): number {
+  const contextWindow = getContextWindow(model);
+  const scale = contextWindow / BASE_CONTEXT_WINDOW;
+  return Math.round(BASE_CONTEXT_MESSAGES * scale);
 }
 
 // Map settings thinking level to gg-ai ThinkingLevel
@@ -271,9 +284,12 @@ export class ChatEngine {
     this.abortControllersBySession.set(sessionId, abortController);
 
     try {
+      // Get model early — needed for context-window-aware message limits and token-based compaction
+      const model = SettingsManager.get('agent.model') || 'claude-opus-4-6';
+
       // Load or get conversation history
       if (!this.conversationsBySession.has(sessionId)) {
-        await this.loadConversationFromMemory(sessionId);
+        await this.loadConversationFromMemory(sessionId, model);
       }
       const conversation = this.conversationsBySession.get(sessionId)!;
 
@@ -294,8 +310,8 @@ export class ChatEngine {
       const userContent = this.buildUserContent(finalMessage, images);
       conversation.push({ role: 'user', content: userContent });
 
-      // Compact if needed
-      const wasCompacted = await this.compactConversation(sessionId, userMessage);
+      // Compact if needed (token-based: triggers when >80% of context window)
+      const wasCompacted = await this.compactConversation(sessionId, userMessage, model);
 
       // Build system prompt — coder mode uses gg-coder's prompt, others use the standard prompt
       let systemPrompt: string;
@@ -312,8 +328,7 @@ export class ChatEngine {
         systemPrompt = `${staticPrompt}\n\n${dynamicPrompt}`;
       }
 
-      // Get model + provider config
-      const model = SettingsManager.get('agent.model') || 'claude-opus-4-6';
+      // Get provider config
       const streamConfig = await getStreamConfig(model);
       const agentTools =
         sessionMode === 'coder'
@@ -363,8 +378,9 @@ export class ChatEngine {
       let response = '';
       let totalInputTokens = 0;
       let totalOutputTokens = 0;
-      let totalCacheRead = 0;
-      let totalCacheWrite = 0;
+      // Track the last turn's input tokens — this represents the actual context size
+      // (each turn sends the full conversation, so the last turn = current context usage)
+      let lastTurnContextTokens = 0;
       // Track active subagents for status display
       const activeSubagents = new Map<string, { type: string; description: string }>();
       // Track tool names used during this execution (for metadata)
@@ -514,10 +530,11 @@ export class ChatEngine {
             const u = event.usage;
             totalInputTokens += u.inputTokens;
             totalOutputTokens += u.outputTokens;
-            totalCacheRead += u.cacheRead ?? 0;
-            totalCacheWrite += u.cacheWrite ?? 0;
 
-            const turnTotal = u.inputTokens + (u.cacheRead ?? 0) + (u.cacheWrite ?? 0);
+            // Last turn's input tokens = actual context size at end of request
+            lastTurnContextTokens = u.inputTokens + (u.cacheRead ?? 0) + (u.cacheWrite ?? 0);
+
+            const turnTotal = lastTurnContextTokens;
             const hitPct = turnTotal > 0 ? Math.round(((u.cacheRead ?? 0) / turnTotal) * 100) : 0;
             console.log(
               `[ChatEngine] Turn ${event.turn} — in: ${u.inputTokens}, out: ${u.outputTokens}, cache_read: ${u.cacheRead ?? 0}, cache_create: ${u.cacheWrite ?? 0}, cache_hit: ${hitPct}%`
@@ -591,7 +608,7 @@ export class ChatEngine {
           (this.pendingMediaBySession.get(sessionId) || []).length > 0
             ? this.pendingMediaBySession.get(sessionId)
             : undefined,
-        contextTokens: totalInputTokens + totalCacheRead + totalCacheWrite,
+        contextTokens: lastTurnContextTokens,
         contextWindow: getContextWindow(model),
       };
     } catch (error) {
@@ -824,13 +841,20 @@ export class ChatEngine {
    * Load conversation history from SQLite.
    * Uses smart context (rolling summary + recent) for longer sessions.
    * Applies history filtering based on the target mode (strips technical noise for non-technical modes).
+   * Message limit scales with the model's context window size.
    */
-  async loadConversationFromMemory(sessionId: string): Promise<void> {
+  async loadConversationFromMemory(sessionId: string, model?: string): Promise<void> {
+    const effectiveModel = model || SettingsManager.get('agent.model') || 'claude-opus-4-6';
+    const maxMessages = getMaxContextMessages(effectiveModel);
     const messageCount = this.memory.getSessionMessageCount(sessionId);
     const sessionMode = this.memory.getSessionMode(sessionId) as AgentModeId;
 
-    if (messageCount <= MAX_CONTEXT_MESSAGES) {
-      const messages = this.memory.getRecentMessages(MAX_CONTEXT_MESSAGES, sessionId);
+    console.log(
+      `[ChatEngine] Loading session ${sessionId} — ${messageCount} stored msgs, limit: ${maxMessages} (model: ${effectiveModel}, context: ${getContextWindow(effectiveModel).toLocaleString()} tokens)`
+    );
+
+    if (messageCount <= maxMessages) {
+      const messages = this.memory.getRecentMessages(maxMessages, sessionId);
       const conversation: MessageParam[] = [];
       for (const msg of messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
@@ -844,10 +868,14 @@ export class ChatEngine {
       return;
     }
 
+    // Scale the recent message limit for smart context proportionally
+    const recentLimit = Math.round(40 * (maxMessages / BASE_CONTEXT_MESSAGES));
+    const summaryInterval = Math.round(30 * (maxMessages / BASE_CONTEXT_MESSAGES));
+
     try {
       const smartContext = await this.memory.getSmartContext(sessionId, {
-        recentMessageLimit: 40,
-        rollingSummaryInterval: 30,
+        recentMessageLimit: recentLimit,
+        rollingSummaryInterval: summaryInterval,
         semanticRetrievalCount: 0,
       });
 
@@ -872,7 +900,7 @@ export class ChatEngine {
         '[ChatEngine] Smart context load failed, falling back to recent messages:',
         err
       );
-      const messages = this.memory.getRecentMessages(MAX_CONTEXT_MESSAGES, sessionId);
+      const messages = this.memory.getRecentMessages(maxMessages, sessionId);
       const conversation: MessageParam[] = [];
       for (const msg of messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
@@ -963,14 +991,37 @@ export class ChatEngine {
     return cleaned;
   }
 
-  private async compactConversation(sessionId: string, currentQuery: string): Promise<boolean> {
+  private async compactConversation(
+    sessionId: string,
+    currentQuery: string,
+    model: string
+  ): Promise<boolean> {
     const conversation = this.conversationsBySession.get(sessionId);
-    if (!conversation || conversation.length <= MAX_CONTEXT_MESSAGES) return false;
+    if (!conversation || conversation.length === 0) return false;
+
+    // Token-based compaction: estimate conversation tokens and compact when >80% of context window
+    const contextWindow = getContextWindow(model);
+    const outputReserve = 16_384;
+    const effectiveWindow = contextWindow - outputReserve;
+    const estimatedTokens = estimateConversationTokens(conversation);
+    const threshold = 0.8;
+    const tokenLimit = effectiveWindow * threshold;
+
+    if (estimatedTokens <= tokenLimit) return false;
+
+    console.log(
+      `[ChatEngine] Compacting session ${sessionId}: ~${estimatedTokens} estimated tokens exceeds ${Math.round(threshold * 100)}% of ${effectiveWindow} effective context (limit: ${Math.round(tokenLimit)})`
+    );
+
+    // Scale smart context params proportionally to model's context window
+    const maxContextMessages = getMaxContextMessages(model);
+    const recentLimit = Math.round(40 * (maxContextMessages / BASE_CONTEXT_MESSAGES));
+    const summaryInterval = Math.round(30 * (maxContextMessages / BASE_CONTEXT_MESSAGES));
 
     try {
       const smartContext = await this.memory.getSmartContext(sessionId, {
-        recentMessageLimit: 40,
-        rollingSummaryInterval: 30,
+        recentMessageLimit: recentLimit,
+        rollingSummaryInterval: summaryInterval,
         semanticRetrievalCount: 5,
         currentQuery,
       });
@@ -989,14 +1040,15 @@ export class ChatEngine {
         newConversation.shift();
       }
 
+      const newTokens = estimateConversationTokens(newConversation);
       this.conversationsBySession.set(sessionId, newConversation);
       console.log(
-        `[ChatEngine] Compacted: ${conversation.length} -> ${newConversation.length} messages (summary: ${smartContext.rollingSummary ? 'yes' : 'no'})`
+        `[ChatEngine] Compacted: ${conversation.length} -> ${newConversation.length} messages, ~${estimatedTokens} -> ~${newTokens} tokens (summary: ${smartContext.rollingSummary ? 'yes' : 'no'})`
       );
       return true;
     } catch (err) {
       console.error('[ChatEngine] Compaction failed, falling back to naive trim:', err);
-      const trimTo = Math.floor(MAX_CONTEXT_MESSAGES * 0.75);
+      const trimTo = Math.floor(maxContextMessages * 0.75);
       const trimmed = conversation.slice(-trimTo);
       while (trimmed.length > 0 && trimmed[0].role !== 'user') {
         trimmed.shift();
