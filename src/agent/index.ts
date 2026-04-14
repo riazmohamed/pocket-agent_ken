@@ -42,7 +42,8 @@ export type AgentStatus = {
     | 'background_task_end'
     | 'partial_text'
     | 'plan_mode_entered'
-    | 'plan_mode_exited';
+    | 'plan_mode_exited'
+    | 'memory_compacting';
   sessionId?: string;
   toolName?: string;
   toolInput?: string;

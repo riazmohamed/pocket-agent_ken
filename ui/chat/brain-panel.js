@@ -133,8 +133,10 @@ function _brainFormatDate(dateStr) {
 
 function _brainFormatLogDate(dateStr) {
   if (!dateStr) return '';
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const yd = new Date(now); yd.setDate(yd.getDate() - 1);
+  const yesterday = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`;
   if (dateStr === today) return 'Today';
   if (dateStr === yesterday) return 'Yesterday';
   const d = new Date(dateStr + 'T00:00:00');

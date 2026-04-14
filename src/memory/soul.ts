@@ -3,9 +3,6 @@ import Database from 'better-sqlite3';
 /** Hard character budget for soul aspects injected into the system prompt (~500 tokens) */
 export const SOUL_CHAR_BUDGET = 1500;
 
-/** Percentage threshold at which memory pressure warnings are shown */
-const MEMORY_PRESSURE_THRESHOLD = 0.8;
-
 export interface SoulAspect {
   id: number;
   aspect: string;
@@ -160,14 +157,8 @@ export function getSoulContext(db: Database.Database, cache: SoulCache): string 
     includedLines.push(aspectContent);
   }
 
-  // Build usage header
-  const totalChars = usedChars + headerReserve;
-  const pct = Math.round((totalChars / SOUL_CHAR_BUDGET) * 100);
-  const pressureWarning =
-    pct >= MEMORY_PRESSURE_THRESHOLD * 100
-      ? ' ⚠️ Memory nearly full — consolidate approach notes'
-      : '';
-  const header = `## Soul [${pct}% — ${totalChars}/${SOUL_CHAR_BUDGET} chars]${pressureWarning}`;
+  // Build header
+  const header = `## Soul`;
 
   const result = [header, ...includedLines].join('\n');
   cache.soulContextCache = result;

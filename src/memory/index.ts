@@ -20,6 +20,7 @@ import {
   getDailyLogsContext as _getDailyLogsContext,
   getDailyLogsMemoryUsage as _getDailyLogsMemoryUsage,
   deleteDailyLog as _deleteDailyLog,
+  pruneOldDailyLogs as _pruneOldDailyLogs,
 } from './daily-logs';
 import {
   createSoulCache,
@@ -110,6 +111,9 @@ export class MemoryManager {
 
     // Run importance decay on startup (reduces importance for stale facts)
     _decayFactImportance(this.db);
+
+    // Prune daily logs older than 3 days — only the rolling window is kept
+    _pruneOldDailyLogs(this.db, 3);
   }
 
   private initialize(): void {

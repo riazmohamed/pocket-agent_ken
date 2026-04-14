@@ -341,3 +341,29 @@
   -webkit-text-fill-color: transparent;
   animation: shimmer 2s ease-in-out infinite;
 }
+
+/* Memory compacting active state - amber/gold vibe */
+.status-indicator.memory-compacting-active {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(234, 179, 8, 0.1) 100%);
+}
+
+.status-indicator.memory-compacting-active .status-action {
+  background: linear-gradient(
+    90deg,
+    #f59e0b 0%,
+    #eab308 25%,
+    #f59e0b 50%,
+    #eab308 75%,
+    #f59e0b 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.status-indicator.memory-compacting-active .status-detail {
+  color: #f59e0b;
+}

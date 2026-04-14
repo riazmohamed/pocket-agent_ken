@@ -49,9 +49,6 @@ export function createFactsCache(): FactsCache {
 /** Hard character budget for facts injected into the system prompt (~1,000 tokens) */
 export const FACTS_CHAR_BUDGET = 3000;
 
-/** Percentage threshold at which memory pressure warnings are shown */
-const MEMORY_PRESSURE_THRESHOLD = 0.8;
-
 // ============ Search constants ============
 
 const VECTOR_WEIGHT = 0.7;
@@ -270,14 +267,8 @@ export function getFactsForContext(db: Database.Database, cache: FactsCache): st
     ).run(...ids);
   }
 
-  // Build usage header
-  const totalChars = usedChars + headerReserve;
-  const pct = Math.round((totalChars / FACTS_CHAR_BUDGET) * 100);
-  const pressureWarning =
-    pct >= MEMORY_PRESSURE_THRESHOLD * 100
-      ? ' ⚠️ Memory nearly full — consolidate or remove stale entries'
-      : '';
-  const header = `## Known Facts [${pct}% — ${totalChars}/${FACTS_CHAR_BUDGET} chars]${pressureWarning}`;
+  // Build header
+  const header = `## Known Facts`;
 
   const lines: string[] = [header];
   for (const [category, categoryFacts] of byCategory) {

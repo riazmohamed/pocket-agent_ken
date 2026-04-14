@@ -64,20 +64,12 @@ export async function handleRememberTool(input: unknown): Promise<string> {
   const id = memoryManager.saveFact(category, subject, content);
   console.log(`[Remember] Saved: [${category}] ${subject}: ${content}`);
 
-  // Check memory pressure after saving
-  const usage = memoryManager.getFactsMemoryUsage();
-  const pressureWarning =
-    usage.pct >= 80
-      ? `\n⚠️ Memory at ${usage.pct}% capacity (${usage.usedChars}/${usage.budgetChars} chars). Consider consolidating facts or forgetting stale entries.`
-      : '';
-
   return JSON.stringify({
     success: true,
-    message: `Remembered: ${subject}${pressureWarning}`,
+    message: `Remembered: ${subject}`,
     id,
     category,
     subject,
-    memoryUsage: { pct: usage.pct, used: usage.usedChars, budget: usage.budgetChars },
   });
 }
 

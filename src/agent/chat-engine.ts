@@ -14,6 +14,7 @@ import type {
   Message,
   TextContent,
   ImageContent as GGImageContent,
+  StreamResponse,
 } from '@kenkaiiii/gg-ai';
 import { MemoryManager, type Message as MemoryMessage } from '../memory';
 import { ToolsConfig, setCurrentSessionId, runWithSessionId } from '../tools';
@@ -143,6 +144,7 @@ export class ChatEngine {
     }>
   > = new Map();
   private pendingMediaBySession: Map<string, MediaAttachment[]> = new Map();
+  private lastCompactionTime: number = 0;
 
   constructor(config: ChatEngineConfig) {
     this.memory = config.memory;
@@ -316,6 +318,9 @@ export class ChatEngine {
 
       // Compact if needed (token-based: triggers when >80% of context window)
       const wasCompacted = await this.compactConversation(sessionId, userMessage, model);
+
+      // Compact facts/soul memory if near capacity
+      await this.compactMemoryIfNeeded(sessionId, model, channel);
 
       // Build system prompt — coder mode uses gg-coder's prompt, others use the standard prompt
       let systemPrompt: string;
@@ -1057,6 +1062,324 @@ export class ChatEngine {
       }
       this.conversationsBySession.set(sessionId, trimmed);
       return false;
+    }
+  }
+
+  // ─── Memory compaction ─────────────────────────────────────────
+
+  /**
+   * Compact facts and/or soul memory when they exceed 80% capacity.
+   * Makes a single LLM call to consolidate entries, then applies the results.
+   * Skips for coder mode, cron jobs, and respects a 10-minute cooldown.
+   */
+  private async compactMemoryIfNeeded(
+    sessionId: string,
+    model: string,
+    channel: string
+  ): Promise<void> {
+    // Skip for scheduled/cron runs
+    if (channel.startsWith('cron:')) return;
+
+    // Skip for coder mode (doesn't inject facts/soul)
+    const sessionMode = this.memory.getSessionMode(sessionId);
+    if (sessionMode === 'coder') return;
+
+    // 10-minute cooldown
+    if (Date.now() - this.lastCompactionTime < 600_000) return;
+
+    // Check usage
+    const factsUsage = this.memory.getFactsMemoryUsage();
+    const soulUsage = this.memory.getSoulMemoryUsage();
+
+    const factsOver = factsUsage.pct >= 80;
+    const soulOver = soulUsage.pct >= 80;
+
+    if (!factsOver && !soulOver) return;
+
+    // Build detail string
+    const detailParts: string[] = [];
+    if (factsOver) detailParts.push(`facts ${factsUsage.pct}%`);
+    if (soulOver) detailParts.push(`soul ${soulUsage.pct}%`);
+    const detail = detailParts.join(', ');
+
+    try {
+      this.emitStatus({
+        type: 'memory_compacting',
+        sessionId,
+        message: 'scanning memory... 🔍',
+        toolInput: detail,
+      });
+
+      // Build compaction prompt with concrete char targets
+      const allFacts = factsOver ? this.memory.getAllFacts() : [];
+      const allSoul = soulOver ? this.memory.getAllSoulAspects() : [];
+
+      const now = Date.now();
+      const factsData = allFacts.map((f) => {
+        const lastAccess = f.last_accessed_at ? new Date(f.last_accessed_at).getTime() : 0;
+        const daysSinceAccess = lastAccess ? Math.round((now - lastAccess) / 86_400_000) : 999;
+        return {
+          id: f.id,
+          category: f.category,
+          subject: f.subject,
+          content: f.content,
+          importance: f.importance,
+          days_since_accessed: daysSinceAccess,
+        };
+      });
+      const soulData = allSoul.map((s) => ({
+        aspect: s.aspect,
+        content: s.content,
+      }));
+
+      const totalFactChars = factsData.reduce(
+        (sum, f) => sum + f.category.length + f.subject.length + f.content.length,
+        0
+      );
+      const totalSoulChars = soulData.reduce(
+        (sum, s) => sum + s.aspect.length + s.content.length,
+        0
+      );
+      const targetFactChars = Math.round(totalFactChars * 0.6);
+      const targetSoulChars = Math.round(totalSoulChars * 0.6);
+
+      const promptParts: string[] = [
+        'Compact these memory entries. Return ONLY raw JSON, no markdown fences.',
+        '',
+      ];
+
+      // Add concrete targets up front
+      if (factsOver) {
+        promptParts.push(
+          `FACTS: currently ${totalFactChars} chars across ${factsData.length} entries. Your upserted facts MUST total UNDER ${targetFactChars} chars (sum of category+subject+content for each).`
+        );
+      }
+      if (soulOver) {
+        promptParts.push(
+          `SOUL: currently ${totalSoulChars} chars across ${soulData.length} entries. Your upserted soul MUST total UNDER ${targetSoulChars} chars (sum of aspect+content for each).`
+        );
+      }
+
+      promptParts.push('');
+      promptParts.push('WHAT TO DROP (priority order):');
+      promptParts.push(
+        '- Each fact has "importance" (0-100, decays over time) and "days_since_accessed" (how many days since this fact was last relevant in conversation)'
+      );
+      promptParts.push(
+        '- DROP FIRST: low importance + high days_since_accessed — these are stale, rarely discussed topics'
+      );
+      promptParts.push(
+        '- DROP NEXT: duplicates and near-duplicates (same person/topic across multiple keys)'
+      );
+      promptParts.push(
+        '- KEEP: high importance OR recently accessed (days_since_accessed < 7) — these are actively discussed'
+      );
+      promptParts.push('');
+      promptParts.push('DEDUPLICATION:');
+      promptParts.push('- Same person/topic split across multiple subject keys → merge into ONE');
+      promptParts.push(
+        '- Near-duplicate subject names (e.g. "Ken\'s mum" vs "Ken_mum") → keep only one'
+      );
+      promptParts.push('- Overlapping info across entries → consolidate');
+      promptParts.push('');
+      promptParts.push('COMPRESSION:');
+      promptParts.push('- Each fact content: MAX 10 words. Telegram-style. No filler.');
+      promptParts.push('- Prefer fewer entries with dense info over many granular ones');
+      promptParts.push('');
+
+      const responseShape: string[] = [];
+
+      if (factsOver) {
+        promptParts.push(
+          `## Facts (${factsData.length} entries, ${totalFactChars} chars → target <${targetFactChars} chars)`
+        );
+        promptParts.push(JSON.stringify(factsData, null, 2));
+        promptParts.push('');
+        responseShape.push(
+          '"facts": { "delete_ids": [<ids to remove>], "upsert": [{ "category": "...", "subject": "...", "content": "..." }] }'
+        );
+      }
+
+      if (soulOver) {
+        promptParts.push(
+          `## Soul (${soulData.length} entries, ${totalSoulChars} chars → target <${targetSoulChars} chars)`
+        );
+        promptParts.push(JSON.stringify(soulData, null, 2));
+        promptParts.push('');
+        responseShape.push(
+          '"soul": { "delete_aspects": ["<aspect names to remove>"], "upsert": [{ "aspect": "...", "content": "..." }] }'
+        );
+      }
+
+      promptParts.push('## Expected JSON response format');
+      promptParts.push('{');
+      promptParts.push('  ' + responseShape.join(',\n  '));
+      promptParts.push('}');
+
+      const compactionPrompt = promptParts.join('\n');
+
+      // Make LLM call
+      this.emitStatus({
+        type: 'memory_compacting',
+        sessionId,
+        message: 'compacting memories... 🧹',
+        toolInput: detail,
+      });
+
+      const streamCfg = await getStreamConfig(model);
+      const result = ggStream({
+        provider: streamCfg.provider,
+        model,
+        maxTokens: 2048,
+        messages: [{ role: 'user', content: compactionPrompt }],
+        apiKey: streamCfg.apiKey,
+        baseUrl: streamCfg.baseUrl,
+        accountId: streamCfg.accountId,
+      });
+
+      const response: StreamResponse = await result.response;
+      const textParts = (
+        Array.isArray(response.message.content)
+          ? response.message.content
+          : [{ type: 'text' as const, text: response.message.content }]
+      ).filter((p): p is TextContent => p.type === 'text');
+      const responseText = textParts.map((p) => p.text).join('');
+
+      if (!responseText) {
+        console.log('[ChatEngine] Memory compaction returned empty response, skipping');
+        return;
+      }
+
+      // Extract JSON (handle both raw JSON and markdown-fenced JSON)
+      let jsonStr = responseText.trim();
+      const fencedMatch = jsonStr.match(/```(?:json)?\s*\n([\s\S]*?)\n\s*```/);
+      if (fencedMatch) {
+        jsonStr = fencedMatch[1].trim();
+      } else {
+        // Fallback: find the first { and last } to extract JSON object
+        const firstBrace = jsonStr.indexOf('{');
+        const lastBrace = jsonStr.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+        }
+      }
+
+      const compactionResult = JSON.parse(jsonStr) as {
+        facts?: {
+          delete_ids?: number[];
+          upsert?: Array<{ category: string; subject: string; content: string }>;
+        };
+        soul?: {
+          delete_aspects?: string[];
+          upsert?: Array<{ aspect: string; content: string }>;
+        };
+      };
+
+      // Apply fact compaction — upsert first (safe), then delete old ones
+      let factsDeleted = 0;
+      let factsAdded = 0;
+      if (compactionResult.facts) {
+        const deleteIds = compactionResult.facts.delete_ids ?? [];
+        const upserts = compactionResult.facts.upsert ?? [];
+        if (deleteIds.length > 0 || upserts.length > 0) {
+          this.emitStatus({
+            type: 'memory_compacting',
+            sessionId,
+            message: 'reorganizing facts... 🗂️',
+            toolInput: `${deleteIds.length} to remove, ${upserts.length} consolidated`,
+          });
+        }
+
+        // Measure: would the upserts add more chars than the deletions remove?
+        const deletedChars = factsData
+          .filter((f) => deleteIds.includes(f.id))
+          .reduce((sum, f) => sum + f.category.length + f.subject.length + f.content.length, 0);
+        const upsertChars = upserts.reduce(
+          (sum, f) => sum + f.category.length + f.subject.length + f.content.length,
+          0
+        );
+        const willShrink = upsertChars < deletedChars;
+
+        // Upsert new merged entries first (safe — worst case we have duplicates)
+        if (willShrink) {
+          for (const fact of upserts) {
+            this.memory.saveFact(fact.category, fact.subject, fact.content);
+            factsAdded++;
+          }
+        } else {
+          console.log(
+            `[ChatEngine] Skipping fact upserts — would add ${upsertChars} chars vs removing ${deletedChars} chars`
+          );
+        }
+
+        // Now delete old entries
+        for (const id of deleteIds) {
+          if (this.memory.deleteFact(id)) factsDeleted++;
+        }
+      }
+
+      // Apply soul compaction — upsert first (safe), then delete old ones
+      let soulDeleted = 0;
+      let soulAdded = 0;
+      if (compactionResult.soul) {
+        const deleteAspects = compactionResult.soul.delete_aspects ?? [];
+        const upserts = compactionResult.soul.upsert ?? [];
+        if (deleteAspects.length > 0 || upserts.length > 0) {
+          this.emitStatus({
+            type: 'memory_compacting',
+            sessionId,
+            message: 'refining soul notes... ✨',
+            toolInput: `${deleteAspects.length} to merge, ${upserts.length} refined`,
+          });
+        }
+
+        // Measure
+        const deletedChars = soulData
+          .filter((s) => deleteAspects.includes(s.aspect))
+          .reduce((sum, s) => sum + s.aspect.length + s.content.length, 0);
+        const upsertChars = upserts.reduce((sum, s) => sum + s.aspect.length + s.content.length, 0);
+        const willShrink = upsertChars < deletedChars;
+
+        if (willShrink) {
+          for (const item of upserts) {
+            this.memory.setSoulAspect(item.aspect, item.content);
+            soulAdded++;
+          }
+        } else if (upserts.length > 0) {
+          console.log(
+            `[ChatEngine] Skipping soul upserts — would add ${upsertChars} chars vs removing ${deletedChars} chars`
+          );
+        }
+
+        for (const aspect of deleteAspects) {
+          if (this.memory.deleteSoulAspect(aspect)) soulDeleted++;
+        }
+      }
+
+      // Log before/after usage
+      const factsAfter = this.memory.getFactsMemoryUsage();
+      const soulAfter = this.memory.getSoulMemoryUsage();
+
+      // Final status with results
+      const resultParts: string[] = [];
+      if (factsOver) resultParts.push(`facts ${factsUsage.pct}%→${factsAfter.pct}%`);
+      if (soulOver) resultParts.push(`soul ${soulUsage.pct}%→${soulAfter.pct}%`);
+      this.emitStatus({
+        type: 'memory_compacting',
+        sessionId,
+        message: 'memory tidied up! ✅',
+        toolInput: resultParts.join(', '),
+      });
+
+      console.log(
+        `[ChatEngine] Memory compacted: facts ${factsUsage.pct}%→${factsAfter.pct}% (deleted ${factsDeleted}, added ${factsAdded}), soul ${soulUsage.pct}%→${soulAfter.pct}% (deleted ${soulDeleted}, added ${soulAdded})`
+      );
+
+      this.lastCompactionTime = Date.now();
+    } catch (err) {
+      console.log(
+        `[ChatEngine] Memory compaction failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 

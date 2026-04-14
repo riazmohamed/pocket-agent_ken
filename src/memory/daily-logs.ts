@@ -3,9 +3,6 @@ import Database from 'better-sqlite3';
 /** Hard character budget for daily logs injected into the system prompt (~700 tokens) */
 export const DAILY_LOGS_CHAR_BUDGET = 2000;
 
-/** Percentage threshold at which memory pressure warnings are shown */
-const MEMORY_PRESSURE_THRESHOLD = 0.8;
-
 export interface DailyLog {
   id: number;
   date: string;
@@ -14,10 +11,14 @@ export interface DailyLog {
 }
 
 /**
- * Get today's date in YYYY-MM-DD format
+ * Get today's date in YYYY-MM-DD format (local timezone)
  */
 export function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -79,16 +80,24 @@ export function appendToDailyLog(db: Database.Database, entry: string): DailyLog
  * Get daily logs from the last N calendar days
  */
 export function getDailyLogsSince(db: Database.Database, days: number = 3): DailyLog[] {
+  // Compute the cutoff in local time (not UTC) so timezone doesn't shift the window
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const year = cutoff.getFullYear();
+  const month = String(cutoff.getMonth() + 1).padStart(2, '0');
+  const day = String(cutoff.getDate()).padStart(2, '0');
+  const cutoffDate = `${year}-${month}-${day}`;
+
   return db
     .prepare(
       `
       SELECT id, date, content, updated_at
       FROM daily_logs
-      WHERE date >= date('now', ?)
+      WHERE date >= ?
       ORDER BY date DESC
     `
     )
-    .all(`-${days} days`) as DailyLog[];
+    .all(cutoffDate) as DailyLog[];
 }
 
 /**
@@ -97,6 +106,26 @@ export function getDailyLogsSince(db: Database.Database, days: number = 3): Dail
 export function deleteDailyLog(db: Database.Database, id: number): boolean {
   const result = db.prepare('DELETE FROM daily_logs WHERE id = ?').run(id);
   return result.changes > 0;
+}
+
+/**
+ * Prune daily logs older than N days.
+ * Called on startup to keep the table clean — only the rolling window is retained.
+ */
+export function pruneOldDailyLogs(db: Database.Database, days: number = 3): number {
+  // Compute cutoff in local time to match how dates are stored
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const year = cutoff.getFullYear();
+  const month = String(cutoff.getMonth() + 1).padStart(2, '0');
+  const day = String(cutoff.getDate()).padStart(2, '0');
+  const cutoffDate = `${year}-${month}-${day}`;
+
+  const result = db.prepare('DELETE FROM daily_logs WHERE date < ?').run(cutoffDate);
+  if (result.changes > 0) {
+    console.log(`[DailyLogs] Pruned ${result.changes} log(s) older than ${days} days`);
+  }
+  return result.changes;
 }
 
 /**
@@ -132,7 +161,6 @@ export function getDailyLogsContext(db: Database.Database, days: number = 3): st
       if (remaining > 50) {
         includedLines.push(logHeader);
         includedLines.push(logContent.slice(0, remaining) + '...');
-        usedChars = contentBudget;
       }
       break;
     }
@@ -142,11 +170,8 @@ export function getDailyLogsContext(db: Database.Database, days: number = 3): st
     includedLines.push(logContent);
   }
 
-  // Build usage header
-  const totalChars = usedChars + headerReserve;
-  const pct = Math.round((totalChars / DAILY_LOGS_CHAR_BUDGET) * 100);
-  const pressureWarning = pct >= MEMORY_PRESSURE_THRESHOLD * 100 ? ' ⚠️ Logs nearly full' : '';
-  const header = `## Recent Daily Logs [${pct}% — ${totalChars}/${DAILY_LOGS_CHAR_BUDGET} chars]${pressureWarning}`;
+  // Build header
+  const header = `## Recent Daily Logs`;
 
   return [header, ...includedLines].join('\n');
 }
@@ -172,7 +197,14 @@ export function getDailyLogsMemoryUsage(
     const dateLabel = log.date === getTodayDate() ? 'Today' : log.date;
     const logHeader = `\n### ${dateLabel}`;
     const additionalChars = logHeader.length + 1 + log.content.length;
-    if (usedChars + additionalChars > contentBudget) break;
+    if (usedChars + additionalChars > contentBudget) {
+      // Mirror getDailyLogsContext: count partial inclusion when truncated
+      const remaining = contentBudget - usedChars - logHeader.length - 1;
+      if (remaining > 50) {
+        usedChars = contentBudget; // truncated content fills remaining budget
+      }
+      break;
+    }
     usedChars += additionalChars;
   }
 

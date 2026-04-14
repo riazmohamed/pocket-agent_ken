@@ -490,6 +490,21 @@ function updateStatusIndicator(status, sessionId) {
       detailEl.textContent = '';
       detailEl.classList.add('hidden');
     }
+  } else if (status.type === 'memory_compacting') {
+    statusEl.classList.add('memory-compacting-active');
+    statusEl.classList.remove('subagent-active');
+    statusEl.classList.remove('pocket-cli-active');
+    statusEl.classList.remove('team-active');
+    statusEl.classList.remove('plan-mode-active');
+    statusEl.classList.remove('tool-blocked');
+    actionEl.textContent = status.message || 'tidying up memory... 🧹';
+    if (status.toolInput) {
+      detailEl.textContent = status.toolInput;
+      detailEl.classList.remove('hidden');
+    } else {
+      detailEl.textContent = '';
+      detailEl.classList.add('hidden');
+    }
   } else if (status.type === 'plan_mode_entered') {
     statusEl.classList.add('plan-mode-active');
     statusEl.classList.remove('subagent-active');

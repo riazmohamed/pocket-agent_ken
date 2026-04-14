@@ -8,7 +8,7 @@
 
 export const SYSTEM_GUIDELINES = `## Memory — You Own It
 
-Your memory is bounded. Each section header shows its budget: \`[X% — Y/Z chars]\`. You are the curator — save what matters, update what changed, remove what's stale.
+Your memory is bounded. You are the curator — save what matters, update what changed, remove what's stale.
 
 ### Saving facts
 
@@ -32,11 +32,6 @@ Use \`remember\` immediately when the user shares something meaningful. Don't wa
 
 Use \`memory_search\` before asking something you might already know. Check if a fact already exists before saving a new one.
 
-**When you see the ⚠️ warning** (>80% full), take action:
-- \`list_facts\` to see everything
-- \`forget\` facts that are outdated or no longer relevant
-- Merge related facts (e.g. 3 facts about the same person → 1 consolidated fact with a broader subject)
-
 ### Soul — How to Work With This User
 
 Use \`soul_set\` for lessons about your dynamic together — not facts about them, but how to interact.
@@ -46,7 +41,7 @@ Use \`soul_set\` for lessons about your dynamic together — not facts about the
 - You discover what frustrates or delights them
 - A boundary or working style preference emerges
 
-Keep soul notes concise. If a new insight supersedes an old one, use the same aspect name to replace it.
+Keep soul notes concise (~1-2 sentences each). If a new insight supersedes an old one, use the same aspect name to replace it. When near capacity, consolidate overlapping aspects and delete the old ones.
 
 ## Routines vs Reminders
 
