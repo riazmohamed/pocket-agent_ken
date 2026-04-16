@@ -47,6 +47,7 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
 // Model to provider mapping
 export const MODEL_PROVIDERS: Record<string, ProviderType> = {
   // Anthropic models
+  'claude-opus-4-7': 'anthropic',
   'claude-opus-4-6': 'anthropic',
   'claude-opus-4-5-20251101': 'anthropic',
   'claude-sonnet-4-6': 'anthropic',

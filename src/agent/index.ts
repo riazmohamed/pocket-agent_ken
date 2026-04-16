@@ -121,7 +121,7 @@ class AgentManagerClass extends EventEmitter {
   private memory: MemoryManager | null = null;
   private projectRoot: string = process.cwd();
   private workspace: string = process.cwd(); // Isolated working directory for agent
-  private model: string = 'claude-opus-4-6';
+  private model: string = 'claude-opus-4-7';
   private mode: AgentModeId = 'coder';
   private chatEngine: ChatEngine | null = null;
   private toolsConfig: ToolsConfig | null = null;
@@ -146,7 +146,7 @@ class AgentManagerClass extends EventEmitter {
     this.memory = config.memory;
     this.projectRoot = config.projectRoot || process.cwd();
     this.workspace = config.workspace || this.projectRoot;
-    this.model = config.model || 'claude-opus-4-6';
+    this.model = config.model || 'claude-opus-4-7';
     this.toolsConfig = config.tools || null;
     this.initialized = true;
 

@@ -524,7 +524,7 @@ describe('AgentManager', () => {
 
   describe('Configuration', () => {
     it('should define default model', () => {
-      const DEFAULT_MODEL = 'claude-opus-4-6';
+      const DEFAULT_MODEL = 'claude-opus-4-7';
       expect(DEFAULT_MODEL).toContain('claude');
     });
 
@@ -549,7 +549,7 @@ describe('AgentManager', () => {
       configuredModel: string,
       keys: { anthropic?: string; moonshot?: string; glm?: string; oauth?: boolean }
     ): string {
-      let model = configuredModel || 'claude-opus-4-6';
+      let model = configuredModel || 'claude-opus-4-7';
       const hasAnthropicKey = !!keys.anthropic;
       const hasOAuth = !!keys.oauth;
       const hasMoonshotKey = !!keys.moonshot;
@@ -566,7 +566,7 @@ describe('AgentManager', () => {
 
       if (needsFallback) {
         if (hasAnthropicKey || hasOAuth) {
-          model = 'claude-opus-4-6';
+          model = 'claude-opus-4-7';
         } else if (hasMoonshotKey) {
           model = 'kimi-k2.5';
         } else if (hasGlmKey) {
@@ -578,7 +578,7 @@ describe('AgentManager', () => {
     }
 
     it('should keep Anthropic model when Anthropic key exists', () => {
-      expect(resolveModel('claude-opus-4-6', { anthropic: 'sk-key' })).toBe('claude-opus-4-6');
+      expect(resolveModel('claude-opus-4-7', { anthropic: 'sk-key' })).toBe('claude-opus-4-7');
     });
 
     it('should keep Anthropic model when OAuth is active', () => {
@@ -586,15 +586,15 @@ describe('AgentManager', () => {
     });
 
     it('should fall back to Kimi when only Moonshot key exists and model is Anthropic', () => {
-      expect(resolveModel('claude-opus-4-6', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
+      expect(resolveModel('claude-opus-4-7', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
     });
 
     it('should fall back to GLM when only GLM key exists and model is Anthropic', () => {
-      expect(resolveModel('claude-opus-4-6', { glm: 'glm-key' })).toBe('glm-4.7');
+      expect(resolveModel('claude-opus-4-7', { glm: 'glm-key' })).toBe('glm-4.7');
     });
 
     it('should prefer Anthropic fallback when both Anthropic and Moonshot keys exist', () => {
-      expect(resolveModel('glm-5', { anthropic: 'sk-key', moonshot: 'kimi-key' })).toBe('claude-opus-4-6');
+      expect(resolveModel('glm-5', { anthropic: 'sk-key', moonshot: 'kimi-key' })).toBe('claude-opus-4-7');
     });
 
     it('should keep Kimi model when Moonshot key exists', () => {
@@ -606,15 +606,15 @@ describe('AgentManager', () => {
     });
 
     it('should fall back from Kimi to Anthropic when no Moonshot key', () => {
-      expect(resolveModel('kimi-k2.5', { anthropic: 'sk-key' })).toBe('claude-opus-4-6');
+      expect(resolveModel('kimi-k2.5', { anthropic: 'sk-key' })).toBe('claude-opus-4-7');
     });
 
     it('should fall back from GLM to Moonshot when only Moonshot key exists', () => {
       expect(resolveModel('glm-5', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
     });
 
-    it('should default to claude-opus-4-6 when model is empty', () => {
-      expect(resolveModel('', { anthropic: 'sk-key' })).toBe('claude-opus-4-6');
+    it('should default to claude-opus-4-7 when model is empty', () => {
+      expect(resolveModel('', { anthropic: 'sk-key' })).toBe('claude-opus-4-7');
     });
 
     it('should fall back from empty model (defaulting to Anthropic) to Kimi when no Anthropic key', () => {

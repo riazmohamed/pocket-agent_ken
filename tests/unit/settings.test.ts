@@ -123,7 +123,7 @@ const SETTINGS_SCHEMA: SettingDefinition[] = [
   // Agent settings
   {
     key: 'agent.model',
-    defaultValue: 'claude-opus-4-6',
+    defaultValue: 'claude-opus-4-7',
     encrypted: false,
     category: 'agent',
     label: 'Default Model',
@@ -674,14 +674,14 @@ describe('SettingsManager', () => {
 
     it('should load default settings from schema', () => {
       // Check a few default values
-      expect(settings.get('agent.model')).toBe('claude-opus-4-6');
+      expect(settings.get('agent.model')).toBe('claude-opus-4-7');
       expect(settings.get('agent.compactionThreshold')).toBe('120000');
       expect(settings.get('browser.enabled')).toBe('true');
     });
 
     it('should return default value when not initialized', () => {
       const uninitializedSettings = new TestableSettingsManager();
-      expect(uninitializedSettings.get('agent.model')).toBe('claude-opus-4-6');
+      expect(uninitializedSettings.get('agent.model')).toBe('claude-opus-4-7');
     });
 
     it('should return empty string for unknown key when not initialized', () => {
@@ -692,7 +692,7 @@ describe('SettingsManager', () => {
 
   describe('get and set', () => {
     it('should get a setting value', () => {
-      expect(settings.get('agent.model')).toBe('claude-opus-4-6');
+      expect(settings.get('agent.model')).toBe('claude-opus-4-7');
     });
 
     it('should set and retrieve a setting value', () => {

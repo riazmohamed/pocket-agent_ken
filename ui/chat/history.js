@@ -81,6 +81,7 @@ async function updateModelBadge() {
     const badge = document.getElementById('model-badge');
     const modelId = await window.pocketAgent.settings.get('agent.model');
     const fallbackNames = {
+      'claude-opus-4-7': 'OPUS 4.7',
       'claude-opus-4-6': 'OPUS 4.6',
       'claude-sonnet-4-6': 'SONNET 4.6',
       'claude-haiku-4-5-20251001': 'HAIKU 4.5',

@@ -560,7 +560,7 @@ async function initializeAgent(): Promise<void> {
 
   // Resolve model — ensure the selected model has a matching API key.
   // If not (e.g. default is claude-* but only a Kimi/GLM key exists), fall back.
-  let model = SettingsManager.get('agent.model') || 'claude-opus-4-6';
+  let model = SettingsManager.get('agent.model') || 'claude-opus-4-7';
   const hasAnthropicKey = !!SettingsManager.get('anthropic.apiKey');
   const hasOAuth =
     SettingsManager.get('auth.method') === 'oauth' && !!SettingsManager.get('auth.oauthToken');
@@ -579,7 +579,7 @@ async function initializeAgent(): Promise<void> {
   if (needsFallback) {
     const oldModel = model;
     if (hasAnthropicKey || hasOAuth) {
-      model = 'claude-opus-4-6';
+      model = 'claude-opus-4-7';
     } else if (hasMoonshotKey) {
       model = 'kimi-k2.5';
     } else if (hasGlmKey) {

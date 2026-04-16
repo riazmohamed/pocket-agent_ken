@@ -39,7 +39,7 @@ vi.mock('@kenkaiiii/gg-ai', () => ({ stream: vi.fn() }));
 vi.mock('../../src/settings', () => ({
   SettingsManager: {
     get: vi.fn((key: string) => {
-      if (key === 'agent.model') return 'claude-opus-4-6';
+      if (key === 'agent.model') return 'claude-opus-4-7';
       if (key === 'agent.thinkingLevel') return 'normal';
       return undefined;
     }),

@@ -79,7 +79,7 @@ vi.mock('@kenkaiiii/gg-ai', () => ({
 vi.mock('../../src/settings', () => ({
   SettingsManager: {
     get: vi.fn((key: string) => {
-      if (key === 'agent.model') return 'claude-opus-4-6';
+      if (key === 'agent.model') return 'claude-opus-4-7';
       if (key === 'agent.thinkingLevel') return 'normal';
       return undefined;
     }),
@@ -169,7 +169,7 @@ describe('ChatEngine', () => {
 
     // Reset default mock implementations
     vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-      if (key === 'agent.model') return 'claude-opus-4-6';
+      if (key === 'agent.model') return 'claude-opus-4-7';
       if (key === 'agent.thinkingLevel') return 'normal';
       return undefined;
     });
@@ -247,7 +247,7 @@ describe('ChatEngine', () => {
 
       await engine.processMessage('hi', 'desktop', 'test-session');
 
-      expect(capturedAgentOptions!.model).toBe('claude-opus-4-6');
+      expect(capturedAgentOptions!.model).toBe('claude-opus-4-7');
     });
 
     it('passes provider from getStreamConfig to Agent', async () => {
@@ -275,7 +275,7 @@ describe('ChatEngine', () => {
   describe('Thinking level mapping', () => {
     it('maps "normal" thinking to "medium"', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'claude-opus-4-6';
+        if (key === 'agent.model') return 'claude-opus-4-7';
         if (key === 'agent.thinkingLevel') return 'normal';
         return undefined;
       });
@@ -289,7 +289,7 @@ describe('ChatEngine', () => {
 
     it('maps "extended" thinking to "high"', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'claude-opus-4-6';
+        if (key === 'agent.model') return 'claude-opus-4-7';
         if (key === 'agent.thinkingLevel') return 'extended';
         return undefined;
       });
@@ -303,7 +303,7 @@ describe('ChatEngine', () => {
 
     it('maps "minimal" thinking to "low"', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'claude-opus-4-6';
+        if (key === 'agent.model') return 'claude-opus-4-7';
         if (key === 'agent.thinkingLevel') return 'minimal';
         return undefined;
       });
@@ -317,7 +317,7 @@ describe('ChatEngine', () => {
 
     it('disables thinking when level is "none"', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'claude-opus-4-6';
+        if (key === 'agent.model') return 'claude-opus-4-7';
         if (key === 'agent.thinkingLevel') return 'none';
         return undefined;
       });
@@ -540,7 +540,7 @@ describe('ChatEngine', () => {
         (args) => typeof args[0] === 'string' && args[0].includes('Session config')
       );
       expect(configLog).toBeDefined();
-      expect(configLog![0]).toContain('claude-opus-4-6');
+      expect(configLog![0]).toContain('claude-opus-4-7');
       expect(configLog![0]).toContain('anthropic');
 
       consoleSpy.mockRestore();

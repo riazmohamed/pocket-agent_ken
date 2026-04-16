@@ -70,6 +70,7 @@ const BASE_CONTEXT_WINDOW = 200_000;
 // Model context window sizes (tokens)
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   // Anthropic models
+  'claude-opus-4-7': 1_000_000,
   'claude-opus-4-6': 1_000_000,
   'claude-sonnet-4-6': 1_000_000,
   'claude-haiku-4-5-20251001': 200_000,
@@ -291,7 +292,7 @@ export class ChatEngine {
 
     try {
       // Get model early — needed for context-window-aware message limits and token-based compaction
-      const model = SettingsManager.get('agent.model') || 'claude-opus-4-6';
+      const model = SettingsManager.get('agent.model') || 'claude-opus-4-7';
 
       // Load or get conversation history
       if (!this.conversationsBySession.has(sessionId)) {
@@ -856,7 +857,7 @@ export class ChatEngine {
    * Message limit scales with the model's context window size.
    */
   async loadConversationFromMemory(sessionId: string, model?: string): Promise<void> {
-    const effectiveModel = model || SettingsManager.get('agent.model') || 'claude-opus-4-6';
+    const effectiveModel = model || SettingsManager.get('agent.model') || 'claude-opus-4-7';
     const maxMessages = getMaxContextMessages(effectiveModel);
     const messageCount = this.memory.getSessionMessageCount(sessionId);
     const sessionMode = this.memory.getSessionMode(sessionId) as AgentModeId;

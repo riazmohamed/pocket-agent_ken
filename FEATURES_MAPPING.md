@@ -796,7 +796,7 @@ SQLite-backed settings with encryption for sensitive values.
 - `glm.apiKey` - Z.AI GLM API key
 
 ##### **Agent Settings**:
-- `agent.model` - Default model (claude-opus-4-6)
+- `agent.model` - Default model (claude-opus-4-7)
 - `agent.mode` - 'general' or 'coder'
 - `agent.thinkingLevel` - none/minimal/normal/extended
 
