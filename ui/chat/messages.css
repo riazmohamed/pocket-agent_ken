@@ -97,7 +97,7 @@
   overflow-wrap: break-word;
   word-break: break-word;
   min-width: 0;
-  animation: messageIn 0.3s ease-out;
+  animation: messageIn 0.3s ease-out both;
   contain: content;
 }
 
@@ -131,7 +131,7 @@
 
 /* Streaming bubble: smooth entrance + typing cursor */
 .streaming-bubble {
-  animation: streamFadeIn 0.25s ease-out;
+  animation: streamFadeIn 0.25s ease-out both;
 }
 
 .streaming-bubble::after {

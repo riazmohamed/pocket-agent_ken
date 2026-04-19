@@ -9,15 +9,19 @@ async function initializeChat() {
   // Refresh model badge when window gains focus (in case user changed it in settings)
   window.addEventListener('focus', updateModelBadge);
 
-  // Reload history when window regains visibility (e.g. after sleep/wake)
+  // Only pause animations when the window is actually hidden (minimized/
+  // occluded). Do NOT pause on blur — a blurred-but-visible window (multi-monitor,
+  // user glancing back before refocusing) would freeze entrance animations,
+  // leaving newly sent user messages stuck at opacity: 0.
+  //
+  // Do NOT reload history on visibility restore: loadHistory wipes #messages
+  // and re-renders from DB. If a send/stream is in flight when the user
+  // minimizes, the in-DOM user bubble or streaming reply may not yet be
+  // persisted — the reload would erase them. Push events (scheduler, Telegram,
+  // iOS) keep the UI in sync without a reload.
   document.addEventListener('visibilitychange', () => {
     document.body.classList.toggle('animations-paused', document.hidden);
-    if (!document.hidden) {
-      loadHistory();
-    }
   });
-  window.addEventListener('blur', () => document.body.classList.add('animations-paused'));
-  window.addEventListener('focus', () => document.body.classList.remove('animations-paused'));
 
 
   // Load user/agent profile for placeholder and empty state

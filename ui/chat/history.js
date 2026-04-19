@@ -1,4 +1,9 @@
-async function loadHistory() {
+async function loadHistory(options = {}) {
+  const { preserveScroll = false } = options;
+  // Capture scroll position (and whether user was pinned to bottom) before wiping.
+  const prevScrollTop = messagesDiv.scrollTop;
+  const prevDistFromBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight;
+  const wasAtBottom = prevDistFromBottom < 40;
   try {
     const history = await window.pocketAgent.agent.getHistory(100, currentSessionId);
     disableAutoAnimate(); messagesDiv.innerHTML = '';
@@ -42,7 +47,14 @@ async function loadHistory() {
     }
 
     enableAutoAnimate();
-    scrollToBottom(true); // Instant scroll on initial load
+    if (preserveScroll && !wasAtBottom) {
+      // Restore prior scroll position after the DOM has laid out.
+      requestAnimationFrame(() => {
+        messagesDiv.scrollTo({ top: prevScrollTop, behavior: 'instant' });
+      });
+    } else {
+      scrollToBottom(true); // Instant scroll on initial load / when pinned to bottom
+    }
   } catch (err) {
     enableAutoAnimate();
     console.error('Failed to load history:', err);
