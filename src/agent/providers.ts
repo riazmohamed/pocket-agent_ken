@@ -53,7 +53,7 @@ export const MODEL_PROVIDERS: Record<string, ProviderType> = {
   'claude-sonnet-4-6': 'anthropic',
   'claude-haiku-4-5-20251001': 'anthropic',
   // Moonshot/Kimi models
-  'kimi-k2.5': 'moonshot',
+  'kimi-k2.6': 'moonshot',
   // Z.AI GLM models
   'glm-5.1': 'glm',
   'glm-5-turbo': 'glm',

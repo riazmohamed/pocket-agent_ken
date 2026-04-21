@@ -206,7 +206,7 @@ Workflows are reusable command templates. Use /workflow to see what's available,
     }
 
     if (SettingsManager.get('moonshot.apiKey')) {
-      availableModels.push({ id: 'kimi-k2.5', name: 'Kimi K2.5', provider: 'Moonshot' });
+      availableModels.push({ id: 'kimi-k2.6', name: 'Kimi K2.6', provider: 'Moonshot' });
     }
 
     if (SettingsManager.get('glm.apiKey')) {

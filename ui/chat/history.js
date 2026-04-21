@@ -97,7 +97,7 @@ async function updateModelBadge() {
       'claude-opus-4-6': 'OPUS 4.6',
       'claude-sonnet-4-6': 'SONNET 4.6',
       'claude-haiku-4-5-20251001': 'HAIKU 4.5',
-      'kimi-k2.5': 'KIMI K2.5',
+      'kimi-k2.6': 'KIMI K2.6',
       'glm-5-turbo': 'GLM-5 TURBO',
       'glm-5': 'GLM-5',
       'glm-4.7': 'GLM-4.7',

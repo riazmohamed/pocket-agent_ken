@@ -25,7 +25,7 @@ export function getAvailableModels(): Array<{ id: string; name: string; provider
   }
   const hasMoonshotKey = SettingsManager.get('moonshot.apiKey');
   if (hasMoonshotKey) {
-    models.push({ id: 'kimi-k2.5', name: 'Kimi K2.5', provider: 'moonshot' });
+    models.push({ id: 'kimi-k2.6', name: 'Kimi K2.6', provider: 'moonshot' });
   }
   const hasGlmKey = SettingsManager.get('glm.apiKey');
   if (hasGlmKey) {

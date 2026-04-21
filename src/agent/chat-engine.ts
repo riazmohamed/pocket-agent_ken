@@ -75,7 +75,7 @@ const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'claude-sonnet-4-6': 1_000_000,
   'claude-haiku-4-5-20251001': 200_000,
   // Moonshot/Kimi models
-  'kimi-k2.5': 200_000,
+  'kimi-k2.6': 256_000,
   // Z.AI GLM models
   'glm-5.1': 204_800,
   'glm-5-turbo': 204_800,

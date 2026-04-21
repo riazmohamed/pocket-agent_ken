@@ -128,7 +128,7 @@ export async function validateMoonshotKey(apiKey: string): Promise<ValidationRes
       'anthropic-version': '2023-06-01',
     },
     body: {
-      model: 'kimi-k2.5',
+      model: 'kimi-k2.6',
       max_tokens: 10,
       messages: [{ role: 'user', content: 'Hi' }],
     },

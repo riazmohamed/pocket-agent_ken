@@ -568,7 +568,7 @@ describe('AgentManager', () => {
         if (hasAnthropicKey || hasOAuth) {
           model = 'claude-opus-4-7';
         } else if (hasMoonshotKey) {
-          model = 'kimi-k2.5';
+          model = 'kimi-k2.6';
         } else if (hasGlmKey) {
           model = 'glm-4.7';
         }
@@ -586,7 +586,7 @@ describe('AgentManager', () => {
     });
 
     it('should fall back to Kimi when only Moonshot key exists and model is Anthropic', () => {
-      expect(resolveModel('claude-opus-4-7', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
+      expect(resolveModel('claude-opus-4-7', { moonshot: 'kimi-key' })).toBe('kimi-k2.6');
     });
 
     it('should fall back to GLM when only GLM key exists and model is Anthropic', () => {
@@ -598,7 +598,7 @@ describe('AgentManager', () => {
     });
 
     it('should keep Kimi model when Moonshot key exists', () => {
-      expect(resolveModel('kimi-k2.5', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
+      expect(resolveModel('kimi-k2.6', { moonshot: 'kimi-key' })).toBe('kimi-k2.6');
     });
 
     it('should keep GLM model when GLM key exists', () => {
@@ -606,11 +606,11 @@ describe('AgentManager', () => {
     });
 
     it('should fall back from Kimi to Anthropic when no Moonshot key', () => {
-      expect(resolveModel('kimi-k2.5', { anthropic: 'sk-key' })).toBe('claude-opus-4-7');
+      expect(resolveModel('kimi-k2.6', { anthropic: 'sk-key' })).toBe('claude-opus-4-7');
     });
 
     it('should fall back from GLM to Moonshot when only Moonshot key exists', () => {
-      expect(resolveModel('glm-5', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
+      expect(resolveModel('glm-5', { moonshot: 'kimi-key' })).toBe('kimi-k2.6');
     });
 
     it('should default to claude-opus-4-7 when model is empty', () => {
@@ -618,7 +618,7 @@ describe('AgentManager', () => {
     });
 
     it('should fall back from empty model (defaulting to Anthropic) to Kimi when no Anthropic key', () => {
-      expect(resolveModel('', { moonshot: 'kimi-key' })).toBe('kimi-k2.5');
+      expect(resolveModel('', { moonshot: 'kimi-key' })).toBe('kimi-k2.6');
     });
   });
 

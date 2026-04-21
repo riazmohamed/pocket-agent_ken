@@ -341,7 +341,7 @@ async function obValidateAndSave() {
     const isAnthropicModel = !currentModel || currentModel.startsWith('claude-');
     if (isAnthropicModel && !anthropicKey) {
       if (kimiKey) {
-        await window.pocketAgent.settings.set('agent.model', 'kimi-k2.5');
+        await window.pocketAgent.settings.set('agent.model', 'kimi-k2.6');
       } else if (glmKey) {
         await window.pocketAgent.settings.set('agent.model', 'glm-4.7');
       }

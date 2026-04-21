@@ -335,7 +335,7 @@ describe('ChatEngine', () => {
   describe('Multi-provider support', () => {
     it('uses moonshot provider for kimi models', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'kimi-k2.5';
+        if (key === 'agent.model') return 'kimi-k2.6';
         if (key === 'agent.thinkingLevel') return 'normal';
         return undefined;
       });
@@ -365,7 +365,7 @@ describe('ChatEngine', () => {
 
     it('disables cache retention for non-anthropic providers', async () => {
       vi.mocked(SettingsManager.get).mockImplementation((key: string) => {
-        if (key === 'agent.model') return 'kimi-k2.5';
+        if (key === 'agent.model') return 'kimi-k2.6';
         if (key === 'agent.thinkingLevel') return 'normal';
         return undefined;
       });

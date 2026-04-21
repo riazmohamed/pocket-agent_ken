@@ -581,7 +581,7 @@ async function initializeAgent(): Promise<void> {
     if (hasAnthropicKey || hasOAuth) {
       model = 'claude-opus-4-7';
     } else if (hasMoonshotKey) {
-      model = 'kimi-k2.5';
+      model = 'kimi-k2.6';
     } else if (hasGlmKey) {
       model = 'glm-4.7';
     }
