@@ -18,6 +18,7 @@ import {
   validateGlmKey,
   validateXiaomiKey,
   validateMiniMaxKey,
+  validateDeepSeekKey,
 } from './validators';
 
 // Re-export types and schema so external consumers aren't broken
@@ -486,6 +487,10 @@ class SettingsManagerClass {
     return validateMiniMaxKey(apiKey);
   }
 
+  async validateDeepSeekKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    return validateDeepSeekKey(apiKey);
+  }
+
   /**
    * Get API keys as environment variables for skill execution.
    * Maps settings keys to the environment variable names that skills expect.
@@ -503,6 +508,7 @@ class SettingsManagerClass {
       'openai.apiKey': 'OPENAI_API_KEY',
       'anthropic.apiKey': 'ANTHROPIC_API_KEY',
       'moonshot.apiKey': 'MOONSHOT_API_KEY',
+      'deepseek.apiKey': 'DEEPSEEK_API_KEY',
     };
 
     for (const [settingKey, envVar] of Object.entries(keyMappings)) {
@@ -528,6 +534,7 @@ class SettingsManagerClass {
       OPENAI_API_KEY: 'openai.apiKey',
       ANTHROPIC_API_KEY: 'anthropic.apiKey',
       MOONSHOT_API_KEY: 'moonshot.apiKey',
+      DEEPSEEK_API_KEY: 'deepseek.apiKey',
     };
 
     const settingKey = reverseMapping[envVarName];

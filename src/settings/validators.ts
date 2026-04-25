@@ -193,3 +193,22 @@ export async function validateMiniMaxKey(apiKey: string): Promise<ValidationResu
     },
   });
 }
+
+/**
+ * Validate a DeepSeek API key by making a test call
+ */
+export async function validateDeepSeekKey(apiKey: string): Promise<ValidationResult> {
+  return validateApiKey({
+    url: 'https://api.deepseek.com/v1/chat/completions',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: {
+      model: 'deepseek-v4-flash',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Hi' }],
+    },
+  });
+}

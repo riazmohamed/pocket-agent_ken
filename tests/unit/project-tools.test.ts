@@ -149,7 +149,7 @@ describe('Project Tools', () => {
       const parsed = JSON.parse(result);
       expect(parsed.success).toBe(true);
       expect(parsed.hasProject).toBe(false);
-      expect(parsed.defaultWorkspace).toBe('/mock/default');
+      expect(parsed.defaultWorkspace).toBe('/mock/workspace');
     });
 
     it('returns hasProject: true with path when active project exists', async () => {
@@ -185,7 +185,7 @@ describe('Project Tools', () => {
       const parsed = JSON.parse(result);
       expect(parsed.success).toBe(true);
       expect(parsed.hasProject).toBe(false);
-      expect(parsed.defaultWorkspace).toBe('/mock/default');
+      expect(parsed.defaultWorkspace).toBe('/mock/workspace');
     });
   });
 

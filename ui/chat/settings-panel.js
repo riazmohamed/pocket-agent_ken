@@ -336,6 +336,7 @@ const _stgKeyValidators = {
   'glm.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your Z.AI API key' },
   'xiaomi.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your Xiaomi API key' },
   'minimax.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your MiniMax API key' },
+  'deepseek.apiKey': { pattern: /^.{10,}$/, hint: 'Enter your DeepSeek API key' },
   'telegram.botToken': { pattern: /^\d{6,}:[A-Za-z0-9_-]{30,}$/, hint: 'Telegram tokens are in format "123456789:ABC..."' }
 };
 
@@ -370,7 +371,7 @@ async function stgSaveKey(inputId) {
 }
 
 function _stgUpdateDeleteButtons() {
-  const keyIds = ['anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey', 'xiaomi.apiKey', 'minimax.apiKey', 'telegram.botToken'];
+  const keyIds = ['anthropic.apiKey', 'openai.apiKey', 'moonshot.apiKey', 'glm.apiKey', 'xiaomi.apiKey', 'minimax.apiKey', 'deepseek.apiKey', 'telegram.botToken'];
   for (const keyId of keyIds) {
     const deleteBtn = document.getElementById(`${keyId}-delete`);
     if (deleteBtn) {
@@ -457,6 +458,7 @@ async function stgValidateKey(provider) {
     else if (provider === 'glm') result = await window.pocketAgent.validate.glmKey(key);
     else if (provider === 'xiaomi') result = await window.pocketAgent.validate.xiaomiKey(key);
     else if (provider === 'minimax') result = await window.pocketAgent.validate.minimaxKey(key);
+    else if (provider === 'deepseek') result = await window.pocketAgent.validate.deepseekKey(key);
     else if (provider === 'telegram') result = await window.pocketAgent.validate.telegramToken(key);
 
     if (result.valid) {

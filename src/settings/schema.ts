@@ -158,6 +158,15 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     description: 'Your MiniMax API key',
     type: 'password',
   },
+  {
+    key: 'deepseek.apiKey',
+    defaultValue: '',
+    encrypted: true,
+    category: 'api_keys',
+    label: 'DeepSeek API Key',
+    description: 'Your DeepSeek API key for V4 models',
+    type: 'password',
+  },
 
   // Agent settings
   {

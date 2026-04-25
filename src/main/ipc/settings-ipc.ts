@@ -59,6 +59,13 @@ export function getAvailableModels(): Array<{ id: string; name: string; provider
       { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax M2.7 Highspeed', provider: 'minimax' }
     );
   }
+  const hasDeepSeekKey = SettingsManager.get('deepseek.apiKey');
+  if (hasDeepSeekKey) {
+    models.push(
+      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', provider: 'deepseek' },
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', provider: 'deepseek' }
+    );
+  }
 
   return models;
 }
@@ -215,6 +222,10 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
     return SettingsManager.validateMiniMaxKey(key);
   });
 
+  ipcMain.handle('settings:validateDeepSeek', async (_, key: string) => {
+    return SettingsManager.validateDeepSeekKey(key);
+  });
+
   // Validate an already-stored key (reads real key from backend, never sent to renderer)
   ipcMain.handle('settings:validateStoredKey', async (_, provider: string) => {
     const keyMap: Record<string, string> = {
@@ -224,6 +235,7 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
       glm: 'glm.apiKey',
       xiaomi: 'xiaomi.apiKey',
       minimax: 'minimax.apiKey',
+      deepseek: 'deepseek.apiKey',
       telegram: 'telegram.botToken',
     };
     const settingKey = keyMap[provider];
@@ -245,6 +257,8 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
         return SettingsManager.validateXiaomiKey(storedKey);
       case 'minimax':
         return SettingsManager.validateMiniMaxKey(storedKey);
+      case 'deepseek':
+        return SettingsManager.validateDeepSeekKey(storedKey);
       case 'telegram':
         return SettingsManager.validateTelegramToken(storedKey);
       default:

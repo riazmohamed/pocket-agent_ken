@@ -83,6 +83,8 @@ function createEngine() {
     getSmartContext: vi.fn(async () => ({ recentMessages: [], rollingSummary: null })),
     getSessionMode: vi.fn(() => 'general'),
     getSessionWorkingDirectory: vi.fn(() => null),
+    getFactsMemoryUsage: vi.fn(() => ({ usedChars: 0, budgetChars: 50000, pct: 0 })),
+    getSoulMemoryUsage: vi.fn(() => ({ usedChars: 0, budgetChars: 50000, pct: 0 })),
   };
   const engine = new ChatEngine({
     memory: memory as never,

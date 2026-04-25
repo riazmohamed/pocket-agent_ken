@@ -168,6 +168,7 @@ contextBridge.exposeInMainWorld('pocketAgent', {
     glmKey: (key: string) => ipcRenderer.invoke('settings:validateGlm', key),
     xiaomiKey: (key: string) => ipcRenderer.invoke('settings:validateXiaomi', key),
     minimaxKey: (key: string) => ipcRenderer.invoke('settings:validateMiniMax', key),
+    deepseekKey: (key: string) => ipcRenderer.invoke('settings:validateDeepSeek', key),
     telegramToken: (token: string) => ipcRenderer.invoke('settings:validateTelegram', token),
     storedKey: (provider: string) => ipcRenderer.invoke('settings:validateStoredKey', provider),
   },
@@ -559,6 +560,7 @@ declare global {
         openAIKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
         moonshotKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
         glmKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
+        deepseekKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
         telegramToken: (
           token: string
         ) => Promise<{ valid: boolean; error?: string; botInfo?: unknown }>;

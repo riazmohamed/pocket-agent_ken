@@ -5,9 +5,23 @@
  * Uses the shared MODEL_PROVIDERS mapping from providers.ts.
  */
 
-import type { Provider } from '@kenkaiiii/gg-ai';
+import type { Provider, Message } from '@kenkaiiii/gg-ai';
+import { providerRegistry, stream } from '@kenkaiiii/gg-ai';
 import { SettingsManager } from '../settings';
 import { getProviderForModel, PROVIDER_CONFIGS } from './providers';
+
+// Register DeepSeek with gg-ai's provider registry at module load.
+// DeepSeek's API is OpenAI Chat Completions-compatible. We route through
+// the OpenAI transport with DeepSeek's base URL and normalize any
+// developer-role messages to system (DeepSeek rejects the developer role).
+providerRegistry.register('deepseek', {
+  stream: (options) => {
+    const normalizedMessages = options.messages.map((msg) =>
+      (msg.role as string) === 'developer' ? ({ ...msg, role: 'system' as const } as Message) : msg
+    );
+    return stream({ ...options, provider: 'openai' as Provider, messages: normalizedMessages });
+  },
+});
 
 export { getProviderForModel };
 
@@ -76,6 +90,14 @@ export async function getStreamConfig(model: string): Promise<StreamConfig> {
       throw new Error('MiniMax API key not configured. Please add your key in Settings > LLM.');
     }
     return { provider: 'minimax', apiKey, baseUrl: config.baseUrl };
+  }
+
+  if (providerType === 'deepseek') {
+    const apiKey = SettingsManager.get('deepseek.apiKey');
+    if (!apiKey) {
+      throw new Error('DeepSeek API key not configured. Please add your key in Settings > LLM.');
+    }
+    return { provider: 'deepseek' as Provider, apiKey, baseUrl: config.baseUrl };
   }
 
   // Anthropic provider

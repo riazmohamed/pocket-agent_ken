@@ -4,7 +4,14 @@
  * and general/chat mode (chat-providers.ts).
  */
 
-export type ProviderType = 'anthropic' | 'moonshot' | 'glm' | 'xiaomi' | 'openai' | 'minimax';
+export type ProviderType =
+  | 'anthropic'
+  | 'moonshot'
+  | 'glm'
+  | 'xiaomi'
+  | 'openai'
+  | 'minimax'
+  | 'deepseek';
 
 export interface ProviderConfig {
   /** OpenAI-compatible base URL (used by gg-ai chat engine in General mode) */
@@ -42,6 +49,10 @@ export const PROVIDER_CONFIGS: Record<ProviderType, ProviderConfig> = {
     // General mode: gg-ai uses Anthropic-compat endpoint for MiniMax models
     baseUrl: 'https://api.minimax.io/anthropic',
   },
+  deepseek: {
+    // General mode: gg-ai uses OpenAI-compat endpoint for DeepSeek models
+    baseUrl: 'https://api.deepseek.com/v1',
+  },
 };
 
 // Model to provider mapping
@@ -71,6 +82,9 @@ export const MODEL_PROVIDERS: Record<string, ProviderType> = {
   // MiniMax models
   'MiniMax-M2.7': 'minimax',
   'MiniMax-M2.7-highspeed': 'minimax',
+  // DeepSeek models
+  'deepseek-v4-pro': 'deepseek',
+  'deepseek-v4-flash': 'deepseek',
 };
 
 export function getProviderForModel(model: string): ProviderType {
