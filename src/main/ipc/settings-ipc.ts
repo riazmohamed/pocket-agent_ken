@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { AgentManager } from '../../agent';
+import { resolveAndPersistModel } from '../../agent/resolve-model';
 import { SettingsManager, SETTINGS_SCHEMA } from '../../settings';
 import { THEMES } from '../../settings/themes';
 import { createTelegramBot } from '../../channels/telegram';
@@ -70,6 +71,27 @@ export function getAvailableModels(): Array<{ id: string; name: string; provider
   return models;
 }
 
+/**
+ * Settings keys that affect which LLM provider is in use. Whenever any of
+ * these change we re-resolve `agent.model` and restart the agent so the
+ * picker, chat-engine, and provider routing all stay in sync. Without
+ * this, adding a Kimi key (for example) when the default model is
+ * `claude-opus-4-7` leaves the agent trying to call Anthropic with no key
+ * and surfaces a confusing "No API key configured" error.
+ */
+const PROVIDER_CREDENTIAL_KEYS = new Set([
+  'anthropic.apiKey',
+  'openai.apiKey',
+  'moonshot.apiKey',
+  'glm.apiKey',
+  'xiaomi.apiKey',
+  'minimax.apiKey',
+  'deepseek.apiKey',
+  'auth.method',
+  'auth.oauthToken',
+  'openai.auth.method',
+]);
+
 export function registerSettingsIPC(deps: IPCDependencies): void {
   const { getScheduler, setTelegramBot, getTelegramBot, WIN } = deps;
 
@@ -117,6 +139,33 @@ export function registerSettingsIPC(deps: IPCDependencies): void {
       // Broadcast chat username change to chat window — no restart required
       if (key === 'chat.username' && getWindow(WIN.CHAT)) {
         getWindow(WIN.CHAT)?.webContents.send('chat:usernameChanged', value);
+      }
+
+      // Provider credential changed — re-resolve the active model and
+      // restart the agent so the new key/model takes effect immediately.
+      // Covers both "added a key" (agent may not be initialized yet) and
+      // "removed a key" (model needs to swap to a still-available provider).
+      if (PROVIDER_CREDENTIAL_KEYS.has(key)) {
+        const previousModel = SettingsManager.get('agent.model');
+        const resolvedModel = resolveAndPersistModel();
+        const modelChanged = resolvedModel !== previousModel;
+        // Restart even when the model didn't change — the underlying credential
+        // (the API key value, OAuth token) may have rotated.
+        try {
+          await deps.restartAgent();
+          console.log(
+            `[Settings] Provider key changed (${key}) — agent restarted (model: ${resolvedModel}${modelChanged ? `, was: ${previousModel || 'unset'}` : ''})`
+          );
+        } catch (err) {
+          console.error('[Settings] Failed to restart agent after key change:', err);
+        }
+        // Notify any open chat/settings windows so the model picker updates.
+        if (modelChanged && getWindow(WIN.CHAT)) {
+          getWindow(WIN.CHAT)?.webContents.send('model:changed', resolvedModel);
+        }
+        if (modelChanged && getWindow(WIN.SETTINGS)) {
+          getWindow(WIN.SETTINGS)?.webContents.send('model:changed', resolvedModel);
+        }
       }
 
       // Instant Telegram toggle — no restart required

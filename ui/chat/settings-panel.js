@@ -362,7 +362,10 @@ async function stgSaveKey(inputId) {
     _stgShowToast('Got it!', 'success');
     const deleteBtn = document.getElementById(`${inputId}-delete`);
     if (deleteBtn) deleteBtn.classList.add('visible');
-    const rebootKeys = ['anthropic.apiKey', 'telegram.botToken'];
+    // Provider API keys auto-restart the agent in the main process (see
+    // PROVIDER_CREDENTIAL_KEYS in src/main/ipc/settings-ipc.ts), so the
+    // user doesn't need a reboot prompt for those. Telegram still does.
+    const rebootKeys = ['telegram.botToken'];
     if (rebootKeys.includes(inputId)) _stgActivateReboot();
   } catch (err) {
     console.error('[Settings] Failed to save key:', err);

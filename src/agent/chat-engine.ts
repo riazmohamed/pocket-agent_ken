@@ -23,6 +23,7 @@ import { SYSTEM_GUIDELINES } from '../config/system-guidelines';
 import { getModeConfig, buildRoutingInstructions } from './agent-modes';
 import type { AgentModeId } from './agent-modes';
 import { getStreamConfig } from './chat-providers';
+import { resolveModel } from './resolve-model';
 import { getChatAgentTools, getCoderAgentTools } from './chat-tools';
 import {
   buildSystemPrompt as buildCoderSystemPrompt,
@@ -158,7 +159,7 @@ export class ChatEngine {
     // Wire up the summarizer for smart context / compaction
     this.memory.setSummarizer(async (messages) => {
       const summaryModel = 'claude-haiku-4-5-20251001';
-      const currentModel = SettingsManager.get('agent.model') || 'claude-haiku-4-5-20251001';
+      const currentModel = resolveModel(SettingsManager.get('agent.model'));
       const prompt = messages.map((m) => `[${m.role}]: ${m.content}`).join('\n');
       const query = `Summarize this conversation concisely, preserving key facts, decisions, and context:\n\n${prompt}`;
 
@@ -293,8 +294,10 @@ export class ChatEngine {
     this.abortControllersBySession.set(sessionId, abortController);
 
     try {
-      // Get model early — needed for context-window-aware message limits and token-based compaction
-      const model = SettingsManager.get('agent.model') || 'claude-opus-4-7';
+      // Get model early — needed for context-window-aware message limits and token-based compaction.
+      // resolveModel() guarantees we pick a model whose provider has a key, even if `agent.model`
+      // is stale (e.g. user removed an Anthropic key but the setting still says claude-opus-4-7).
+      const model = resolveModel(SettingsManager.get('agent.model'));
 
       // Load or get conversation history
       if (!this.conversationsBySession.has(sessionId)) {
@@ -844,7 +847,7 @@ export class ChatEngine {
    * Message limit scales with the model's context window size.
    */
   async loadConversationFromMemory(sessionId: string, model?: string): Promise<void> {
-    const effectiveModel = model || SettingsManager.get('agent.model') || 'claude-opus-4-7';
+    const effectiveModel = model || resolveModel(SettingsManager.get('agent.model'));
     const maxMessages = getMaxContextMessages(effectiveModel);
     const messageCount = this.memory.getSessionMessageCount(sessionId);
     const sessionMode = this.memory.getSessionMode(sessionId) as AgentModeId;

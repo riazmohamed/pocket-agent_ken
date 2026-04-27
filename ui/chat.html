@@ -137,27 +137,76 @@
     </div>
 
     <!-- Step: Choose Auth Method -->
+    <!--
+      Two OAuth options up top (Claude Pro/Max + OpenAI Codex), each its own
+      first-class button. Below them, a collapsible "Or connect a different
+      provider" section reveals API key inputs for all 7 supported providers.
+      The model is auto-selected by resolveAndPersistModel() once any key is
+      saved — no manual model choice needed during onboarding.
+    -->
     <div class="ob-step" id="ob-step-auth">
       <p class="ob-step-desc">how would you like to connect?</p>
-      <div class="ob-auth-options-simple">
-        <button class="ob-btn primary" onclick="obSelectAuth('oauth', this)">Sign in with Claude</button>
-        <button class="ob-btn secondary" onclick="obSelectAuth('api', this)">Use API Key</button>
-      </div>
-      <p class="ob-auth-hint">Claude sign-in uses your Pro or Max subscription. API key works with Anthropic, Kimi, or GLM.</p>
-    </div>
-
-    <!-- Step: OAuth Start -->
-    <div class="ob-step" id="ob-step-oauth">
-      <p class="ob-step-desc">click below to open Claude sign-in. after signing in, copy the code and paste it here.</p>
-      <div class="ob-button-row">
-        <button class="ob-btn secondary" onclick="obShowStep('ob-step-auth')">Back</button>
-        <button class="ob-btn oauth" id="ob-oauth-btn" onclick="obStartOAuth()">
-          Sign in
+      <div class="ob-oauth-row">
+        <button class="ob-btn primary" id="ob-claude-oauth-btn" onclick="obStartClaudeOAuth()">
+          Sign in with Claude
+        </button>
+        <button class="ob-btn primary" id="ob-openai-oauth-btn" onclick="obStartOpenAIOAuth()">
+          Sign in with OpenAI
         </button>
       </div>
+      <p class="ob-auth-hint">Claude sign-in uses your Pro or Max subscription. OpenAI sign-in uses your ChatGPT Plus/Pro account.</p>
+
+      <div class="ob-optional-section">
+        <div class="ob-optional-header" onclick="obToggleOptional(this)">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9s-4.419 6-6 6s-6-6-6-6"/></svg>
+          <h4>Or connect a different provider</h4>
+        </div>
+        <div class="ob-optional-content">
+          <p class="ob-hint ob-section-hint">Add an API key for any of the providers below. You can add more later in Settings.</p>
+          <div class="ob-form-group">
+            <label>Anthropic API Key</label>
+            <input type="password" id="ob-anthropic-key" placeholder="sk-ant-...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://console.anthropic.com/settings/keys'); return false;">console.anthropic.com</a></p>
+          </div>
+          <div class="ob-form-group">
+            <label>Kimi (Moonshot) API Key</label>
+            <input type="password" id="ob-kimi-key-api" placeholder="sk-...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://platform.moonshot.ai/'); return false;">platform.moonshot.ai</a></p>
+          </div>
+          <div class="ob-form-group">
+            <label>GLM (Z.AI) API Key</label>
+            <input type="password" id="ob-glm-key-api" placeholder="...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://z.ai/manage-apikey/apikey-list'); return false;">z.ai</a></p>
+          </div>
+          <div class="ob-form-group">
+            <label>Xiaomi (MiMo) API Key</label>
+            <input type="password" id="ob-xiaomi-key-api" placeholder="...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://api.xiaomi.com/'); return false;">api.xiaomi.com</a></p>
+          </div>
+          <div class="ob-form-group">
+            <label>MiniMax API Key</label>
+            <input type="password" id="ob-minimax-key-api" placeholder="...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://api.minimax.io/'); return false;">api.minimax.io</a></p>
+          </div>
+          <div class="ob-form-group">
+            <label>DeepSeek API Key</label>
+            <input type="password" id="ob-deepseek-key-api" placeholder="sk-...">
+            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://platform.deepseek.com/'); return false;">platform.deepseek.com</a></p>
+          </div>
+          <div class="ob-button-row">
+            <button class="ob-btn primary" id="ob-api-btn" onclick="obValidateAndSave()">
+              Save &amp; Continue
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Step: OAuth Code Entry -->
+    <!--
+      Step: Claude OAuth Code Entry. Anthropic's OAuth uses a paste-the-code
+      flow (unlike OpenAI's PKCE auto-callback), so we still need this step
+      after the user clicks "Sign in with Claude" above.
+    -->
     <div class="ob-step" id="ob-step-oauth-code">
       <p class="ob-step-desc">paste the authorization code from your browser</p>
       <div class="ob-form-group">
@@ -168,50 +217,6 @@
       <div class="ob-button-row">
         <button class="ob-btn secondary" onclick="obCancelOAuth()">Cancel</button>
         <button class="ob-btn primary" id="ob-oauth-complete-btn" onclick="obCompleteOAuth()">
-          Continue
-        </button>
-      </div>
-      <div class="ob-optional-section">
-        <div class="ob-optional-header" onclick="obToggleOptional(this)">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 9s-4.419 6-6 6s-6-6-6-6"/></svg>
-          <h4>bonus: add more AI providers</h4>
-        </div>
-        <div class="ob-optional-content">
-          <div class="ob-form-group">
-            <label>Kimi (Moonshot) API Key</label>
-            <input type="password" id="ob-kimi-key-oauth" placeholder="sk-...">
-            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://platform.moonshot.ai/'); return false;">platform.moonshot.ai</a></p>
-          </div>
-          <div class="ob-form-group">
-            <label>GLM (Z.AI) API Key</label>
-            <input type="password" id="ob-glm-key-oauth" placeholder="...">
-            <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://z.ai/manage-apikey/apikey-list'); return false;">z.ai</a></p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step: API Key Entry -->
-    <div class="ob-step" id="ob-step-api">
-      <p class="ob-step-desc">enter at least one key to get started. add more for access to additional models.</p>
-      <div class="ob-form-group">
-        <label>Anthropic API Key</label>
-        <input type="password" id="ob-anthropic-key" placeholder="sk-ant-...">
-        <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://console.anthropic.com/settings/keys'); return false;">console.anthropic.com</a></p>
-      </div>
-      <div class="ob-form-group">
-        <label>Kimi (Moonshot) API Key</label>
-        <input type="password" id="ob-kimi-key-api" placeholder="sk-...">
-        <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://platform.moonshot.ai/'); return false;">platform.moonshot.ai</a></p>
-      </div>
-      <div class="ob-form-group">
-        <label>GLM (Z.AI) API Key</label>
-        <input type="password" id="ob-glm-key-api" placeholder="...">
-        <p class="ob-hint">Get from <a href="#" onclick="window.pocketAgent.app.openExternal('https://z.ai/manage-apikey/apikey-list'); return false;">z.ai</a></p>
-      </div>
-      <div class="ob-button-row">
-        <button class="ob-btn secondary" onclick="obShowStep('ob-step-auth')">Back</button>
-        <button class="ob-btn primary" id="ob-api-btn" onclick="obValidateAndSave()">
           Continue
         </button>
       </div>

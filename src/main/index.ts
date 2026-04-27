@@ -6,6 +6,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { AgentManager } from '../agent';
+import { resolveAndPersistModel } from '../agent/resolve-model';
 import { MemoryManager } from '../memory';
 import { createScheduler, CronScheduler } from '../scheduler';
 import { createTelegramBot, TelegramBot } from '../channels/telegram';
@@ -531,35 +532,17 @@ async function initializeAgent(): Promise<void> {
     },
   };
 
-  // Resolve model — ensure the selected model has a matching API key.
-  // If not (e.g. default is claude-* but only a Kimi/GLM key exists), fall back.
-  let model = SettingsManager.get('agent.model') || 'claude-opus-4-7';
-  const hasAnthropicKey = !!SettingsManager.get('anthropic.apiKey');
-  const hasOAuth =
-    SettingsManager.get('auth.method') === 'oauth' && !!SettingsManager.get('auth.oauthToken');
-  const hasMoonshotKey = !!SettingsManager.get('moonshot.apiKey');
-  const hasGlmKey = !!SettingsManager.get('glm.apiKey');
-
-  const isAnthropicModel = model.startsWith('claude-');
-  const isMoonshotModel = model.startsWith('kimi-');
-  const isGlmModel = model.startsWith('glm-');
-
-  const needsFallback =
-    (isAnthropicModel && !hasAnthropicKey && !hasOAuth) ||
-    (isMoonshotModel && !hasMoonshotKey) ||
-    (isGlmModel && !hasGlmKey);
-
-  if (needsFallback) {
-    const oldModel = model;
-    if (hasAnthropicKey || hasOAuth) {
-      model = 'claude-opus-4-7';
-    } else if (hasMoonshotKey) {
-      model = 'kimi-k2.6';
-    } else if (hasGlmKey) {
-      model = 'glm-4.7';
-    }
-    console.log(`[Main] Model/key mismatch: ${oldModel} has no key, falling back to ${model}`);
-    SettingsManager.set('agent.model', model);
+  // Resolve model — single source of truth lives in src/agent/resolve-model.ts.
+  // Covers all providers (anthropic / openai / moonshot / glm / xiaomi /
+  // minimax / deepseek) and persists the resolved model so chat-engine and
+  // the model picker see it on the next read. settings:set also calls this
+  // whenever a provider credential changes, so `agent.model` stays in sync.
+  const configuredModel = SettingsManager.get('agent.model');
+  const model = resolveAndPersistModel();
+  if (configuredModel && model !== configuredModel) {
+    console.log(
+      `[Main] Model/key mismatch: ${configuredModel} has no matching credential, falling back to ${model}`
+    );
   }
 
   // Initialize agent with tools config

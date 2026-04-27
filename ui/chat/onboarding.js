@@ -97,18 +97,16 @@ function obShowStep(stepId) {
     btn.innerHTML = OB_ICONS.refresh + ' Refresh';
     obRefreshPermissions();
   } else if (stepId === 'ob-step-auth') {
-    document.querySelectorAll('.ob-auth-option').forEach(el => el.classList.remove('selected'));
-  } else if (stepId === 'ob-step-oauth') {
-    const btn = document.getElementById('ob-oauth-btn');
-    btn.disabled = false;
-    btn.textContent = 'Sign in';
+    // Reset both OAuth buttons in case the user came back from a failed flow.
+    const claudeBtn = document.getElementById('ob-claude-oauth-btn');
+    if (claudeBtn) { claudeBtn.disabled = false; claudeBtn.textContent = 'Sign in with Claude'; }
+    const openaiBtn = document.getElementById('ob-openai-oauth-btn');
+    if (openaiBtn) { openaiBtn.disabled = false; openaiBtn.textContent = 'Sign in with OpenAI'; }
+    const apiBtn = document.getElementById('ob-api-btn');
+    if (apiBtn) { apiBtn.disabled = false; apiBtn.textContent = 'Save & Continue'; }
   } else if (stepId === 'ob-step-oauth-code') {
     document.getElementById('ob-oauth-code').value = '';
     const btn = document.getElementById('ob-oauth-complete-btn');
-    btn.disabled = false;
-    btn.textContent = 'Continue';
-  } else if (stepId === 'ob-step-api') {
-    const btn = document.getElementById('ob-api-btn');
     btn.disabled = false;
     btn.textContent = 'Continue';
   }
@@ -216,33 +214,22 @@ function obGoBackFromAuth() {
   }
 }
 
-function obSelectAuth(method, el) {
-  obSelectedAuth = method;
-  document.querySelectorAll('.ob-auth-option').forEach(opt => opt.classList.remove('selected'));
-  el.classList.add('selected');
-
-  setTimeout(() => {
-    if (method === 'oauth') {
-      obShowStep('ob-step-oauth');
-    } else {
-      obShowStep('ob-step-api');
-      document.getElementById('ob-anthropic-key').focus();
-    }
-  }, 200);
-}
-
 function obToggleOptional(header) {
   const content = header.nextElementSibling;
   header.classList.toggle('expanded');
   content.classList.toggle('show');
 }
 
-async function obStartOAuth() {
-  const btn = document.getElementById('ob-oauth-btn');
-
+/**
+ * Start Anthropic (Claude Pro/Max) OAuth. Opens the browser, then advances
+ * to the code-paste step — Anthropic's flow does not auto-callback.
+ */
+async function obStartClaudeOAuth() {
+  obSelectedAuth = 'oauth';
+  const btn = document.getElementById('ob-claude-oauth-btn');
+  const original = btn.textContent;
   btn.disabled = true;
   btn.innerHTML = '<span class="ob-spinner"></span> Opening browser...';
-
   try {
     const result = await window.pocketAgent.auth.startOAuth();
     if (result.success) {
@@ -254,9 +241,33 @@ async function obStartOAuth() {
   } catch (err) {
     _obToast(err.message || 'Connection failed', 'error');
   }
-
   btn.disabled = false;
-  btn.textContent = 'Sign in';
+  btn.textContent = original;
+}
+
+/**
+ * Start OpenAI (Codex / ChatGPT Plus) OAuth. Uses PKCE — the browser-side
+ * callback completes the flow without a code paste step. On success the
+ * agent is auto-restarted by the settings:set handler in main.
+ */
+async function obStartOpenAIOAuth() {
+  obSelectedAuth = 'openai-oauth';
+  const btn = document.getElementById('ob-openai-oauth-btn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ob-spinner"></span> Opening browser...';
+  try {
+    const result = await window.pocketAgent.openaiAuth.startOAuth();
+    if (result.success) {
+      obShowStep('ob-step-name');
+    } else {
+      _obToast(result.error || 'Failed to start OpenAI sign-in', 'error');
+    }
+  } catch (err) {
+    _obToast(err.message || 'Connection failed', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = original;
 }
 
 async function obCompleteOAuth() {
@@ -274,11 +285,9 @@ async function obCompleteOAuth() {
   try {
     const result = await window.pocketAgent.auth.completeOAuth(code);
     if (result.success) {
-      // Save optional keys
-      const kimiKey = document.getElementById('ob-kimi-key-oauth').value.trim();
-      if (kimiKey) await window.pocketAgent.settings.set('moonshot.apiKey', kimiKey);
-      const glmKey = document.getElementById('ob-glm-key-oauth').value.trim();
-      if (glmKey) await window.pocketAgent.settings.set('glm.apiKey', glmKey);
+      // Other providers can be added later from the auth step's collapsible
+      // section or from Settings. Keeping this step focused on the OAuth
+      // verification only avoids re-prompting users who just want to sign in.
       obShowStep('ob-step-name');
     } else {
       _obToast(result.error || 'Invalid code. Please try again.', 'error');
@@ -301,28 +310,56 @@ async function obCancelOAuth() {
   obShowStep('ob-step-auth');
 }
 
+// Onboarding API-key entry. Each entry maps an input id to its setting key
+// and (optionally) a format check + label for error messages. Order here
+// also determines validation order — we only run a network validation on
+// Anthropic keys today; the rest are accepted by format.
+// OpenAI is intentionally NOT here — OpenAI auth uses OAuth (Codex sign-in)
+// only, via the dedicated button on the auth step. Do not add an API-key
+// field for OpenAI; it would conflict with the OAuth-only model used in
+// settings and would let users save a key that isn't routed.
+const OB_API_KEY_FIELDS = [
+  { inputId: 'ob-anthropic-key', settingKey: 'anthropic.apiKey', label: 'Anthropic', format: /^sk-ant-[A-Za-z0-9_-]{90,}$/, formatHint: 'Anthropic keys start with "sk-ant-"' },
+  { inputId: 'ob-kimi-key-api', settingKey: 'moonshot.apiKey', label: 'Kimi', format: /^sk-[A-Za-z0-9_-]{20,}$/, formatHint: 'Kimi keys start with "sk-"' },
+  { inputId: 'ob-glm-key-api', settingKey: 'glm.apiKey', label: 'GLM' },
+  { inputId: 'ob-xiaomi-key-api', settingKey: 'xiaomi.apiKey', label: 'Xiaomi' },
+  { inputId: 'ob-minimax-key-api', settingKey: 'minimax.apiKey', label: 'MiniMax' },
+  { inputId: 'ob-deepseek-key-api', settingKey: 'deepseek.apiKey', label: 'DeepSeek', format: /^sk-[A-Za-z0-9_-]{20,}$/, formatHint: 'DeepSeek keys start with "sk-"' },
+];
+
 async function obValidateAndSave() {
-  const anthropicKey = document.getElementById('ob-anthropic-key').value.trim();
-  const kimiKey = document.getElementById('ob-kimi-key-api').value.trim();
-  const glmKey = document.getElementById('ob-glm-key-api').value.trim();
   const btn = document.getElementById('ob-api-btn');
 
-  if (!anthropicKey && !kimiKey && !glmKey) {
+  // Collect entered values for every supported provider.
+  const entered = OB_API_KEY_FIELDS
+    .map((field) => {
+      const el = document.getElementById(field.inputId);
+      const value = el ? el.value.trim() : '';
+      return { ...field, value };
+    })
+    .filter((f) => f.value);
+
+  if (entered.length === 0) {
     _obToast('Please enter at least one API key', 'error');
     return;
   }
 
-  if (anthropicKey && !/^sk-ant-[A-Za-z0-9_-]{90,}$/.test(anthropicKey)) {
-    _obToast('Anthropic keys start with "sk-ant-"', 'error');
-    return;
+  // Format check (cheap, sync).
+  for (const field of entered) {
+    if (field.format && !field.format.test(field.value)) {
+      _obToast(field.formatHint || `Invalid ${field.label} key`, 'error');
+      return;
+    }
   }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="ob-spinner"></span> Validating...';
 
   try {
-    if (anthropicKey) {
-      const result = await window.pocketAgent.validate.anthropicKey(anthropicKey);
+    // Network-validate Anthropic when present (only provider we hit live).
+    const anthropicField = entered.find((f) => f.settingKey === 'anthropic.apiKey');
+    if (anthropicField) {
+      const result = await window.pocketAgent.validate.anthropicKey(anthropicField.value);
       if (!result.valid) {
         _obToast(result.error || 'Invalid Anthropic API key', 'error');
         btn.disabled = false;
@@ -332,20 +369,13 @@ async function obValidateAndSave() {
     }
 
     await window.pocketAgent.settings.set('auth.method', 'api_key');
-    if (anthropicKey) await window.pocketAgent.settings.set('anthropic.apiKey', anthropicKey);
-    if (kimiKey) await window.pocketAgent.settings.set('moonshot.apiKey', kimiKey);
-    if (glmKey) await window.pocketAgent.settings.set('glm.apiKey', glmKey);
-
-    // Auto-select matching model if default doesn't match available keys
-    const currentModel = await window.pocketAgent.settings.get('agent.model');
-    const isAnthropicModel = !currentModel || currentModel.startsWith('claude-');
-    if (isAnthropicModel && !anthropicKey) {
-      if (kimiKey) {
-        await window.pocketAgent.settings.set('agent.model', 'kimi-k2.6');
-      } else if (glmKey) {
-        await window.pocketAgent.settings.set('agent.model', 'glm-4.7');
-      }
+    for (const field of entered) {
+      await window.pocketAgent.settings.set(field.settingKey, field.value);
     }
+    // Note: we used to manually set `agent.model` here based on which key
+    // was provided. That's now handled centrally by resolveAndPersistModel()
+    // in the main process — the settings:set IPC re-resolves the model and
+    // restarts the agent on every provider key change.
 
     obShowStep('ob-step-name');
   } catch (err) {
@@ -391,7 +421,7 @@ async function obFinishSetup() {
 
 const OB_STEP_ORDER = [
   'ob-step-welcome', 'ob-step-keychain', 'ob-step-permissions', 'ob-step-auth',
-  'ob-step-oauth', 'ob-step-oauth-code', 'ob-step-api',
+  'ob-step-oauth-code',
   'ob-step-name', 'ob-step-location', 'ob-step-occupation',
   'ob-step-birthday', 'ob-step-agent-name',
   'ob-step-goals', 'ob-step-struggles', 'ob-step-funfacts',
@@ -404,9 +434,7 @@ const OB_NAV_CONFIG = {
   'ob-step-keychain': { back: null, skip: () => obSkipKeychain() },
   'ob-step-permissions': { back: 'ob-step-keychain', skip: 'ob-step-auth' },
   'ob-step-auth': { back: () => obGoBackFromAuth(), skip: null },
-  'ob-step-oauth': { back: 'ob-step-auth', skip: null },
   'ob-step-oauth-code': { back: () => obCancelOAuth(), skip: null },
-  'ob-step-api': { back: 'ob-step-auth', skip: null },
   'ob-step-name': { back: null, skip: 'ob-step-location' },
   'ob-step-location': { back: 'ob-step-name', skip: 'ob-step-occupation' },
   'ob-step-occupation': { back: 'ob-step-location', skip: 'ob-step-birthday' },

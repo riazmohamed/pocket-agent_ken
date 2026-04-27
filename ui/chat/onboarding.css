@@ -8,7 +8,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* `safe center` keeps content centered when it fits in the viewport but
+     falls back to top-aligned scrolling when the step is taller than the
+     window. Without this (plain `center`), a tall expanded section gets
+     clipped at the top with no way to scroll up. The plain `center`
+     declaration above is a fallback — engines that don't understand the
+     `safe` keyword drop the second line and keep the first. */
   justify-content: center;
+  justify-content: safe center;
   padding: 32px 36px 40px 36px;
   overflow-y: auto;
   opacity: 1;
@@ -877,6 +884,25 @@ body:not(.onboarding-active) #chat-view {
 .ob-success-text p {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+/* Side-by-side OAuth buttons (Claude + OpenAI Codex) on the auth step. */
+.ob-oauth-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ob-oauth-row .ob-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tiny intro line inside the collapsible "Or connect a different provider" */
+.ob-section-hint {
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 /* Optional section */
