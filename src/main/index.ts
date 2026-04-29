@@ -1,3 +1,4 @@
+import '../../gg-pixel.main.mjs';
 import { app, Notification, globalShortcut, powerMonitor } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';

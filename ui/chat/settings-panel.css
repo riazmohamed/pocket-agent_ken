@@ -90,7 +90,7 @@
 #settings-view .settings-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 24px 32px;
+  padding: 8px 0 32px;
 }
 
 #settings-view .settings-content::-webkit-scrollbar {

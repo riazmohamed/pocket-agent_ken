@@ -28,39 +28,43 @@ header h1 span {
 }
 
 .model-badge {
-  height: 28px;
+  height: 30px;
   box-sizing: border-box;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
   font-family: inherit;
-  padding: 0 20px 0 8px;
+  padding: 0 24px 0 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color 150ms ease;
   outline: none;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='%23636366' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='%237a4432' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 6px center;
+  background-position: right 8px center;
 }
 
 .model-badge:hover {
   border-color: var(--accent);
-  color: var(--text-primary);
 }
 
-.model-badge:focus {
-  border-color: var(--accent);
+/* Focus state intentionally inherits the default border (no extra ring). */
+.model-badge:focus,
+.model-badge:focus-visible {
+  border-color: var(--text-muted);
+  box-shadow: none;
+  outline: none;
 }
 
 .model-badge option {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .header-right {
