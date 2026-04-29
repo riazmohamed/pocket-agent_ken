@@ -141,6 +141,9 @@
   },
   "author": "",
   "license": "MIT",
+  "overrides": {
+    "better-sqlite3": "^12.6.2"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "@kenkaiiii/gg-agent": "^4.3.82",
