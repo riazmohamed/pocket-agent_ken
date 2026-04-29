@@ -4,6 +4,6 @@
     "module": "CommonJS",
     "moduleResolution": "Node10"
   },
-  "include": ["src/main/preload.ts", "src/main/splash-preload.ts"],
+  "include": ["src/main/preload.ts"],
   "exclude": []
 }

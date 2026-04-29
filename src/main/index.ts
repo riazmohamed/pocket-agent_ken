@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Notification, globalShortcut, screen, powerMonitor } from 'electron';
+import { app, Notification, globalShortcut, powerMonitor } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -49,7 +49,6 @@ fixPathForPackagedApp();
 let memory: MemoryManager | null = null;
 let scheduler: CronScheduler | null = null;
 let telegramBot: TelegramBot | null = null;
-let splashWindow: BrowserWindow | null = null;
 // tray menu updates are event-driven via IPC handlers
 let modelChangedHandler: ((model: string) => void) | null = null;
 
@@ -311,61 +310,6 @@ function ensureAgentWorkspace(): string {
   return workspace;
 }
 
-// ============ Splash Screen ============
-
-function showSplashScreen(): void {
-  console.log('[Main] Showing splash screen...');
-
-  // Get primary display for proper centering
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-
-  const splashWidth = 650;
-  const splashHeight = 200;
-
-  splashWindow = new BrowserWindow({
-    width: splashWidth,
-    height: splashHeight,
-    x: Math.round((screenWidth - splashWidth) / 2),
-    y: Math.round((screenHeight - splashHeight) / 2),
-    frame: false,
-    transparent: true,
-    resizable: false,
-    movable: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'splash-preload.js'),
-    },
-  });
-
-  splashWindow.loadFile(path.join(__dirname, '../../ui/splash.html'));
-
-  splashWindow.on('closed', () => {
-    splashWindow = null;
-  });
-
-  // Safety timeout - force close splash after 5 seconds if IPC fails
-  setTimeout(() => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      console.log('[Main] Safety timeout: force-closing splash screen');
-      closeSplashScreen();
-    }
-  }, 5000);
-}
-
-function closeSplashScreen(): void {
-  console.log('[Main] closeSplashScreen called, splashWindow exists:', !!splashWindow);
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    console.log('[Main] Closing splash window...');
-    splashWindow.close();
-    splashWindow = null;
-    console.log('[Main] Splash window closed');
-  }
-}
-
 // ============ Windows ============
 
 function openChatWindow(): void {
@@ -478,7 +422,6 @@ function buildIPCDeps(): IPCDependencies {
     openFactsWindow,
     openDailyLogsWindow,
     openSoulWindow,
-    closeSplashScreen,
     WIN,
   };
 }
@@ -696,9 +639,6 @@ app.whenReady().then(async () => {
   console.log('[Main] App ready, starting initialization...');
 
   try {
-    // Show splash screen immediately
-    showSplashScreen();
-
     // === Power Management ===
     // Let macOS manage power naturally — App Nap may coalesce timers by a few
     // seconds when the app is in the background, which is fine for minute-level
@@ -799,10 +739,14 @@ app.whenReady().then(async () => {
     // of whether the agent will be initialized (isFirstRun may skip initializeAgent).
     ensureAgentWorkspace();
 
-    // Initialize agent if not first run (window will be shown after splash completes)
+    // Initialize agent if not first run. The chat window opens via the tray
+    // (this is a tray-resident app — no auto-launched window on startup).
     if (!SettingsManager.isFirstRun()) {
       console.log('[Main] Initializing agent...');
       await initializeAgent();
+    } else {
+      // First-run: open chat so the user lands on onboarding.
+      openChatWindow();
     }
 
     // Tray menu is updated event-driven (after messages, cron changes, etc.)

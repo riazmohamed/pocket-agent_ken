@@ -21,16 +21,7 @@ export function registerMiscIPC(deps: IPCDependencies): void {
     openFactsWindow,
     openDailyLogsWindow,
     openSoulWindow,
-    closeSplashScreen,
   } = deps;
-
-  // Splash screen completion — always open chat window
-  // Onboarding is now embedded inside chat.html and handled client-side
-  ipcMain.on('splash-complete', () => {
-    console.log('[Main] Splash complete, showing main app');
-    closeSplashScreen();
-    openChatWindow();
-  });
 
   // App window openers
   ipcMain.handle('app:openFacts', async () => {

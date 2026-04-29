@@ -25,7 +25,6 @@ export interface IPCDependencies {
   openFactsWindow: () => void;
   openDailyLogsWindow: () => void;
   openSoulWindow: () => void;
-  closeSplashScreen: () => void;
 
   /** Window ID constants */
   WIN: {
