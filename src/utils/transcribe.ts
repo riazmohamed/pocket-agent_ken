@@ -2,7 +2,7 @@
  * Audio transcription utility using OpenAI Whisper API
  */
 
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { SettingsManager } from '../settings';
 
 export interface TranscriptionResult {
@@ -33,15 +33,10 @@ export async function transcribeAudio(
   try {
     const openai = new OpenAI({ apiKey });
 
-    // Create a File object from the buffer
+    // Create an Uploadable from the buffer using the OpenAI SDK helper
     // OpenAI accepts: mp3, mp4, mpeg, mpga, m4a, wav, webm, ogg
     const mimeType = getMimeType(format);
-    // Convert Buffer to ArrayBuffer for web API compatibility
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    ) as ArrayBuffer;
-    const file = new File([arrayBuffer], `audio.${format}`, { type: mimeType });
+    const file = await toFile(buffer, `audio.${format}`, { type: mimeType });
 
     const startTime = Date.now();
 

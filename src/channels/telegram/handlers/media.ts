@@ -265,11 +265,8 @@ export async function handleVoiceMessage(ctx: Context, deps: MediaHandlerDeps): 
     if (onMessageCallback) {
       const memory = AgentManager.getMemory();
       const sessionId = memory?.getSessionForChat(chatId) || 'default';
-      const transcriptPreview =
-        result.transcription.text && result.transcription.text.length > 50
-          ? result.transcription.text.substring(0, 50) + '...'
-          : result.transcription.text || '';
-      const displayMessage = caption ? `${caption}\n\n${transcriptPreview}` : transcriptPreview;
+      const fullTranscript = result.transcription.text || '';
+      const displayMessage = caption ? `${caption}\n\n${fullTranscript}` : fullTranscript;
 
       onMessageCallback({
         userMessage: displayMessage,
@@ -396,13 +393,10 @@ export async function handleAudioMessage(ctx: Context, deps: MediaHandlerDeps): 
     if (onMessageCallback) {
       const memory = AgentManager.getMemory();
       const sessionId = memory?.getSessionForChat(chatId) || 'default';
-      const transcriptPreview =
-        result.transcription.text && result.transcription.text.length > 50
-          ? result.transcription.text.substring(0, 50) + '...'
-          : result.transcription.text || '';
+      const fullTranscript = result.transcription.text || '';
       const displayMessage = caption
-        ? `${caption} [${audio.title || 'Audio'}: "${transcriptPreview}"]`
-        : `${audio.title || 'Audio'}: "${transcriptPreview}"`;
+        ? `${caption} [${audio.title || 'Audio'}: "${fullTranscript}"]`
+        : `${audio.title || 'Audio'}: "${fullTranscript}"`;
 
       onMessageCallback({
         userMessage: displayMessage,
