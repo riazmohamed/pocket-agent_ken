@@ -348,10 +348,14 @@
   border-color: var(--accent);
 }
 
-/* Focus state intentionally inherits the default border (no extra ring). */
+/* Focus/active state intentionally inherits the default border (no extra ring).
+   Re-asserting border-radius prevents native macOS WebKit from squaring the
+   corners while the <select> is focused/open. */
 .mode-select:focus,
-.mode-select:focus-visible {
+.mode-select:focus-visible,
+.mode-select:active {
   border-color: var(--text-muted);
+  border-radius: var(--radius-sm);
   box-shadow: none;
   outline: none;
 }

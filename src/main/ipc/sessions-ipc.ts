@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
 import { AgentManager } from '../../agent';
+import { sanitizeSessionName } from '../../utils/session-name';
 import type { IPCDependencies } from './types';
 
 // ============ Session Directory Helpers ============
@@ -86,12 +87,13 @@ export function registerSessionsIPC(deps: IPCDependencies): void {
 
   ipcMain.handle('sessions:create', async (_, name: string) => {
     try {
+      const safeName = sanitizeSessionName(name);
       const memory = getMemory();
       const mode = AgentManager.getMode();
       console.log(
-        `[Sessions] Creating session "${name}" mode=${mode} workingDirectory=null (deferred)`
+        `[Sessions] Creating session "${safeName}" mode=${mode} workingDirectory=null (deferred)`
       );
-      const session = memory?.createSession(name, mode, null);
+      const session = memory?.createSession(safeName, mode, null);
       return { success: true, session };
     } catch (err) {
       return { success: false, error: (err as Error).message };
@@ -100,24 +102,28 @@ export function registerSessionsIPC(deps: IPCDependencies): void {
 
   ipcMain.handle('sessions:rename', async (_, id: string, name: string) => {
     try {
+      const safeName = sanitizeSessionName(name);
       const memory = getMemory();
       const session = memory?.getSession(id);
       let newWorkingDirectory: string | undefined;
       console.log(
-        `[Sessions] Renaming session ${id} to "${name}" | current working_directory=${session?.working_directory || 'null'}`
+        `[Sessions] Renaming session ${id} to "${safeName}" | current working_directory=${session?.working_directory || 'null'}`
       );
 
       if (session?.working_directory) {
-        const newPath = renameSessionDirectory(session.working_directory, name);
+        const newPath = renameSessionDirectory(session.working_directory, safeName);
         if (!newPath) {
-          console.log(`[Sessions] Rename blocked: directory "${name}" already exists`);
-          return { success: false, error: `Cannot rename: directory "${name}" already exists` };
+          console.log(`[Sessions] Rename blocked: directory "${safeName}" already exists`);
+          return {
+            success: false,
+            error: `Cannot rename: directory "${safeName}" already exists`,
+          };
         }
         newWorkingDirectory = newPath;
         console.log(`[Sessions] Directory renamed: ${session.working_directory} -> ${newPath}`);
       }
 
-      const success = memory?.renameSession(id, name, newWorkingDirectory) ?? false;
+      const success = memory?.renameSession(id, safeName, newWorkingDirectory) ?? false;
       return { success };
     } catch (err) {
       return { success: false, error: (err as Error).message };

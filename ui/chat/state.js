@@ -113,6 +113,7 @@ function playReplySound() {
 
 // Session state
 const MAX_TABS = 10;
+const SESSION_NAME_MAX = 40; // Long enough to be descriptive; CSS truncates with ellipsis
 let sessions = [];
 let currentSessionId = 'default';
 const tabsContainer = document.getElementById('sidebar-sessions');

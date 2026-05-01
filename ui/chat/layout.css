@@ -52,10 +52,14 @@ header h1 span {
   border-color: var(--accent);
 }
 
-/* Focus state intentionally inherits the default border (no extra ring). */
+/* Focus/active state intentionally inherits the default border (no extra ring).
+   Re-asserting border-radius prevents native macOS WebKit from squaring the
+   corners while the <select> is focused/open. */
 .model-badge:focus,
-.model-badge:focus-visible {
+.model-badge:focus-visible,
+.model-badge:active {
   border-color: var(--text-muted);
+  border-radius: var(--radius-sm);
   box-shadow: none;
   outline: none;
 }

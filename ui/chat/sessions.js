@@ -307,6 +307,28 @@ async function createNewSession() {
   }
 }
 
+// Mirror of src/utils/session-name.ts — keep these in sync.
+// Strips filesystem-illegal chars so the UI gives instant feedback while
+// typing, instead of silently rewriting the name on blur.
+// Order matters: collapse whitespace BEFORE stripping C0 controls so
+// tab/newline (which are control chars) become spaces instead of vanishing.
+function sanitizeSessionNameLive(raw) {
+  if (typeof raw !== 'string') return '';
+  return raw
+    .replace(/\s+/g, ' ')
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+    .slice(0, SESSION_NAME_MAX);
+}
+
+function sanitizeSessionNameFinal(raw) {
+  const cleaned = sanitizeSessionNameLive(raw)
+    .trim()
+    .replace(/^\.+/, '')
+    .replace(/\.+$/, '')
+    .trim();
+  return cleaned || 'Untitled';
+}
+
 function startRenameSession(sessionId) {
   const tab = tabsContainer.querySelector(`[data-session-id="${sessionId}"]`);
   if (!tab) return;
@@ -318,12 +340,21 @@ function startRenameSession(sessionId) {
   input.type = 'text';
   input.className = 'tab-name-input';
   input.value = currentName;
-  input.maxLength = 10;
+  input.maxLength = SESSION_NAME_MAX;
 
-  // Sanitize input: single word only (no spaces), max 10 chars
+  // Live sanitize as the user types: strip filesystem-illegal chars,
+  // collapse runs of whitespace, cap length. Spaces are allowed — the
+  // CSS truncates with ellipsis when the sidebar is narrow.
   input.oninput = () => {
-    // Remove spaces and limit to 10 chars
-    input.value = input.value.replace(/\s/g, '').slice(0, 10);
+    const start = input.selectionStart;
+    const cleaned = sanitizeSessionNameLive(input.value);
+    if (cleaned !== input.value) {
+      input.value = cleaned;
+      // Restore caret as best we can after the substitution
+      try {
+        input.setSelectionRange(start, start);
+      } catch (_) { /* ignore */ }
+    }
   };
 
   input.onblur = () => finishRename(sessionId, input.value);
@@ -334,9 +365,6 @@ function startRenameSession(sessionId) {
     } else if (e.key === 'Escape') {
       input.value = currentName;
       input.blur();
-    } else if (e.key === ' ') {
-      // Prevent space key
-      e.preventDefault();
     }
   };
 
@@ -346,8 +374,10 @@ function startRenameSession(sessionId) {
 }
 
 async function finishRename(sessionId, newName) {
-  // Sanitize: remove spaces, limit to 10 chars, fallback to 'Untitled'
-  const sanitizedName = newName.replace(/\s/g, '').slice(0, 10) || 'Untitled';
+  // Final pass: trim, strip leading/trailing dots, fallback to 'Untitled'.
+  // The server (sanitizeSessionName in src/utils/session-name.ts) re-applies
+  // the same rules as a safety net.
+  const sanitizedName = sanitizeSessionNameFinal(newName);
 
   try {
     const result = await window.pocketAgent.sessions.rename(sessionId, sanitizedName);

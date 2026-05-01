@@ -28,8 +28,19 @@ vi.mock('openai', () => {
     }
   }
   (MockOpenAI as unknown as Record<string, unknown>).APIError = MockAPIError;
+  // The transcribe util calls `toFile(buffer, name, { type })` to wrap the
+  // raw buffer into the SDK's Uploadable shape. The real implementation
+  // returns a File-like object — for the mock we just echo back something
+  // recognisable so the downstream `create()` call still receives a value.
+  const toFile = vi.fn(async (data: unknown, name: string, opts?: { type?: string }) => ({
+    __mockFile: true,
+    data,
+    name,
+    type: opts?.type,
+  }));
   return {
     default: MockOpenAI,
+    toFile,
   };
 });
 

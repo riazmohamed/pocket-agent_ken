@@ -8,6 +8,7 @@ import { AgentManager } from '../../../agent';
 import { SessionLinkCallback } from '../types';
 import { loadWorkflowCommands } from '../../../config/commands-loader';
 import { getAvailableModels } from '../../../main/ipc/settings-ipc';
+import { sanitizeSessionName } from '../../../utils/session-name';
 
 export interface CommandHandlerDeps {
   bot: Bot;
@@ -263,7 +264,10 @@ export function registerSessionHandlers(deps: CommandHandlerDeps): void {
       return;
     }
 
-    const groupName = ctx.chat?.title || '';
+    const rawGroupName = ctx.chat?.title || '';
+    // Normalise the group title the same way session names are normalised so
+    // a group called "My Chat " matches a session stored as "My Chat".
+    const groupName = rawGroupName ? sanitizeSessionName(rawGroupName) : '';
     console.log(`[Telegram] Bot added to group "${groupName}" (chatId: ${chatId})`);
 
     // Try to match group name to a session
@@ -304,7 +308,10 @@ export function registerSessionHandlers(deps: CommandHandlerDeps): void {
   bot.command('link', async (ctx) => {
     const chatId = ctx.chat?.id;
     const chatType = ctx.chat?.type;
-    const sessionName = ctx.message?.text?.replace('/link', '').trim();
+    const rawSessionName = ctx.message?.text?.replace('/link', '').trim();
+    // Apply the same normalisation we use when names are created via the UI
+    // so `/link  My  Chat ` matches a session stored as "My Chat".
+    const sessionName = rawSessionName ? sanitizeSessionName(rawSessionName) : '';
 
     if (!chatId) return;
 
